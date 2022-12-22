@@ -68,4 +68,6 @@ typedef struct {
 	slice_t literal;
 } token_t;
 
+token_type tokenLookupIdentifier(slice_t ident);
+
 #endif
