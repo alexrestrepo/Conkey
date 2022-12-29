@@ -12,6 +12,14 @@
 	/* operators */ \
 	TOK(ASSIGN) \
 	TOK(PLUS) \
+	TOK(MINUS) \
+	TOK(BANG) \
+	TOK(ASTERISK) \
+	TOK(SLASH) \
+	TOK(LT) \
+	TOK(GT) \
+	TOK(EQ) \
+	TOK(NOT_EQ) \
 	/* delimiters */ \
 	TOK(COMMA) \
 	TOK(SEMICOLON) \
@@ -21,7 +29,12 @@
 	TOK(RBRACE) \
 	/* keywords */ \
 	TOK(FUNCTION) \
-	TOK(LET)
+	TOK(LET) \
+	TOK(TRUE) \
+	TOK(FALSE) \
+	TOK(IF) \
+	TOK(ELSE) \
+	TOK(RETURN)
 
 	
 #define TOK(token) TOKEN_##token,

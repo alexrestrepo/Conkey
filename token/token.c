@@ -8,6 +8,11 @@ token_type tokenLookupIdentifier(slice_t ident) {
 	} keywords[] = {
 		{ "fn", TOKEN_FUNCTION},
 		{ "let", TOKEN_LET},
+		{ "true", TOKEN_TRUE},
+		{ "false", TOKEN_FALSE},
+		{ "if", TOKEN_IF},
+		{ "else", TOKEN_ELSE},
+		{ "return", TOKEN_RETURN},
 	};
 	
 	size_t keywordCount = sizeof(keywords) / sizeof(struct keyword);

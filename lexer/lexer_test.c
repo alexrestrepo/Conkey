@@ -20,6 +20,17 @@ UTEST(lexer, nextToken) {
 		};
 		
 		let result = add(five, ten);
+		!-/ *5;
+		5 < 10 > 5;
+		
+		if (5 < 10) {
+			return true;
+		} else {
+			return false;
+		}
+		
+		10 == 10;
+		10 != 9;
 	);
 	
 	test_t tests[] = {
@@ -61,6 +72,46 @@ UTEST(lexer, nextToken) {
 		{TOKEN_COMMA, ","},
 		{TOKEN_IDENT, "ten"},
 		{TOKEN_RPAREN, ")"},
+		{TOKEN_SEMICOLON, ";"},
+		
+		{TOKEN_BANG, "!"},
+		{TOKEN_MINUS, "-"},
+		{TOKEN_SLASH, "/"},
+		{TOKEN_ASTERISK, "*"},
+		{TOKEN_INT, "5"},
+		{TOKEN_SEMICOLON, ";"},
+		{TOKEN_INT, "5"},
+		{TOKEN_LT, "<"},
+		{TOKEN_INT, "10"},
+		{TOKEN_GT, ">"},
+		{TOKEN_INT, "5"},
+		{TOKEN_SEMICOLON, ";"},
+		
+		{TOKEN_IF, "if"},
+		{TOKEN_LPAREN, "("},
+		{TOKEN_INT, "5"},
+		{TOKEN_LT, "<"},
+		{TOKEN_INT, "10"},
+		{TOKEN_RPAREN, ")"},
+		{TOKEN_LBRACE, "{"},
+		{TOKEN_RETURN, "return"},
+		{TOKEN_TRUE, "true"},
+		{TOKEN_SEMICOLON, ";"},
+		{TOKEN_RBRACE, "}"},
+		{TOKEN_ELSE, "else"},
+		{TOKEN_LBRACE, "{"},
+		{TOKEN_RETURN, "return"},
+		{TOKEN_FALSE, "false"},
+		{TOKEN_SEMICOLON, ";"},
+		{TOKEN_RBRACE, "}"},
+		
+		{TOKEN_INT, "10"},
+		{TOKEN_EQ, "=="},
+		{TOKEN_INT, "10"},
+		{TOKEN_SEMICOLON, ";"},
+		{TOKEN_INT, "10"},
+		{TOKEN_NOT_EQ, "!="},
+		{TOKEN_INT, "9"},
 		{TOKEN_SEMICOLON, ";"},
 		
 		{TOKEN_EOF, ""},
