@@ -14,6 +14,7 @@ UTEST(lexer, nextToken) {
 	const char *input = MONKEY(
 		let five = 5;
 		let ten = 10;
+		
 		let add = fn(x,y) {
 			x + y;
 		};

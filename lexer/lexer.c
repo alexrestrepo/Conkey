@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+void lexerReadChar(lexer_t *lexer);
+
 lexer_t *createLexer(const char *input) {
 	size_t inputLength = strlen(input);
 	lexer_t *lexer = calloc(1, sizeof(*lexer) + sizeof(char[inputLength + 1]));
@@ -75,41 +77,43 @@ static void lexerSkipWhitespace(lexer_t *lexer) {
 token_t lexerNextToken(lexer_t *lexer) {
 	token_t token = {0};
 	lexerSkipWhitespace(lexer);
-	switch (lexer->ch) {
+	
+	const char ch = lexer->ch;
+	switch (ch) {
 		case '=':
-			token = (token_t){TOKEN_ASSIGN, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_ASSIGN;
 			break;
 		
 		case ';':
-			token = (token_t){TOKEN_SEMICOLON, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_SEMICOLON;
 			break;
 		
 		case '(':
-			token = (token_t){TOKEN_LPAREN, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_LPAREN;
 			break;
 		
 		case ')':
-			token = (token_t){TOKEN_RPAREN, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_RPAREN;
 			break;
 		
 		case ',':
-			token = (token_t){TOKEN_COMMA, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_COMMA;
 			break;
 		
 		case '+':
-			token = (token_t){TOKEN_PLUS, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_PLUS;
 			break;
 		
 		case '{':
-			token = (token_t){TOKEN_LBRACE, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_LBRACE;
 			break;
 		
 		case '}':
-			token = (token_t){TOKEN_RBRACE, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_RBRACE;
 			break;
 		
 		case '\0':
-			token = (token_t){TOKEN_EOF, (slice_t){&(lexer->input[lexer->position]), 1}};
+			token.type = TOKEN_EOF;
 			break;
 		
 		default:
@@ -122,12 +126,14 @@ token_t lexerNextToken(lexer_t *lexer) {
 				token.type = TOKEN_INT;
 				token.literal = lexerReadNumber(lexer);
 				return token;
+				
 			} else {
-				token = (token_t){ TOKEN_ILLEGAL, (slice_t){&(lexer->input[lexer->position]), 1}};
+				token.type = TOKEN_ILLEGAL;
 			}
 			break;
 	}
 	
+	token.literal = (slice_t){&(lexer->input[lexer->position]), 1};
 	lexerReadChar(lexer);
 	return token;
 }

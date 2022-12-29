@@ -3,65 +3,46 @@
 
 #include <string.h>
 
-typedef struct {
-	char *src;
-	size_t length;
-} slice_t;
+#define TOKENS_TYPES \
+	TOK(ILLEGAL) \
+	TOK(EOF) \
+	/* indentifiers + literals */ \
+	TOK(IDENT) \
+	TOK(INT) \
+	/* operators */ \
+	TOK(ASSIGN) \
+	TOK(PLUS) \
+	/* delimiters */ \
+	TOK(COMMA) \
+	TOK(SEMICOLON) \
+	TOK(LPAREN) \
+	TOK(RPAREN) \
+	TOK(LBRACE) \
+	TOK(RBRACE) \
+	/* keywords */ \
+	TOK(FUNCTION) \
+	TOK(LET)
 
+	
+#define TOK(token) TOKEN_##token,
 typedef enum {
-	TOKEN_ILLEGAL,
-	TOKEN_EOF,
-	
-	// indentifiers + literals
-	TOKEN_IDENT,
-	TOKEN_INT,
-	
-	// operators
-	TOKEN_ASSIGN,
-	TOKEN_PLUS,
-	
-	// delimiters
-	TOKEN_COMMA,
-	TOKEN_SEMICOLON,
-	
-	TOKEN_LPAREN,
-	TOKEN_RPAREN,
-	TOKEN_LBRACE,
-	TOKEN_RBRACE,
-	
-	// keywords
-	TOKEN_FUNCTION,
-	TOKEN_LET,
+	TOKENS_TYPES
 	
 	// count
 	TOKEN_TYPE_COUNT
 } token_type;
+#undef TOK
 
+#define TOK(token) #token,
 static const char *token_types[] = {
-	"ILLEGAL",
-	"EOF",
-	
-	// indentifiers + literals
-	"IDENT",
-	"INT",
-	
-	// operators
-	"ASSIGN",
-	"PLUS",
-	
-	// delimiters
-	"COMMA",
-	"SEMICOLON",
-	
-	"LPAREN",
-	"RPAREN",
-	"LBRACE",
-	"RBRACE",
-	
-	// keywords
-	"FUNCTION",
-	"LET",
+	TOKENS_TYPES
 };
+#undef TOK
+
+typedef struct {
+	char *src;
+	size_t length;
+} slice_t;
 
 typedef struct {
 	token_type type;
