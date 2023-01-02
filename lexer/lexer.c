@@ -157,7 +157,7 @@ token_t lexerNextToken(lexer_t *lexer) {
 		
 		case ')':
 			token.type = TOKEN_RPAREN;
-			break;				
+			break;
 				
 		case '{':
 			token.type = TOKEN_LBRACE;

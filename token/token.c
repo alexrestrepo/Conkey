@@ -6,6 +6,7 @@ token_type tokenLookupIdentifier(slice_t ident) {
 		const char *keyword;
 		token_type type;
 	} keywords[] = {
+		// FIXME: this can be just the type and expand it when comparing?
 		{ "fn", TOKEN_FUNCTION},
 		{ "let", TOKEN_LET},
 		{ "true", TOKEN_TRUE},

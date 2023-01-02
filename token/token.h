@@ -3,52 +3,58 @@
 
 #include <string.h>
 
-#define TOKENS_TYPES \
-	TOK(ILLEGAL) \
-	TOK(EOF) \
+#define TOKEN_DEFS \
+	TOK(EOF,     "EOF") \
+	TOK(ILLEGAL, "ILLEGAL") \
 	/* indentifiers + literals */ \
-	TOK(IDENT) \
-	TOK(INT) \
+	TOK(IDENT, "Identifier") \
+	TOK(INT,   "Integer") \
 	/* operators */ \
-	TOK(ASSIGN) \
-	TOK(PLUS) \
-	TOK(MINUS) \
-	TOK(BANG) \
-	TOK(ASTERISK) \
-	TOK(SLASH) \
-	TOK(LT) \
-	TOK(GT) \
-	TOK(EQ) \
-	TOK(NOT_EQ) \
+	TOK(ASSIGN,   "=") \
+	TOK(PLUS,     "+") \
+	TOK(MINUS,    "-") \
+	TOK(BANG,     "!") \
+	TOK(ASTERISK, "*") \
+	TOK(SLASH,    "/") \
+	TOK(LT,       "<") \
+	TOK(GT,       ">") \
+	TOK(EQ,       "==") \
+	TOK(NOT_EQ,   "!=") \
 	/* delimiters */ \
-	TOK(COMMA) \
-	TOK(SEMICOLON) \
-	TOK(LPAREN) \
-	TOK(RPAREN) \
-	TOK(LBRACE) \
-	TOK(RBRACE) \
+	TOK(COMMA,     ",") \
+	TOK(SEMICOLON, ";") \
+	TOK(LPAREN,    "(") \
+	TOK(RPAREN,    ")") \
+	TOK(LBRACE,    "{") \
+	TOK(RBRACE,    "}") \
 	/* keywords */ \
-	TOK(FUNCTION) \
-	TOK(LET) \
-	TOK(TRUE) \
-	TOK(FALSE) \
-	TOK(IF) \
-	TOK(ELSE) \
-	TOK(RETURN)
+	TOK(FUNCTION, "fn") \
+	TOK(LET,      "let") \
+	TOK(TRUE,     "true") \
+	TOK(FALSE,    "false") \
+	TOK(IF,       "if") \
+	TOK(ELSE,     "else") \
+	TOK(RETURN,   "return")
 
 	
-#define TOK(token) TOKEN_##token,
+#define TOK(token, ...) TOKEN_##token,
 typedef enum {
-	TOKENS_TYPES
+	TOKEN_DEFS
 	
 	// count
 	TOKEN_TYPE_COUNT
 } token_type;
 #undef TOK
 
-#define TOK(token) #token,
+#define TOK(token, ...) #token,
 static const char *token_types[] = {
-	TOKENS_TYPES
+	TOKEN_DEFS
+};
+#undef TOK
+
+#define TOK(token, str) str,
+static const char *token_str[] = {
+	TOKEN_DEFS
 };
 #undef TOK
 
