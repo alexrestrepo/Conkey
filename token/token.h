@@ -69,5 +69,6 @@ typedef struct {
 } token_t;
 
 token_type tokenLookupIdentifier(slice_t ident);
+void tokenPrint(token_t token);
 
 #endif

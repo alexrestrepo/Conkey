@@ -13,9 +13,9 @@ void replStart() {
 			break;
 		}
 		
-		lexer_t *lexer = createLexer(line);
-		for (token_t tok = lexerNextToken(lexer); tok.type != TOKEN_EOF; tok = lexerNextToken(lexer)) {
-			printf("{Type:%s Literal:%.*s}\n", token_types[tok.type], (int)tok.literal.length, tok.literal.src);
+		lexer_t *lexer = lexerCreate(line);
+		for (token_t token = lexerNextToken(lexer); token.type != TOKEN_EOF; token = lexerNextToken(lexer)) {
+			tokenPrint(token);
 		}
 		lexerRelease(&lexer);
 	}

@@ -16,7 +16,7 @@ typedef struct {
 	char input[];
 } lexer_t;
 
-lexer_t *createLexer(const char *input);
+lexer_t *lexerCreate(const char *input);
 void lexerRelease(lexer_t **lexer);
 
 token_t lexerNextToken(lexer_t *lexer);

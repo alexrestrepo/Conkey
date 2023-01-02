@@ -10,7 +10,7 @@
 
 static void lexerReadChar(lexer_t *lexer);
 
-lexer_t *createLexer(const char *input) {
+lexer_t *lexerCreate(const char *input) {
 	size_t inputLength = strlen(input);
 	lexer_t *lexer = calloc(1, sizeof(*lexer) + sizeof(char[inputLength + 1]));
 	if (lexer) {

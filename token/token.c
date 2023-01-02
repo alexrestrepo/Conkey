@@ -1,5 +1,6 @@
 #include "token.h"
 #include <string.h>
+#include <stdio.h>
 
 token_type tokenLookupIdentifier(slice_t ident) {
 	struct keyword {
@@ -23,4 +24,8 @@ token_type tokenLookupIdentifier(slice_t ident) {
 		}
 	}
 	return TOKEN_IDENT;
+}
+
+void tokenPrint(token_t token) {
+	printf("{Type:%s Literal:%.*s}\n", token_types[token.type], (int)token.literal.length, token.literal.src);
 }
