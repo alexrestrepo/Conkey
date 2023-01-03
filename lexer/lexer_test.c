@@ -117,7 +117,7 @@ UTEST(lexer, nextToken) {
 		{TOKEN_EOF, ""},
 	};
 	
-	lexer_t *lexer = createLexer(input);
+	lexer_t *lexer = lexerCreate(input);
 	
 	size_t testCount = sizeof(tests) / sizeof(test_t);
 	for (int i = 0; i < testCount; i++) {

@@ -1,8 +1,11 @@
 #include "token.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <assert.h>
 
-token_type tokenLookupIdentifier(slice_t ident) {
+token_type tokenLookupIdentifier(charslice_t ident) {
 	struct keyword {
 		const char *keyword;
 		token_type type;
@@ -27,5 +30,19 @@ token_type tokenLookupIdentifier(slice_t ident) {
 }
 
 void tokenPrint(token_t token) {
-	printf("{Type:%s Literal:%.*s}\n", token_types[token.type], (int)token.literal.length, token.literal.src);
+	printf("{Type:%s Literal:'%.*s'}\n", token_types[token.type], (int)token.literal.length, token.literal.src);
+}
+
+charslice_t charsliceCreate(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	size_t size = vsnprintf(NULL, 0, fmt, args);
+	va_end(args);
+	
+	char *src = calloc(size + 1, sizeof(char));
+	va_start(args, fmt);
+	assert(vsnprintf(src, size + 1, fmt, args) <= size);
+	va_end(args);
+	
+	return (charslice_t){src, size};
 }

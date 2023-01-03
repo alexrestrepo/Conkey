@@ -61,14 +61,15 @@ static const char *token_str[] = {
 typedef struct {
 	char *src;
 	size_t length;
-} slice_t;
+} charslice_t;
+charslice_t charsliceCreate(const char *fmt, ...) __printflike(1, 2);
 
 typedef struct {
 	token_type type;
-	slice_t literal;
+	charslice_t literal;
 } token_t;
 
-token_type tokenLookupIdentifier(slice_t ident);
+token_type tokenLookupIdentifier(charslice_t ident);
 void tokenPrint(token_t token);
 
 #endif

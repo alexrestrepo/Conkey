@@ -59,22 +59,22 @@ static char lexerPeekChar(lexer_t *lexer) {
 	}
 }
 
-static slice_t lexerReadIdentifier(lexer_t *lexer) {
+static charslice_t lexerReadIdentifier(lexer_t *lexer) {
 	size_t position = lexer->position;
 	char *start = &(lexer->input[position]);
 	while (isLetter(lexer->ch)) {
 		lexerReadChar(lexer);
 	}
-	return (slice_t){start, lexer->position - position};
+	return (charslice_t){start, lexer->position - position};
 }
 
-static slice_t lexerReadNumber(lexer_t *lexer) {
+static charslice_t lexerReadNumber(lexer_t *lexer) {
 	size_t position = lexer->position;
 	char *start = &(lexer->input[position]);
 	while (isDigit(lexer->ch)) {
 		lexerReadChar(lexer);
 	}
-	return (slice_t){start, lexer->position - position};
+	return (charslice_t){start, lexer->position - position};
 }
 
 static void lexerSkipWhitespace(lexer_t *lexer) {
@@ -95,7 +95,7 @@ token_t lexerNextToken(lexer_t *lexer) {
 				size_t position = lexer->position;
 				lexerReadChar(lexer);
 				token.type = TOKEN_EQ;
-				token.literal = (slice_t){&(lexer->input[position]), 2};
+				token.literal = (charslice_t){&(lexer->input[position]), 2};
 				lexerReadChar(lexer);
 				return token;
 				
@@ -118,7 +118,7 @@ token_t lexerNextToken(lexer_t *lexer) {
 				size_t position = lexer->position;
 				lexerReadChar(lexer);
 				token.type = TOKEN_NOT_EQ;
-				token.literal = (slice_t){&(lexer->input[position]), 2};
+				token.literal = (charslice_t){&(lexer->input[position]), 2};
 				lexerReadChar(lexer);
 				return token;
 				
@@ -188,7 +188,7 @@ token_t lexerNextToken(lexer_t *lexer) {
 			break;
 	}
 	
-	token.literal = (slice_t){&(lexer->input[lexer->position]), 1};
+	token.literal = (charslice_t){&(lexer->input[lexer->position]), 1};
 	lexerReadChar(lexer);
 	return token;
 }

@@ -1,5 +1,5 @@
-#ifndef __macros_h__
-#define __macros_h__
+#ifndef _macros_h_
+#define _macros_h_
 
 #define MONKEY(...) #__VA_ARGS__
 
