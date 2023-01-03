@@ -11,6 +11,7 @@ typedef enum {
 	AST_PROGRAM,
 	AST_LET,
 	AST_IDENTIFIER,
+	AST_RETURN,
 } astnode_type;
 
 typedef struct astnode astnode_t;
@@ -52,5 +53,12 @@ typedef struct {
 	astexpression_t *value;
 } astletstatement_t;
 astletstatement_t *letStatementCreate(token_t token);
+
+typedef struct {
+	aststatement_t statement;
+	token_t token;
+	astexpression_t *returnValue;
+} astreturnstatement_t;
+astreturnstatement_t *returnStatementCreate(token_t token);
 
 #endif

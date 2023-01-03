@@ -32,7 +32,7 @@ void parserNextToken(parser_t *parser) {
 }
 
 static void parserPeekError(parser_t *parser, token_type type) {
-	charslice_t slice = charsliceCreate("expected next token to be %s, got %s instead",
+	charslice_t slice = charsliceCreate("expected next token to be %s, got '%s' instead",
 		token_str[type], token_str[parser->peekToken.type]
 	);
 	arrput(parser->errors, slice);
@@ -75,10 +75,25 @@ static aststatement_t *parserParseLetStatement(parser_t *parser) {
 	return (aststatement_t *)stmt;
 } 
 
+static aststatement_t *parserParseReturnStatement(parser_t *parser) {
+	astreturnstatement_t *stmt = returnStatementCreate(parser->currentToken);
+	parserNextToken(parser);
+	
+	// TODO: skipping expressions until semicolon
+	while (!parserCurTokenIs(parser, TOKEN_SEMICOLON)) {
+		parserNextToken(parser);
+	}
+	return &stmt->statement;
+}
+
 static aststatement_t *parserParseStatement(parser_t *parser) {
 	switch (parser->currentToken.type) {
 		case TOKEN_LET:
 			return parserParseLetStatement(parser);
+			break;
+			
+		case TOKEN_RETURN:
+			return parserParseReturnStatement(parser);
 			break;
 			
 		default:

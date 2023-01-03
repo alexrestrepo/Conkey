@@ -62,3 +62,17 @@ astletstatement_t *letStatementCreate(token_t token) {
 	let->token = token;
 	return let;
 }
+
+static charslice_t returnStatementTokenLiteral(astnode_t *node) {
+	assert(node->type == AST_RETURN);
+	astreturnstatement_t *self = (astreturnstatement_t *)node;
+	return self->token.literal;
+}
+
+astreturnstatement_t *returnStatementCreate(token_t token) {
+	astreturnstatement_t *ret = calloc(1, sizeof(*ret));
+	ret->statement.node.type = AST_RETURN;
+	ret->statement.node.tokenLiteral = returnStatementTokenLiteral;
+	ret->token = token;
+	return ret;
+}

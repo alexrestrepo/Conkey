@@ -36,13 +36,13 @@ void tokenPrint(token_t token) {
 charslice_t charsliceCreate(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
-	size_t size = vsnprintf(NULL, 0, fmt, args);
+	size_t size = 1 + vsnprintf(NULL, 0, fmt, args);
 	va_end(args);
 	
-	char *src = calloc(size + 1, sizeof(char));
+	char *src = calloc(size, sizeof(char));
 	va_start(args, fmt);
-	assert(vsnprintf(src, size + 1, fmt, args) <= size);
+	assert(vsnprintf(src, size, fmt, args) <= size);
 	va_end(args);
 	
-	return (charslice_t){src, size};
+	return (charslice_t){src, size - 1};
 }

@@ -83,4 +83,32 @@ UTEST(parser, letStatements) {
 	}
 }
 
+UTEST(parser, returnStatements) {
+	const char *input = MONKEY(
+		return 5;
+		return 10;
+		return 993322;
+	);
+	
+	lexer_t *lexer = lexerCreate(input);
+	parser_t *parser = parserCreate(lexer);
+	astprogram_t *program = parserParseProgram(parser);
+	ASSERT_TRUE(program);
+	
+	bool errors = checkParserErrors(parser);
+	ASSERT_FALSE(errors);
+	
+	ASSERT_TRUE(program->statements);
+	ASSERT_EQ(arrlen(program->statements), 3);
+	
+	for (int i = 0; i < arrlen(program->statements); i++) {
+		aststatement_t *stmt = program->statements[i];
+		ASSERT_EQ(stmt->node.type, AST_RETURN);
+		
+		ASSERT_STRNEQ("return", 
+			stmt->node.tokenLiteral(&stmt->node).src, 
+			stmt->node.tokenLiteral(&stmt->node).length);
+	}
+}
+
 UTEST_MAIN();
