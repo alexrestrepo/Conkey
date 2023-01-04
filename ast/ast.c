@@ -48,8 +48,8 @@ static charslice_t letStatementTokenLiteral(astnode_t *node) {
 
 astidentifier_t *identifierCreate(token_t token, charslice_t value) {
 	astidentifier_t *identifier = calloc(1, sizeof(*identifier));
-	identifier->expression.node.type = AST_IDENTIFIER;
-	identifier->expression.node.tokenLiteral = identifierTokenLiteral;
+	identifier->as.node.type = AST_IDENTIFIER;
+	identifier->as.node.tokenLiteral = identifierTokenLiteral;
 	identifier->token = token;
 	identifier->value = value;
 	return identifier;
@@ -57,8 +57,8 @@ astidentifier_t *identifierCreate(token_t token, charslice_t value) {
 
 astletstatement_t *letStatementCreate(token_t token) {
 	astletstatement_t *let = calloc(1, sizeof(*let));
-	let->statement.node.type = AST_LET;
-	let->statement.node.tokenLiteral = letStatementTokenLiteral;
+	let->as.node.type = AST_LET;
+	let->as.node.tokenLiteral = letStatementTokenLiteral;
 	let->token = token;
 	return let;
 }
@@ -71,8 +71,8 @@ static charslice_t returnStatementTokenLiteral(astnode_t *node) {
 
 astreturnstatement_t *returnStatementCreate(token_t token) {
 	astreturnstatement_t *ret = calloc(1, sizeof(*ret));
-	ret->statement.node.type = AST_RETURN;
-	ret->statement.node.tokenLiteral = returnStatementTokenLiteral;
+	ret->as.node.type = AST_RETURN;
+	ret->as.node.tokenLiteral = returnStatementTokenLiteral;
 	ret->token = token;
 	return ret;
 }

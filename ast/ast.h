@@ -29,24 +29,32 @@ typedef struct {
 	astnode_t node;	
 } astexpression_t;
 
+// node < astprogram
 typedef struct {
 	astnode_t node;
 	aststatement_t **statements;
 } astprogram_t;
- 
 astprogram_t *programCreate(void);
 void programRelease(astprogram_t **program);
 
+// node < expression < astidentifier
 typedef struct {
-	astexpression_t expression;
+	union {
+		astnode_t node;
+		astexpression_t expression;
+	} as;
 	
 	token_t token;
 	charslice_t value;
 } astidentifier_t;
 astidentifier_t *identifierCreate(token_t token, charslice_t value);
 
+// node < statement < astletstatement
 typedef struct {
-	aststatement_t statement;
+	union {
+		astnode_t node;
+		aststatement_t statement;
+	} as;
 	
 	token_t token;
 	astidentifier_t *name;
@@ -54,8 +62,13 @@ typedef struct {
 } astletstatement_t;
 astletstatement_t *letStatementCreate(token_t token);
 
+// node < statement < astreturnstatement
 typedef struct {
-	aststatement_t statement;
+	union {
+		astnode_t node;
+		aststatement_t statement;
+	} as;
+	
 	token_t token;
 	astexpression_t *returnValue;
 } astreturnstatement_t;

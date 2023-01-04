@@ -83,7 +83,7 @@ static aststatement_t *parserParseReturnStatement(parser_t *parser) {
 	while (!parserCurTokenIs(parser, TOKEN_SEMICOLON)) {
 		parserNextToken(parser);
 	}
-	return &stmt->statement;
+	return &stmt->as.statement;
 }
 
 static aststatement_t *parserParseStatement(parser_t *parser) {

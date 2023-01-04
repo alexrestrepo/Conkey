@@ -29,7 +29,7 @@ static bool testLetStatement(aststatement_t *statement, const char *name) {
 		return false;
 	}
 	
-	literal = letStatement->name->expression.node.tokenLiteral((astnode_t *)letStatement->name);
+	literal = letStatement->name->as.node.tokenLiteral((astnode_t *)letStatement->name);
 	if (strncmp(name, literal.src, literal.length)) {
 		fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got=%*s\n", name, (int)literal.length, literal.src);
 		return false;
