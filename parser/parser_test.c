@@ -111,4 +111,29 @@ UTEST(parser, returnStatements) {
 	}
 }
 
+UTEST(parser, identifierExpression) {
+	const char *input = "foobar;";
+	
+	lexer_t *lexer = lexerCreate(input);
+	parser_t *parser = parserCreate(lexer);
+	
+	astprogram_t *program = parserParseProgram(parser);
+	bool errors = checkParserErrors(parser);
+	ASSERT_FALSE(errors);
+	
+	ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
+	
+	ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+	astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+	
+	ASSERT_NE(stmt->expression, NULL);
+	ASSERT_EQ(AST_IDENTIFIER, stmt->expression->node.type);
+	astidentifier_t *ident = (astidentifier_t *)stmt->expression;
+	
+	ASSERT_STRNEQ("foobar", ident->value.src, ident->value.length);
+	
+	charslice_t lit = ident->as.node.tokenLiteral(&ident->as.node);
+	ASSERT_STRNEQ("foobar", lit.src, lit.length);
+}
+
 UTEST_MAIN();

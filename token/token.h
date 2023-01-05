@@ -2,6 +2,7 @@
 #define _token_h_
 
 #include <string.h>
+#include <stdbool.h>
 
 #define TOKEN_DEFS \
 	TOK(EOF,     "EOF") \
@@ -61,8 +62,9 @@ static const char *token_str[] = {
 typedef struct {
 	char *src;
 	size_t length;
+	bool external;
 } charslice_t;
-charslice_t charsliceCreate(const char *fmt, ...) __printflike(1, 2);
+charslice_t charsliceMake(const char *fmt, ...) __printflike(1, 2);
 
 typedef struct {
 	token_type type;

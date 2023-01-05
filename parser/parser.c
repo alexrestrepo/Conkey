@@ -8,16 +8,15 @@
 
 #include "../stb_ds.h"
 
-parser_t *parserCreate(lexer_t *lexer) {
-	parser_t *parser = calloc(1, sizeof(*parser));
-	parser->lexer = lexer;
-	
-	// read 2 tokens so current and peek are set
-	parserNextToken(parser);
-	parserNextToken(parser);
-	
-	return parser;
-}
+typedef enum {
+	LOWEST = 1,
+	EQUALS, // ==
+	LESSGREATER, // < or >
+	SUM, // +
+	PRODUCT, // *
+	PREFIX, // -x or !x
+	CALL, // funct()
+} op_precedence;
 
 void parserRelease(parser_t **parser) {
 	if (parser && *parser) {
@@ -32,7 +31,7 @@ void parserNextToken(parser_t *parser) {
 }
 
 static void parserPeekError(parser_t *parser, token_type type) {
-	charslice_t slice = charsliceCreate("expected next token to be %s, got '%s' instead",
+	charslice_t slice = charsliceMake("expected next token to be %s, got '%s' instead",
 		token_str[type], token_str[parser->peekToken.type]
 	);
 	arrput(parser->errors, slice);
@@ -86,20 +85,46 @@ static aststatement_t *parserParseReturnStatement(parser_t *parser) {
 	return &stmt->as.statement;
 }
 
+static astexpression_t *parserParseExpression(parser_t *parser, op_precedence precedence) {
+	prefixParseFn *prefix = parser->prefixParseFns[parser->currentToken.type];
+	if (!prefix) {
+		return NULL;
+	}
+	
+	astexpression_t *leftExp = prefix(parser);
+	return leftExp;
+}
+
+static aststatement_t *parserParseExpressionStatement(parser_t *parser) {
+	astexpressionstatement_t *stmt = expressionStatementCreate(parser->currentToken);
+	stmt->expression = parserParseExpression(parser, LOWEST);
+	
+	if (parserPeekTokenIs(parser, TOKEN_SEMICOLON)) { // optional
+		parserNextToken(parser);
+	}
+	return &stmt->as.statement;
+}
+
+static astexpression_t *parserParseIdentifier(parser_t *parser) {
+	return (astexpression_t *)identifierCreate(parser->currentToken, parser->currentToken.literal);
+}
+
 static aststatement_t *parserParseStatement(parser_t *parser) {
+	aststatement_t *stmt = NULL;
 	switch (parser->currentToken.type) {
 		case TOKEN_LET:
-			return parserParseLetStatement(parser);
+			stmt = parserParseLetStatement(parser);
 			break;
 			
 		case TOKEN_RETURN:
-			return parserParseReturnStatement(parser);
+			stmt =  parserParseReturnStatement(parser);
 			break;
 			
 		default:
+			stmt = parserParseExpressionStatement(parser);
 			break;
 	}
-	return NULL;
+	return stmt;
 }
 
 astprogram_t *parserParseProgram(parser_t *parser) {
@@ -113,4 +138,26 @@ astprogram_t *parserParseProgram(parser_t *parser) {
 		parserNextToken(parser);
 	}
 	return program;
+}
+
+void parserRegisterPrefix(parser_t *parser, token_type type, prefixParseFn *prefixParseFn) {
+	parser->prefixParseFns[type] = prefixParseFn;
+}
+
+void parserRegisterInfix(parser_t *parser, token_type type, infixParseFn *infixParseFn) {
+	parser->infixParseFns[type] = infixParseFn;
+}
+
+
+parser_t *parserCreate(lexer_t *lexer) {
+	parser_t *parser = calloc(1, sizeof(*parser));
+	parser->lexer = lexer;
+	
+	// read 2 tokens so current and peek are set
+	parserNextToken(parser);
+	parserNextToken(parser);
+
+	parser->prefixParseFns[TOKEN_IDENT] = parserParseIdentifier;
+	
+	return parser;
 }

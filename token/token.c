@@ -33,7 +33,7 @@ void tokenPrint(token_t token) {
 	printf("{Type:%s Literal:'%.*s'}\n", token_types[token.type], (int)token.literal.length, token.literal.src);
 }
 
-charslice_t charsliceCreate(const char *fmt, ...) {
+charslice_t charsliceMake(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	size_t size = 1 + vsnprintf(NULL, 0, fmt, args);
