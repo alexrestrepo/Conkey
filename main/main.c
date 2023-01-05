@@ -4,7 +4,7 @@
 
 #include "../repl/repl.h"
 
-const char *getUserName() {	
+const char *getUserName(void) {
 	uid_t uid = geteuid();
 	struct passwd *pw = getpwuid(uid);
 	if (pw) {

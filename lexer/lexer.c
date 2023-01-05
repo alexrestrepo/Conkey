@@ -31,7 +31,7 @@ void lexerRelease(lexer_t **lexer) {
 }
 
 static bool isLetter(char ch) {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_';
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';
 }
 
 static bool isDigit(char ch) {
