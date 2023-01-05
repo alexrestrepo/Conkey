@@ -5,6 +5,7 @@
 #ifndef _ast_h_
 #define _ast_h_
 
+#include <stdint.h>
 #include "../token/token.h"
 
 typedef enum {
@@ -16,6 +17,7 @@ typedef enum {
 	
 	// expressions
 	AST_IDENTIFIER,
+	AST_INTEGER,
 } astnode_type;
 
 typedef struct astnode astnode_t;
@@ -92,5 +94,16 @@ typedef struct {
 	
 } astexpressionstatement_t;
 astexpressionstatement_t *expressionStatementCreate(token_t token);
+
+typedef struct {
+	union {
+		astnode_t node;
+		astexpression_t expression;
+	} as;
+	
+	token_t token;
+	int64_t value;
+} astinteger_t;
+astinteger_t *integerExpressionCreate(token_t token);
 
 #endif

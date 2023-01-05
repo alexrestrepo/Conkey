@@ -109,6 +109,12 @@ static astexpression_t *parserParseIdentifier(parser_t *parser) {
 	return (astexpression_t *)identifierCreate(parser->currentToken, parser->currentToken.literal);
 }
 
+static astexpression_t *parserParseIntegerLiteral(parser_t *parser) {
+	astinteger_t *literal = integerExpressionCreate(parser->currentToken);
+	literal->value = strtod(parser->currentToken.literal.src, NULL);
+	return (astexpression_t *)literal;
+}
+
 static aststatement_t *parserParseStatement(parser_t *parser) {
 	aststatement_t *stmt = NULL;
 	switch (parser->currentToken.type) {
@@ -148,7 +154,6 @@ void parserRegisterInfix(parser_t *parser, token_type type, infixParseFn *infixP
 	parser->infixParseFns[type] = infixParseFn;
 }
 
-
 parser_t *parserCreate(lexer_t *lexer) {
 	parser_t *parser = calloc(1, sizeof(*parser));
 	parser->lexer = lexer;
@@ -156,8 +161,9 @@ parser_t *parserCreate(lexer_t *lexer) {
 	// read 2 tokens so current and peek are set
 	parserNextToken(parser);
 	parserNextToken(parser);
-
-	parser->prefixParseFns[TOKEN_IDENT] = parserParseIdentifier;
+	
+	parserRegisterPrefix(parser, TOKEN_IDENT, parserParseIdentifier);
+	parserRegisterPrefix(parser, TOKEN_INT, parserParseIntegerLiteral);
 	
 	return parser;
 }

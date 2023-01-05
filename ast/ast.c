@@ -161,3 +161,22 @@ astexpressionstatement_t *expressionStatementCreate(token_t token) {
 	stmt->token = token;
 	return stmt;
 }
+
+static charslice_t integerExpressionTokenLiteral(astnode_t *node) {
+	assert(node->type == AST_INTEGER);
+	astinteger_t *self = (astinteger_t *)node;
+	return self->token.literal;
+}
+
+static charslice_t integerExpressionString(astnode_t *node) {
+	assert(node->type == AST_INTEGER);
+	astinteger_t *self = (astinteger_t *)node;
+	return self->token.literal;
+}
+
+astinteger_t *integerExpressionCreate(token_t token) {
+	astinteger_t *i = calloc(1, sizeof(*i));
+	i->as.node = astnodeMake(AST_INTEGER, integerExpressionTokenLiteral, integerExpressionString);
+	i->token = token;
+	return i;
+}

@@ -136,4 +136,29 @@ UTEST(parser, identifierExpression) {
 	ASSERT_STRNEQ("foobar", lit.src, lit.length);
 }
 
+UTEST(parser, integerLiteralExpression) {
+	const char *input = "5;";
+	
+	lexer_t *lexer = lexerCreate(input);
+	parser_t *parser = parserCreate(lexer);
+	
+	astprogram_t *program = parserParseProgram(parser);
+	bool errors = checkParserErrors(parser);
+	ASSERT_FALSE(errors);
+	
+	ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
+	
+	ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+	astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+	
+	ASSERT_NE(stmt->expression, NULL);
+	ASSERT_EQ(AST_INTEGER, stmt->expression->node.type);
+	astinteger_t *literal = (astinteger_t *)stmt->expression;
+	
+	ASSERT_EQ(5, literal->value);
+	
+	charslice_t lit = literal->as.node.tokenLiteral(&literal->as.node);
+	ASSERT_STRNEQ("5", lit.src, lit.length);
+}
+
 UTEST_MAIN();
