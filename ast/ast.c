@@ -180,3 +180,28 @@ astinteger_t *integerExpressionCreate(token_t token) {
 	i->token = token;
 	return i;
 }
+
+static charslice_t prefixExpressionTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_PREFIXEXPR);
+    astprefixexpression_t *self = (astprefixexpression_t *)node;
+    return self->token.literal;
+}
+
+static charslice_t prefixExpressionString(astnode_t *node) {
+    assert(node->type == AST_PREFIXEXPR);
+    astprefixexpression_t *self = (astprefixexpression_t *)node;
+
+    // TODO: figure out mem usage, all the leaks! :)
+    charslice_t rightstr = self->right->node.string(&(self->right->node));
+    charslice_t out = charsliceMake("(%*s%*s)", (int)self->operator.length, self->operator.src,
+                                    (int)rightstr.length, rightstr.src);
+    return out;
+}
+
+astprefixexpression_t *prefixExpressionCreate(token_t token, charslice_t operator) {
+    astprefixexpression_t *exp = calloc(1, sizeof(*exp));
+    exp->as.node = astnodeMake(AST_PREFIXEXPR, prefixExpressionTokenLiteral, prefixExpressionString);
+    exp->token = token;
+    exp->operator = operator;
+    return exp;
+}

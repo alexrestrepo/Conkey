@@ -37,6 +37,11 @@ static void parserPeekError(parser_t *parser, token_type type) {
 	arrput(parser->errors, slice);
 }
 
+static void parserNoPrefixParseFnError(parser_t *parser, token_type token) {
+    charslice_t error = charsliceMake("no prefix parse function for '%s' found", token_str[token]);
+    arrput(parser->errors, error);
+}
+
 static bool parserCurTokenIs(parser_t *parser, token_type type) {
 	return parser->currentToken.type == type;
 }
@@ -88,6 +93,7 @@ static aststatement_t *parserParseReturnStatement(parser_t *parser) {
 static astexpression_t *parserParseExpression(parser_t *parser, op_precedence precedence) {
 	prefixParseFn *prefix = parser->prefixParseFns[parser->currentToken.type];
 	if (!prefix) {
+        parserNoPrefixParseFnError(parser, parser->currentToken.type);
 		return NULL;
 	}
 	
@@ -113,6 +119,13 @@ static astexpression_t *parserParseIntegerLiteral(parser_t *parser) {
 	astinteger_t *literal = integerExpressionCreate(parser->currentToken);
 	literal->value = strtod(parser->currentToken.literal.src, NULL);
 	return (astexpression_t *)literal;
+}
+
+static astexpression_t *parserParsePrefixExpression(parser_t *parser) {
+    astprefixexpression_t *exp = prefixExpressionCreate(parser->currentToken, parser->currentToken.literal);
+    parserNextToken(parser);
+    exp->right = parserParseExpression(parser, PREFIX);
+    return (astexpression_t *)exp;
 }
 
 static aststatement_t *parserParseStatement(parser_t *parser) {
@@ -164,6 +177,8 @@ parser_t *parserCreate(lexer_t *lexer) {
 	
 	parserRegisterPrefix(parser, TOKEN_IDENT, parserParseIdentifier);
 	parserRegisterPrefix(parser, TOKEN_INT, parserParseIntegerLiteral);
-	
+    parserRegisterPrefix(parser, TOKEN_MINUS, parserParsePrefixExpression);
+    parserRegisterPrefix(parser, TOKEN_BANG, parserParsePrefixExpression);
+
 	return parser;
 }

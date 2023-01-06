@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "../ast/ast.h"
 #include "../lexer/lexer.h"
@@ -159,6 +160,63 @@ UTEST(parser, integerLiteralExpression) {
 	
 	charslice_t lit = literal->as.node.tokenLiteral(&literal->as.node);
 	ASSERT_STRNEQ("5", lit.src, lit.length);
+}
+
+static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
+    if (il->node.type != AST_INTEGER) {
+        fprintf(stderr, "il not integerliteral. got%d\n", il->node.type);
+        return false;
+    }
+
+    astinteger_t *integ = (astinteger_t *)il;
+    if (integ->value != value) {
+        fprintf(stderr, "integ.value not %lld. got=%lld\n", value, integ->value);
+        return false;
+    }
+
+    charslice_t toklit = integ->as.node.tokenLiteral(&integ->as.node);
+    charslice_t val = charsliceMake("%lld", value);
+    if (strncmp(toklit.src, val.src, val.length)) {
+        fprintf(stderr, "integ.tokenLiteral not %lld. got=%*s\n", value, (int)toklit.length, toklit.src);
+        return false;
+    }
+
+    return true;
+}
+
+UTEST(parser, parsingPrefixExpressions) {
+    struct test {
+        const char *input;
+        const char *operator;
+        uint64_t integerValue;
+
+    } tests[] = {
+        { "!5", "!", 5},
+        {"-15", "-", 15},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
+        bool errors = checkParserErrors(parser);
+        ASSERT_FALSE(errors);
+
+        ASSERT_TRUE(program->statements);
+        ASSERT_EQ(1, arrlen(program->statements));
+
+        aststatement_t *stmt = program->statements[0];
+        ASSERT_EQ(AST_EXPRESSIONSTMT, stmt->node.type);
+
+        astexpression_t *exp = ((astexpressionstatement_t *)stmt)->expression;
+        ASSERT_EQ(AST_PREFIXEXPR, exp->node.type);
+
+        astprefixexpression_t *prefix = (astprefixexpression_t *)exp;
+        ASSERT_STRNEQ(test.operator, prefix->operator.src, prefix->operator.length);
+
+        ASSERT_TRUE(testIntegerLiteral(prefix->right, test.integerValue));
+    }
 }
 
 UTEST_MAIN();
