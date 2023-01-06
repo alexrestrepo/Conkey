@@ -8,21 +8,23 @@
 token_type tokenLookupIdentifier(charslice_t ident) {
 	struct keyword {
 		const char *keyword;
+        size_t length;
 		token_type type;
 	} keywords[] = {
-		// FIXME: this can be just the type and expand it when comparing?
-		{ "fn", TOKEN_FUNCTION},
-		{ "let", TOKEN_LET},
-		{ "true", TOKEN_TRUE},
-		{ "false", TOKEN_FALSE},
-		{ "if", TOKEN_IF},
-		{ "else", TOKEN_ELSE},
-		{ "return", TOKEN_RETURN},
+		// FIXME: this can be just the type and expand it when comparing? forgot what this meant.
+		{ "fn", 2, TOKEN_FUNCTION},
+        { "if", 2, TOKEN_IF},
+        { "let", 3, TOKEN_LET},
+        { "true", 4, TOKEN_TRUE},
+        { "else", 4, TOKEN_ELSE},
+        { "false", 5, TOKEN_FALSE},
+		{ "return", 6, TOKEN_RETURN},
 	};
 	
 	size_t keywordCount = sizeof(keywords) / sizeof(struct keyword);
 	for (int i = 0; i < keywordCount; i++) {
-		if (strncmp(keywords[i].keyword, ident.src, ident.length) == 0) {
+		if (keywords[i].length == ident.length
+            && strncmp(keywords[i].keyword, ident.src, ident.length) == 0) {
 			return keywords[i].type;
 		}
 	}

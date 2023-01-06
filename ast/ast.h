@@ -19,6 +19,7 @@ typedef enum {
 	AST_IDENTIFIER,
 	AST_INTEGER,
     AST_PREFIXEXPR,
+    AST_INFIXEXPR,
 } astnode_type;
 
 typedef struct astnode astnode_t;
@@ -118,5 +119,18 @@ typedef struct {
     astexpression_t *right;
 } astprefixexpression_t;
 astprefixexpression_t *prefixExpressionCreate(token_t token, charslice_t operator);
+
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } as;
+
+    token_t token; // operator e.g. +
+    astexpression_t *left;
+    charslice_t operator;
+    astexpression_t *right;
+} astinfixexpression_t;
+astinfixexpression_t *infixExpressionCreate(token_t token, charslice_t operator, astexpression_t *left);
 
 #endif

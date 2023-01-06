@@ -38,7 +38,7 @@ static charslice_t programString(astnode_t *node) {
 		for (int i = 0; i < arrlen(self->statements); i++) {
 			aststatement_t *stmt = self->statements[i];
 			charslice_t str = stmt->node.string(&(stmt->node));
-			out = charsliceMake("%*s%*s", (int)out.length, out.src, (int)str.length, str.src);
+			out = charsliceMake("%.*s%.*s", (int)out.length, out.src, (int)str.length, str.src);
 		}
 	}
 	
@@ -92,13 +92,13 @@ static charslice_t letStatementString(astnode_t *node) {
 	// TODO: figure out mem usage, all the leaks! :)
 	charslice_t lit = self->as.node.tokenLiteral(&(self->as.node));
 	charslice_t str = self->name->as.node.string(&(self->name->as.node));
-	charslice_t out = charsliceMake("%*s %*s = ", (int)lit.length, lit.src, (int)str.length, str. src);
+	charslice_t out = charsliceMake("%.*s %.*s = ", (int)lit.length, lit.src, (int)str.length, str. src);
 	
 	if (self->value) {
 		str = self->value->node.string(&(self->value->node));
-		out = charsliceMake("%*s%*s", (int)out.length, out.src, (int)str.length, str.src);
+		out = charsliceMake("%.*s%.*s", (int)out.length, out.src, (int)str.length, str.src);
 	}
-	out = charsliceMake("%*s;", (int)out.length, out.src);
+	out = charsliceMake("%.*s;", (int)out.length, out.src);
 	return out;
 }
 
@@ -121,13 +121,13 @@ static charslice_t returnStatementString(astnode_t *node) {
 	
 	// TODO: figure out mem usage, all the leaks! :)
 	charslice_t str = self->as.node.tokenLiteral(&(self->as.node));	
-	charslice_t out = charsliceMake("%*s ", (int)str.length, str.src);
+	charslice_t out = charsliceMake("%.*s ", (int)str.length, str.src);
 	
 	if (self->returnValue) {
 		str = self->returnValue->node.string(&(self->returnValue->node));
-		out = charsliceMake("%*s%*s", (int)out.length, out.src, (int)str.length, str.src);
+		out = charsliceMake("%.*s%.*s", (int)out.length, out.src, (int)str.length, str.src);
 	}
-	out = charsliceMake("%*s;", (int)out.length, out.src);
+	out = charsliceMake("%.*s;", (int)out.length, out.src);
 	return out;
 }
 
@@ -193,7 +193,7 @@ static charslice_t prefixExpressionString(astnode_t *node) {
 
     // TODO: figure out mem usage, all the leaks! :)
     charslice_t rightstr = self->right->node.string(&(self->right->node));
-    charslice_t out = charsliceMake("(%*s%*s)", (int)self->operator.length, self->operator.src,
+    charslice_t out = charsliceMake("(%.*s%.*s)", (int)self->operator.length, self->operator.src,
                                     (int)rightstr.length, rightstr.src);
     return out;
 }
@@ -202,6 +202,35 @@ astprefixexpression_t *prefixExpressionCreate(token_t token, charslice_t operato
     astprefixexpression_t *exp = calloc(1, sizeof(*exp));
     exp->as.node = astnodeMake(AST_PREFIXEXPR, prefixExpressionTokenLiteral, prefixExpressionString);
     exp->token = token;
+    exp->operator = operator;
+    return exp;
+}
+
+static charslice_t infixExpressionTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_INFIXEXPR);
+    astinfixexpression_t *self = (astinfixexpression_t *)node;
+    return self->token.literal;
+}
+
+static charslice_t infixExpressionString(astnode_t *node) {
+    assert(node->type == AST_INFIXEXPR);
+    astinfixexpression_t *self = (astinfixexpression_t *)node;
+
+    // TODO: figure out mem usage, all the leaks! :)
+    charslice_t lefttstr = self->left->node.string(&(self->left->node));
+    charslice_t rightstr = self->right->node.string(&(self->right->node));
+    charslice_t out = charsliceMake("(%.*s %.*s %.*s)",
+                                    (int)lefttstr.length, lefttstr.src,
+                                    (int)self->operator.length, self->operator.src,
+                                    (int)rightstr.length, rightstr.src);
+    return out;
+}
+
+astinfixexpression_t *infixExpressionCreate(token_t token, charslice_t operator, astexpression_t *left) {
+    astinfixexpression_t *exp = calloc(1, sizeof(*exp));
+    exp->as.node = astnodeMake(AST_INFIXEXPR, infixExpressionTokenLiteral, infixExpressionString);
+    exp->token = token;
+    exp->left = left;
     exp->operator = operator;
     return exp;
 }

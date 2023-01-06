@@ -13,8 +13,8 @@
 
 static bool testLetStatement(aststatement_t *statement, const char *name) {
 	charslice_t literal = statement->node.tokenLiteral(&statement->node);
-	if (strncmp("let", literal.src, literal.length)) {
-		fprintf(stderr, "s.tokenLiteral not 'let'. got=%*s\n", (int)literal.length, literal.src);
+	if (literal.length != 3 || strncmp("let", literal.src, literal.length)) {
+		fprintf(stderr, "s.tokenLiteral not 'let'. got=%.*s\n", (int)literal.length, literal.src);
 		return false;
 	}
 	
@@ -24,15 +24,17 @@ static bool testLetStatement(aststatement_t *statement, const char *name) {
 	}
 	
 	astletstatement_t *letStatement = (astletstatement_t *)statement;
-	if (strncmp(name, letStatement->name->value.src, letStatement->name->value.length)) {
-		fprintf(stderr, "letStatement.name.value not '%s'. got=%*s\n", name,
+	if (strlen(name) != letStatement->name->value.length
+        || strncmp(name, letStatement->name->value.src, letStatement->name->value.length)) {
+		fprintf(stderr, "letStatement.name.value not '%s'. got=%.*s\n", name,
 			(int)letStatement->name->value.length, letStatement->name->value.src);
 		return false;
 	}
 	
 	literal = letStatement->name->as.node.tokenLiteral((astnode_t *)letStatement->name);
-	if (strncmp(name, literal.src, literal.length)) {
-		fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got=%*s\n", name, (int)literal.length, literal.src);
+	if (strlen(name) != literal.length
+        || strncmp(name, literal.src, literal.length)) {
+		fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got=%.*s\n", name, (int)literal.length, literal.src);
 		return false;
 	}
 	
@@ -46,7 +48,7 @@ static bool checkParserErrors(parser_t *parser) {
 	
 	fprintf(stderr, "\nparser has %ld errors\n", arrlen(parser->errors));
 	for (size_t i = 0; i < arrlen(parser->errors); i++) {
-		fprintf(stderr, "parser error: %*s\n", (int)parser->errors[i].length, parser->errors[i].src);
+		fprintf(stderr, "parser error: %.*s\n", (int)parser->errors[i].length, parser->errors[i].src);
 	}
 	return true;
 }
@@ -176,8 +178,8 @@ static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
 
     charslice_t toklit = integ->as.node.tokenLiteral(&integ->as.node);
     charslice_t val = charsliceMake("%lld", value);
-    if (strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "integ.tokenLiteral not %lld. got=%*s\n", value, (int)toklit.length, toklit.src);
+    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
+        fprintf(stderr, "integ.tokenLiteral not %lld. got=%.*s\n", value, (int)toklit.length, toklit.src);
         return false;
     }
 
@@ -216,6 +218,123 @@ UTEST(parser, parsingPrefixExpressions) {
         ASSERT_STRNEQ(test.operator, prefix->operator.src, prefix->operator.length);
 
         ASSERT_TRUE(testIntegerLiteral(prefix->right, test.integerValue));
+    }
+}
+
+UTEST(parser, parsingInfixExpressions) {
+    struct test {
+        const char *input;
+        int64_t leftValue;
+        const char *operator;
+        int64_t rightValue;
+    } tests[] = {
+        {"5 + 5;", 5, "+", 5},
+        {"5 - 5;", 5, "-", 5},
+        {"5 * 5;", 5, "*", 5},
+        {"5 / 5;", 5, "/", 5},
+        {"5 > 5;", 5, ">", 5},
+        {"5 < 5;", 5, "<", 5},
+        {"5 == 5;", 5, "==", 5},
+        {"5 != 5;", 5, "!=", 5},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
+
+        bool errors = checkParserErrors(parser);
+        ASSERT_FALSE(errors);
+
+        ASSERT_TRUE(program->statements);
+        ASSERT_EQ(1, arrlen(program->statements));
+
+        aststatement_t *stmt = program->statements[0];
+        ASSERT_EQ(AST_EXPRESSIONSTMT, stmt->node.type);
+
+        astexpression_t *exp = ((astexpressionstatement_t *)stmt)->expression;
+        ASSERT_EQ(AST_INFIXEXPR, exp->node.type);
+
+        astinfixexpression_t *infix = (astinfixexpression_t *)exp;
+        ASSERT_TRUE(testIntegerLiteral(infix->left, test.leftValue));
+
+        ASSERT_STRNEQ(test.operator, infix->operator.src, infix->operator.length);
+
+        ASSERT_TRUE(testIntegerLiteral(infix->right, test.rightValue));
+    }
+}
+
+UTEST(parser, operatorPrecedenceParsing) {
+    struct test {
+        const char *input;
+        const char *expected;
+    } tests[] = {
+        {
+            "-a * b",
+            "((-a) * b)",
+        },
+        {
+            "!-a",
+            "(!(-a))",
+        },
+        {
+            "a + b + c",
+            "((a + b) + c)",
+        },
+        {
+            "a + b - c",
+            "((a + b) - c)",
+        },
+        {
+            "a * b * c",
+            "((a * b) * c)",
+        },
+        {
+            "a * b / c",
+            "((a * b) / c)",
+        },
+        {
+            "a + b / c",
+            "(a + (b / c))",
+        },
+        {
+            "a + b * c + d / e - f",
+            "(((a + (b * c)) + (d / e)) - f)",
+        },
+        {
+            "3 + 4; -5 * 5",
+            "(3 + 4)((-5) * 5)",
+        },
+        {
+            "5 > 4 == 3 < 4",
+            "((5 > 4) == (3 < 4))",
+        },
+        {
+            "5 < 4 != 3 > 4",
+            "((5 < 4) != (3 > 4))",
+        },
+        {
+            "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
+
+        bool errors = checkParserErrors(parser);
+        if (errors) {
+            printf("'%s'\n",test.input);
+        }
+        ASSERT_FALSE(errors);
+
+        charslice_t actual = program->node.string(&program->node);
+        ASSERT_STRNEQ(test.expected, actual.src, actual.length);
     }
 }
 

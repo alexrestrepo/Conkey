@@ -9,14 +9,26 @@
 #include "../stb_ds.h"
 
 typedef enum {
-	LOWEST = 1,
-	EQUALS, // ==
-	LESSGREATER, // < or >
-	SUM, // +
-	PRODUCT, // *
-	PREFIX, // -x or !x
-	CALL, // funct()
+    PREC_NONE,
+	PREC_LOWEST,
+	PREC_EQUALS, // ==
+    PREC_LESSGREATER, // < or >
+    PREC_SUM, // +
+    PREC_PRODUCT, // *
+    PREC_PREFIX, // -x or !x
+    PREC_CALL, // funct()
 } op_precedence;
+
+static op_precedence precedences[TOKEN_TYPE_COUNT] = {
+    [TOKEN_EQ] = PREC_EQUALS,
+    [TOKEN_NOT_EQ] = PREC_EQUALS,
+    [TOKEN_LT] = PREC_LESSGREATER,
+    [TOKEN_GT] = PREC_LESSGREATER,
+    [TOKEN_PLUS] = PREC_SUM,
+    [TOKEN_MINUS] = PREC_SUM,
+    [TOKEN_SLASH] = PREC_PRODUCT,
+    [TOKEN_ASTERISK] = PREC_PRODUCT,
+};
 
 void parserRelease(parser_t **parser) {
 	if (parser && *parser) {
@@ -35,6 +47,22 @@ static void parserPeekError(parser_t *parser, token_type type) {
 		token_str[type], token_str[parser->peekToken.type]
 	);
 	arrput(parser->errors, slice);
+}
+
+static op_precedence parserPeekPrecedence(parser_t *parser) {
+    op_precedence prec = precedences[parser->peekToken.type];
+    if (prec) {
+        return prec;
+    }
+    return PREC_LOWEST;
+}
+
+static op_precedence parserCurrentPrecedence(parser_t *parser) {
+    op_precedence prec = precedences[parser->currentToken.type];
+    if (prec) {
+        return prec;
+    }
+    return PREC_LOWEST;
 }
 
 static void parserNoPrefixParseFnError(parser_t *parser, token_type token) {
@@ -98,12 +126,22 @@ static astexpression_t *parserParseExpression(parser_t *parser, op_precedence pr
 	}
 	
 	astexpression_t *leftExp = prefix(parser);
+    while (!parserPeekTokenIs(parser, TOKEN_SEMICOLON)
+           && precedence < parserPeekPrecedence(parser)) {
+        infixParseFn *infix = parser->infixParseFns[parser->peekToken.type];
+        if (!infix) {
+            return leftExp;
+        }
+        parserNextToken(parser);
+        leftExp = infix(parser, leftExp);
+    }
+
 	return leftExp;
 }
 
 static aststatement_t *parserParseExpressionStatement(parser_t *parser) {
 	astexpressionstatement_t *stmt = expressionStatementCreate(parser->currentToken);
-	stmt->expression = parserParseExpression(parser, LOWEST);
+	stmt->expression = parserParseExpression(parser, PREC_LOWEST);
 	
 	if (parserPeekTokenIs(parser, TOKEN_SEMICOLON)) { // optional
 		parserNextToken(parser);
@@ -124,7 +162,15 @@ static astexpression_t *parserParseIntegerLiteral(parser_t *parser) {
 static astexpression_t *parserParsePrefixExpression(parser_t *parser) {
     astprefixexpression_t *exp = prefixExpressionCreate(parser->currentToken, parser->currentToken.literal);
     parserNextToken(parser);
-    exp->right = parserParseExpression(parser, PREFIX);
+    exp->right = parserParseExpression(parser,     PREC_PREFIX);
+    return (astexpression_t *)exp;
+}
+
+static astexpression_t *parserParseInfixExpression(parser_t *parser, astexpression_t *left) {
+    astinfixexpression_t *exp = infixExpressionCreate(parser->currentToken, parser->currentToken.literal, left);
+    op_precedence precedence = parserCurrentPrecedence(parser);
+    parserNextToken(parser);
+    exp->right = parserParseExpression(parser, precedence);
     return (astexpression_t *)exp;
 }
 
@@ -179,6 +225,15 @@ parser_t *parserCreate(lexer_t *lexer) {
 	parserRegisterPrefix(parser, TOKEN_INT, parserParseIntegerLiteral);
     parserRegisterPrefix(parser, TOKEN_MINUS, parserParsePrefixExpression);
     parserRegisterPrefix(parser, TOKEN_BANG, parserParsePrefixExpression);
+
+    parserRegisterInfix(parser, TOKEN_PLUS, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_MINUS, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_SLASH, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_ASTERISK, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_EQ, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_NOT_EQ, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_LT, parserParseInfixExpression);
+    parserRegisterInfix(parser, TOKEN_GT, parserParseInfixExpression);
 
 	return parser;
 }
