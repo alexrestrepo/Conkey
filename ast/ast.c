@@ -7,7 +7,7 @@
 #include "ast.h"
 
 #define STB_DS_IMPLEMENTATION
-#include "../stb_ds.h"
+#include "../stb_ds_x.h"
 
 static inline astnode_t astnodeMake(astnode_type type, literal_fn literal, string_fn string) {
 	return (astnode_t) {

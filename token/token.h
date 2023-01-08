@@ -62,7 +62,7 @@ static const char *token_str[] = {
 typedef struct {
 	char *src;
 	size_t length;
-	bool external;
+	bool internal; // if true src is an internal copy owned by the slice.
 } charslice_t;
 charslice_t charsliceMake(const char *fmt, ...) __printflike(1, 2);
 

@@ -7,7 +7,7 @@
 #include "../lexer/lexer.h"
 #include "../macros.h"
 #include "../utest.h"
-#include "../stb_ds.h"
+#include "../stb_ds_x.h"
 
 #include "parser.h"
 

@@ -1,9 +1,12 @@
 #include "token.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <assert.h>
+
+#include "../stb_ds_x.h"
 
 token_type tokenLookupIdentifier(charslice_t ident) {
 	struct keyword {
@@ -11,7 +14,7 @@ token_type tokenLookupIdentifier(charslice_t ident) {
         size_t length;
 		token_type type;
 	} keywords[] = {
-		// FIXME: this can be just the type and expand it when comparing? forgot what this meant.
+		// FIXME: this can be just the type (token_type) and expand it (token_str) when comparing?
 		{ "fn", 2, TOKEN_FUNCTION},
         { "if", 2, TOKEN_IF},
         { "let", 3, TOKEN_LET},
@@ -35,16 +38,16 @@ void tokenPrint(token_t token) {
 	printf("{Type:%s Literal:'%.*s'}\n", token_types[token.type], (int)token.literal.length, token.literal.src);
 }
 
+
 charslice_t charsliceMake(const char *fmt, ...) {
-	va_list args;
-	va_start(args, fmt);
-	size_t size = 1 + vsnprintf(NULL, 0, fmt, args);
-	va_end(args);
-	
-	char *src = calloc(size, sizeof(char));
-	va_start(args, fmt);
-	assert(vsnprintf(src, size, fmt, args) <= size);
-	va_end(args);
-	
-	return (charslice_t){src, size - 1};
+    charslice_t slice = {0};
+    va_list args;
+    va_start(args, fmt);
+    sarrvprintf(slice.src, fmt, args);
+    va_end(args);
+
+    slice.length = arrlen(slice.src) - 1;
+    slice.internal = true;
+    // p *((stbds_array_header *)(slice.src) - 1)
+    return slice;
 }

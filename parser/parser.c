@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "../stb_ds.h"
+#include "../stb_ds_x.h"
 
 typedef enum {
     PREC_NONE,
@@ -162,7 +162,7 @@ static astexpression_t *parserParseIntegerLiteral(parser_t *parser) {
 static astexpression_t *parserParsePrefixExpression(parser_t *parser) {
     astprefixexpression_t *exp = prefixExpressionCreate(parser->currentToken, parser->currentToken.literal);
     parserNextToken(parser);
-    exp->right = parserParseExpression(parser,     PREC_PREFIX);
+    exp->right = parserParseExpression(parser, PREC_PREFIX);
     return (astexpression_t *)exp;
 }
 

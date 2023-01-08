@@ -2,7 +2,7 @@
 
 #include "ast.h"
 #include "../token/token.h"
-#include "../stb_ds.h"
+#include "../stb_ds_x.h"
 
 UTEST(ast, testString) {
 	astprogram_t *program = programCreate();
