@@ -319,7 +319,6 @@ static astexpression_t *parserParseFunctionLiteral(parser_t *parser) {
 
     lit->body = parserParseBlockStatement(parser);
     return (astexpression_t *)lit;
-
 }
 
 astprogram_t *parserParseProgram(parser_t *parser) {

@@ -26,7 +26,7 @@
 #endif
 
 #define stdbs_arrclear(a) ((a) ? stbds_header(a)->length = 0 : 0)
-#define stbds_arrendptr(a) ((a) + arrlen(a))
+#define stbds_arrendptr(a) ((a) ? (a) + arrlen(a) : 0)
 
 #define stbds_sarrprintf(a, ...) ((a) = stbds_sarrprintf_fn((a), __VA_ARGS__))
 #define stbds_sarrvprintf(a, fmt, lst) ((a) = stbds_sarrvprintf_fn((a), (fmt), (lst)))
