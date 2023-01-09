@@ -14,13 +14,16 @@ typedef enum {
 	AST_LET,
 	AST_RETURN,
 	AST_EXPRESSIONSTMT,
-	
+    AST_BLOCKSTMT,
+
 	// expressions
 	AST_IDENTIFIER,
 	AST_INTEGER,
     AST_PREFIXEXPR,
     AST_INFIXEXPR,
     AST_BOOL,
+    AST_IFEXPR,
+
 } astnode_type;
 
 typedef struct astnode astnode_t;
@@ -144,5 +147,30 @@ typedef struct {
     bool value;
 } astboolean_t;
 astboolean_t *booleanCreate(token_t token, bool value);
+
+// leafs can be a single node? ints/idents/bools...
+typedef  struct {
+    union {
+        astnode_t node;
+        aststatement_t statement;
+    } as;
+
+    token_t token;
+    aststatement_t **statements;
+} astblockstatement_t;
+astblockstatement_t *blockStatementCreate(token_t token);
+
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } as;
+
+    token_t token;
+    astexpression_t *condition;
+    astblockstatement_t *consequence;
+    astblockstatement_t *alternative;
+} astifexpression_t;
+astifexpression_t *ifExpressionCreate(token_t token);
 
 #endif

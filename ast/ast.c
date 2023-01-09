@@ -248,3 +248,68 @@ astboolean_t *booleanCreate(token_t token, bool value) {
     boo->value = value;
     return boo;
 }
+
+static charslice_t ifexprTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_IFEXPR);
+    astifexpression_t *self = (astifexpression_t *)node;
+    return self->token.literal;
+}
+
+static charslice_t ifExpressionString(astnode_t *node) {
+    assert(node->type == AST_IFEXPR);
+    astifexpression_t *self = (astifexpression_t *)node;
+
+    // TODO: figure out mem usage, all the leaks! :)
+    charslice_t out = {0};
+    charslice_t tmp = {0};
+
+    sarrprintf(out.src, "if");
+
+    tmp = self->condition->node.string(&self->condition->node);
+    sarrprintf(out.src, "%.*s ", (int)tmp.length, tmp.src);
+
+    tmp = self->consequence->as.node.string(&self->consequence->as.node);
+    sarrprintf(out.src, "%.*s ", (int)tmp.length, tmp.src);
+
+    if (self->alternative) {
+        tmp = self->alternative->as.node.string(&self->alternative->as.node);
+        sarrprintf(out.src, "else %.*s ", (int)tmp.length, tmp.src);
+    }
+
+    return out;
+}
+
+astifexpression_t *ifExpressionCreate(token_t token) {
+    astifexpression_t *ifexp = calloc(1, sizeof(*ifexp));
+    ifexp->as.node = astnodeMake(AST_IFEXPR, ifexprTokenLiteral, ifExpressionString);
+    ifexp->token = token;
+    return ifexp;
+}
+
+static charslice_t blockStatementTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_BLOCKSTMT);
+    astblockstatement_t *self = (astblockstatement_t *)node;
+    return self->token.literal;
+}
+
+static charslice_t blockStatementString(astnode_t *node) {
+    assert(node->type == AST_BLOCKSTMT);
+    astblockstatement_t *self = (astblockstatement_t *)node;
+
+    charslice_t out = {0};
+    if (self->statements) {
+        for (int i = 0; i < arrlen(self->statements); i++) {
+            charslice_t str = self->statements[i]->node.string(&(self->statements[i]->node));
+            sarrprintf(out.src, "%.*s", (int)str.length, str.src);
+        }
+    }
+
+    return out;
+}
+
+astblockstatement_t *blockStatementCreate(token_t token) {
+    astblockstatement_t *block = calloc(1, sizeof(*block));
+    block->as.node = astnodeMake(AST_BLOCKSTMT, blockStatementTokenLiteral, blockStatementString);
+    block->token = token;
+    return block;
+}

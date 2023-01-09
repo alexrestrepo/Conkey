@@ -33,19 +33,19 @@ typedef struct {
 static bool testLetStatement(aststatement_t *statement, const char *name) {
     charslice_t literal = statement->node.tokenLiteral(&statement->node);
     if (literal.length != 3 || strncmp("let", literal.src, literal.length)) {
-        fprintf(stderr, "s.tokenLiteral not 'let'. got=%.*s\n", (int)literal.length, literal.src);
+        fprintf(stderr, "s.tokenLiteral not 'let'. got='%.*s'\n", (int)literal.length, literal.src);
         return false;
     }
 
     if (statement->node.type != AST_LET) {
-        fprintf(stderr, "statement not letStatement. got=%d\n", statement->node.type);
+        fprintf(stderr, "statement not letStatement. got='%d'\n", statement->node.type);
         return false;
     }
 
     astletstatement_t *letStatement = (astletstatement_t *)statement;
     if (strlen(name) != letStatement->name->value.length
         || strncmp(name, letStatement->name->value.src, letStatement->name->value.length)) {
-        fprintf(stderr, "letStatement.name.value not '%s'. got=%.*s\n", name,
+        fprintf(stderr, "letStatement.name.value not '%s'. got='%.*s'\n", name,
                 (int)letStatement->name->value.length, letStatement->name->value.src);
         return false;
     }
@@ -53,7 +53,7 @@ static bool testLetStatement(aststatement_t *statement, const char *name) {
     literal = letStatement->name->as.node.tokenLiteral((astnode_t *)letStatement->name);
     if (strlen(name) != literal.length
         || strncmp(name, literal.src, literal.length)) {
-        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got=%.*s\n", name, (int)literal.length, literal.src);
+        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got='%.*s'\n", name, (int)literal.length, literal.src);
         return false;
     }
 
@@ -191,14 +191,14 @@ static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
 
     astinteger_t *integ = (astinteger_t *)il;
     if (integ->value != value) {
-        fprintf(stderr, "integ.value not %lld. got=%lld\n", value, integ->value);
+        fprintf(stderr, "integ.value not %lld. got='%lld'\n", value, integ->value);
         return false;
     }
 
     charslice_t toklit = integ->as.node.tokenLiteral(&integ->as.node);
     charslice_t val = charsliceMake("%lld", value);
     if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "integ.tokenLiteral not %lld. got=%.*s\n", value, (int)toklit.length, toklit.src);
+        fprintf(stderr, "integ.tokenLiteral not %lld. got='%.*s'\n", value, (int)toklit.length, toklit.src);
         return false;
     }
 
@@ -213,7 +213,7 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
     
     astidentifier_t *identifier = (astidentifier_t *)exp;
     if (value.length != identifier->value.length || strncmp(value.src, identifier->value.src, identifier->value.length)) {
-        fprintf(stderr, "identifier.value not %.*s. got=%.*s\n", 
+        fprintf(stderr, "identifier.value not %.*s. got='%.*s'\n",
             (int)value.length, value.src,
             (int)identifier->value.length, identifier->value.src
         );
@@ -222,7 +222,7 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
     
     charslice_t literal = exp->node.tokenLiteral(&exp->node);
     if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
-        fprintf(stderr, "identifier.tokenLiteral not %.*s. got=%.*s\n", 
+        fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%.*s'\n",
             (int)value.length, value.src,
             (int)literal.length, literal.src
         );
@@ -240,7 +240,7 @@ static bool testBooleanLiteral(astexpression_t *exp, bool value) {
 
     astboolean_t *boo = (astboolean_t *)exp;
     if (boo->value != value) {
-        fprintf(stderr, "boo.value not %s. got=%s\n",
+        fprintf(stderr, "boo.value not %s. got='%s'\n",
                 value ? "true":"false",
                 boo->value ? "true":"false");
         return false;
@@ -249,7 +249,7 @@ static bool testBooleanLiteral(astexpression_t *exp, bool value) {
     charslice_t toklit = boo->as.node.tokenLiteral(&boo->as.node);
     charslice_t val = charsliceMake("%s", value?"true":"false");
     if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "boo.tokenLiteral not %s. got=%.*s\n",
+        fprintf(stderr, "boo.tokenLiteral not %s. got='%.*s'\n",
                 value ? "true":"false", (int)toklit.length, toklit.src);
         return false;
     }
@@ -271,7 +271,7 @@ static bool testLiteralExpression(astexpression_t *exp, Value expected) {
             return testBooleanLiteral(exp, expected.boolValue);
             break;
     }
-    fprintf(stderr, "type of exp not handled. got=%d", expected.type);
+    fprintf(stderr, "type of exp not handled. got='%d'", expected.type);
     return false;
 }
 
@@ -287,7 +287,7 @@ static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t op
     }
     
     if (opExp->operator.length != operator.length || strncmp(opExp->operator.src, operator.src, operator.length)) {
-        fprintf(stderr, "exp.operator is not %.*s. got=%.*s\n", 
+        fprintf(stderr, "exp.operator is not %.*s. got='%.*s'\n", 
             (int)operator.length, operator.src,
             (int)opExp->operator.length, opExp->operator.src
         );
@@ -317,6 +317,9 @@ UTEST(parser, parsingPrefixExpressions) {
         parser_t *parser = parserCreate(lexer);
         astprogram_t *program = parserParseProgram(parser);
         bool errors = checkParserErrors(parser);
+        if (errors) {
+            printf("[%d]:'%s'\n", i, test.input);
+        }
         ASSERT_FALSE(errors);
 
         ASSERT_TRUE(program->statements);
@@ -370,6 +373,9 @@ UTEST(parser, parsingInfixExpressions) {
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
+        if (errors) {
+            printf("[%d]:'%s'\n", i, test.input);
+        }
         ASSERT_FALSE(errors);
 
         ASSERT_TRUE(program->statements);
@@ -454,6 +460,26 @@ UTEST(parser, operatorPrecedenceParsing) {
             "3 < 5 == true",
             "((3 < 5) == true)",
         },
+        {
+            "1 + (2 + 3) + 4",
+            "((1 + (2 + 3)) + 4)",
+        },
+        {
+            "(5 + 5) * 2",
+            "((5 + 5) * 2)",
+        },
+        {
+            "2 / (5 + 5)",
+            "(2 / (5 + 5))",
+        },
+        {
+            "-(5 + 5)",
+            "(-(5 + 5))",
+        },
+        {
+            "!(true == true)",
+            "(!(true == true))",
+        },
     };
     
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
@@ -465,7 +491,7 @@ UTEST(parser, operatorPrecedenceParsing) {
 
         bool errors = checkParserErrors(parser);
         if (errors) {
-            printf("'%s'\n",test.input);
+            printf("[%d]:'%s'\n", i, test.input);
         }
         ASSERT_FALSE(errors);
 
@@ -494,7 +520,7 @@ UTEST(parser, booleanExpressions) {
 
         bool errors = checkParserErrors(parser);
         if (errors) {
-            printf("'%s'\n",test.input);
+            printf("[%d]:'%s'\n", i, test.input);
         }
         ASSERT_FALSE(errors);
 
@@ -510,6 +536,76 @@ UTEST(parser, booleanExpressions) {
         astboolean_t *boo = (astboolean_t *)exp->expression;
         ASSERT_EQ(boo->value, test.expected);
     }
+}
+
+UTEST(parser, ifExpressions) {
+    const char *input = "if (x < y) { x }";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);    
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+    ASSERT_EQ(AST_IFEXPR, stmt->expression->node.type);
+
+    astifexpression_t *exp = (astifexpression_t *)stmt->expression;
+    ASSERT_TRUE(testInfixExpression(exp->condition, STR("x"), (charslice_t){"<", 1}, STR("y")));
+
+    ASSERT_TRUE(exp->consequence->statements);
+    ASSERT_EQ(1, arrlen(exp->consequence->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, exp->consequence->statements[0]->node.type);
+    astexpressionstatement_t *consequence = (astexpressionstatement_t *)exp->consequence->statements[0];
+
+    ASSERT_TRUE(testIdentifier(consequence->expression, (charslice_t){"x", 1}));
+
+    ASSERT_FALSE(exp->alternative);
+}
+
+UTEST(parser, ifElseExpressions) {
+    const char *input = "if (x < y) { x } else { y }";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+    ASSERT_EQ(AST_IFEXPR, stmt->expression->node.type);
+
+    astifexpression_t *exp = (astifexpression_t *)stmt->expression;
+    ASSERT_TRUE(testInfixExpression(exp->condition, STR("x"), (charslice_t){"<", 1}, STR("y")));
+
+    ASSERT_TRUE(exp->consequence->statements);
+    ASSERT_EQ(1, arrlen(exp->consequence->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, exp->consequence->statements[0]->node.type);
+    astexpressionstatement_t *consequence = (astexpressionstatement_t *)exp->consequence->statements[0];
+
+    ASSERT_TRUE(testIdentifier(consequence->expression, (charslice_t){"x", 1}));
+
+    ASSERT_TRUE(exp->alternative->statements);
+    ASSERT_EQ(1, arrlen(exp->alternative->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, exp->alternative->statements[0]->node.type);
+    astexpressionstatement_t *alternative = (astexpressionstatement_t *)exp->alternative->statements[0];
+
+    ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));
 }
 
 UTEST_MAIN();

@@ -196,6 +196,60 @@ static astexpression_t *parserParseBoolean(parser_t *parser) {
     return (astexpression_t *)booleanCreate(parser->currentToken, parserCurTokenIs(parser, TOKEN_TRUE));
 }
 
+static astexpression_t *parserParseGroupedExpression(parser_t *parser) {
+    parserNextToken(parser);
+    astexpression_t *exp = parserParseExpression(parser, PREC_LOWEST);
+    if (!parserExpectPeek(parser, TOKEN_RPAREN)) {
+        return NULL;
+    }
+    return exp;
+}
+
+static astblockstatement_t *parserParseBlockStatement(parser_t *parser) {
+    astblockstatement_t *block = blockStatementCreate(parser->currentToken);
+    parserNextToken(parser);
+
+    while (!parserCurTokenIs(parser, TOKEN_RBRACE) && !parserCurTokenIs(parser, TOKEN_EOF)) {
+        aststatement_t *stmt = parserParseStatement(parser);
+        if (stmt) {
+            arrput(block->statements, stmt);
+        }
+        parserNextToken(parser);
+    }
+    return block;
+}
+
+static astexpression_t *parserParseIfExpression(parser_t *parser) {
+    astifexpression_t *exp = ifExpressionCreate(parser->currentToken);
+    if (!parserExpectPeek(parser, TOKEN_LPAREN)) {
+        return NULL;
+    }
+
+    parserNextToken(parser);
+    exp->condition = parserParseExpression(parser, PREC_LOWEST);
+
+    if (!parserExpectPeek(parser, TOKEN_RPAREN)) {
+        return NULL;
+    }
+
+    if (!parserExpectPeek(parser, TOKEN_LBRACE)) {
+        return NULL;
+    }
+
+    exp->consequence = parserParseBlockStatement(parser);
+
+    if (parserPeekTokenIs(parser, TOKEN_ELSE)) {
+        parserNextToken(parser);
+        if (!parserExpectPeek(parser, TOKEN_LBRACE)) {
+            return NULL;
+        }
+
+        exp->alternative = parserParseBlockStatement(parser);
+    }
+
+    return (astexpression_t *)exp;
+}
+
 astprogram_t *parserParseProgram(parser_t *parser) {
     astprogram_t *program = programCreate();
     
@@ -231,6 +285,8 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterPrefix(parser, TOKEN_BANG, parserParsePrefixExpression);
     parserRegisterPrefix(parser, TOKEN_FALSE, parserParseBoolean);
     parserRegisterPrefix(parser, TOKEN_TRUE, parserParseBoolean);
+    parserRegisterPrefix(parser, TOKEN_LPAREN, parserParseGroupedExpression);
+    parserRegisterPrefix(parser, TOKEN_IF, parserParseIfExpression);
     
     parserRegisterInfix(parser, TOKEN_PLUS, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_MINUS, parserParseInfixExpression);
