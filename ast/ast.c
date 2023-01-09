@@ -9,7 +9,7 @@
 #define STB_DS_IMPLEMENTATION
 #include "../stb_ds_x.h"
 
-#define SLCE(a) ((charslice_t){(a), arrlen((a)) - 1 })
+#define SLCE(a) ((a) ? (charslice_t){(a), arrlen((a)) - 1 } : (charslice_t){"", 0})
 
 static inline astnode_t astnodeMake(astnode_type type, literal_fn literal, string_fn string) {
 	return (astnode_t) {
@@ -309,7 +309,7 @@ static charslice_t blockStatementString(astnode_t *node) {
             sarrprintf(out, "%.*s", (int)str.length, str.src);
         }
     }
-
+    
     return SLCE(out);
 }
 
@@ -335,15 +335,25 @@ static charslice_t functionLiteralString(astnode_t *node) {
     if (self->parameters) {
         for (int i = 0; i < arrlen(self->parameters); i++) {
             charslice_t str = self->parameters[i]->as.node.string(&(self->parameters[i]->as.node));
-            sarrprintf(params, "%.*s,", (int)str.length, str.src);
+            sarrprintf(params, "%.*s", (int)str.length, str.src);
+            if (i < arrlen(self->parameters) - 1) {
+                sarrprintf(params, ", ");
+            }
         }
     }
 
+    // TODO: fix when params and body are null. cuz reasons.
     charslice_t tmp = self->as.node.tokenLiteral(&self->as.node);
-    sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(params) - 2 /* null + trailing comma*/, params);
+    if (params && arrlen(params) > 1) {
+        sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(params) - 1 /* null */, params);
+    } else {
+        sarrprintf(out, "%.*s()", (int)tmp.length, tmp.src);
+    }
 
-    tmp = self->body->as.node.string(&self->body->as.node);
-    sarrprintf(out, "%.*s", (int)tmp.length, tmp.src);
+    if (self->body) {
+        tmp = self->body->as.node.string(&self->body->as.node);
+        sarrprintf(out, "%.*s", (int)tmp.length, tmp.src);
+    }
 
     return SLCE(out);
 }
@@ -353,4 +363,45 @@ astfunctionliteral_t *functionLiteralCreate(token_t token) {
     lit->as.node = astnodeMake(AST_FNLIT, functionLiteralTokenLiteral, functionLiteralString);
     lit->token = token;
     return lit;
+}
+
+static charslice_t callExpressionTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_CALL);
+    astcallexpression_t *self = (astcallexpression_t *)node;
+    return self->token.literal;
+}
+
+static charslice_t callExpressionString(astnode_t *node) {
+    assert(node->type == AST_CALL);
+    astcallexpression_t *self = (astcallexpression_t *)node;
+
+    char *out = NULL;
+    char *args = NULL;
+    if (self->arguments) {
+        for (int i = 0; i < arrlen(self->arguments); i++) {
+            charslice_t str = self->arguments[i]->node.string(&(self->arguments[i]->node));
+            sarrprintf(args, "%.*s", (int)str.length, str.src);
+            if (i < arrlen(self->arguments) - 1) {
+                sarrprintf(args, ", ");
+            }
+        }
+    }
+
+    // TODO: fix when params and body are null. cuz reasons.
+    charslice_t tmp = self->function->node.tokenLiteral(&self->function->node);
+    if (args && arrlen(args) > 2) {
+        sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(args) - 1 /* null */, args);
+    } else {
+        sarrprintf(out, "%.*s()", (int)tmp.length, tmp.src);
+    }
+
+    return SLCE(out);
+}
+
+astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *function) {
+    astcallexpression_t *call = calloc(1, sizeof(*call));
+    call->as.node = astnodeMake(AST_CALL, callExpressionTokenLiteral, callExpressionString);
+    call->token = token;
+    call->function = function;
+    return call;
 }

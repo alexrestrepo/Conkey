@@ -214,18 +214,18 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
     astidentifier_t *identifier = (astidentifier_t *)exp;
     if (value.length != identifier->value.length || strncmp(value.src, identifier->value.src, identifier->value.length)) {
         fprintf(stderr, "identifier.value not %.*s. got='%.*s'\n",
-            (int)value.length, value.src,
-            (int)identifier->value.length, identifier->value.src
-        );
+                (int)value.length, value.src,
+                (int)identifier->value.length, identifier->value.src
+                );
         return false;
     }
     
     charslice_t literal = exp->node.tokenLiteral(&exp->node);
     if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
         fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%.*s'\n",
-            (int)value.length, value.src,
-            (int)literal.length, literal.src
-        );
+                (int)value.length, value.src,
+                (int)literal.length, literal.src
+                );
         return false;
     }
     
@@ -262,7 +262,7 @@ static bool testLiteralExpression(astexpression_t *exp, Value expected) {
         case TYPE_INT:
             return testIntegerLiteral(exp, expected.intValue);
             break;
-        
+
         case TYPE_STR:
             return testIdentifier(exp, expected.strValue);
             break;
@@ -287,10 +287,10 @@ static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t op
     }
     
     if (opExp->operator.length != operator.length || strncmp(opExp->operator.src, operator.src, operator.length)) {
-        fprintf(stderr, "exp.operator is not %.*s. got='%.*s'\n", 
-            (int)operator.length, operator.src,
-            (int)opExp->operator.length, opExp->operator.src
-        );
+        fprintf(stderr, "exp.operator is not %.*s. got='%.*s'\n",
+                (int)operator.length, operator.src,
+                (int)opExp->operator.length, opExp->operator.src
+                );
         return false;
     }
     
@@ -480,6 +480,18 @@ UTEST(parser, operatorPrecedenceParsing) {
             "!(true == true)",
             "(!(true == true))",
         },
+        {
+            "a + add(b * c) + d",
+            "((a + add((b * c))) + d)",
+        },
+        {
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        },
+        {
+            "add(a + b + c * d / f + g)",
+            "add((((a + b) + ((c * d) / f)) + g))",
+        },
     };
     
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
@@ -545,7 +557,7 @@ UTEST(parser, ifExpressions) {
     parser_t *parser = parserCreate(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
-    bool errors = checkParserErrors(parser);    
+    bool errors = checkParserErrors(parser);
     ASSERT_FALSE(errors);
 
     ASSERT_TRUE(program->statements);
@@ -605,7 +617,7 @@ UTEST(parser, ifElseExpressions) {
     ASSERT_EQ(AST_EXPRESSIONSTMT, exp->alternative->statements[0]->node.type);
     astexpressionstatement_t *alternative = (astexpressionstatement_t *)exp->alternative->statements[0];
 
-    ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));    
+    ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));
 }
 
 UTEST(parser, functionLiteralParsing) {
@@ -641,8 +653,8 @@ UTEST(parser, functionLiteralParsing) {
 
     ASSERT_TRUE(testInfixExpression(bodystmt->expression, STR("x"), (charslice_t){"+",1}, STR("y")));
 
-//    charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
-//    fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
+    //    charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
+    //    fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
 }
 
 UTEST(parser, functionParameterParsing) {
@@ -676,7 +688,39 @@ UTEST(parser, functionParameterParsing) {
         for (int j = 0; j < test.parcnt; j++) {
             testLiteralExpression((astexpression_t *)function->parameters[j], STR(test.expectedParams[j]));
         }
+
+        //        charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
+        //        fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
     }
+}
+
+UTEST(parser, callExpressionParsing) {
+    const char *input = "add(1, 2 * 3, 4 + 5);";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_CALL, stmt->expression->node.type);
+    astcallexpression_t *call = (astcallexpression_t *)stmt->expression;
+
+    ASSERT_TRUE(testIdentifier(call->function, (charslice_t){"add", 3}));
+
+    ASSERT_TRUE(call->arguments);
+    ASSERT_EQ(3, arrlen(call->arguments));
+
+    ASSERT_TRUE(testLiteralExpression((astexpression_t *)call->arguments[0], INT(1)));
+    ASSERT_TRUE(testInfixExpression((astexpression_t *)call->arguments[1], INT(2), (charslice_t){"*",1}, INT(3)));
+    ASSERT_TRUE(testInfixExpression((astexpression_t *)call->arguments[2], INT(4), (charslice_t){"+",1}, INT(5)));
 }
 
 UTEST_MAIN();
