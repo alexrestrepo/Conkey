@@ -32,13 +32,13 @@ static charslice_t programString(astnode_t *node) {
 	astprogram_t *self = (astprogram_t *)node;
 	
 	// TODO: figure out mem usage, all the leaks! :)
-	charslice_t out = {"", 0};
+	charslice_t out = {NULL, 0};
 	
 	if (self->statements) {
 		for (int i = 0; i < arrlen(self->statements); i++) {
 			aststatement_t *stmt = self->statements[i];
 			charslice_t str = stmt->node.string(&(stmt->node));
-			out = charsliceMake("%.*s%.*s", (int)out.length, out.src, (int)str.length, str.src);
+            sarrprintf(out.src, "%.*s", (int)str.length, str.src);
 		}
 	}
 	
@@ -96,9 +96,9 @@ static charslice_t letStatementString(astnode_t *node) {
 	
 	if (self->value) {
 		str = self->value->node.string(&(self->value->node));
-		out = charsliceMake("%.*s%.*s", (int)out.length, out.src, (int)str.length, str.src);
+        sarrprintf(out.src, "%.*s", (int)str.length, str.src);
 	}
-	out = charsliceMake("%.*s;", (int)out.length, out.src);
+    sarrprintf(out.src, ";");
 	return out;
 }
 
@@ -125,9 +125,9 @@ static charslice_t returnStatementString(astnode_t *node) {
 	
 	if (self->returnValue) {
 		str = self->returnValue->node.string(&(self->returnValue->node));
-		out = charsliceMake("%.*s%.*s", (int)out.length, out.src, (int)str.length, str.src);
+        sarrprintf(out.src, "%.*s", (int)str.length, str.src);
 	}
-	out = charsliceMake("%.*s;", (int)out.length, out.src);
+    sarrprintf(out.src, ";");
 	return out;
 }
 
@@ -233,4 +233,18 @@ astinfixexpression_t *infixExpressionCreate(token_t token, charslice_t operator,
     exp->left = left;
     exp->operator = operator;
     return exp;
+}
+
+static charslice_t booleanTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_BOOL);
+    astinfixexpression_t *self = (astinfixexpression_t *)node;
+    return self->token.literal;
+}
+
+astboolean_t *booleanCreate(token_t token, bool value) {
+    astboolean_t *boo = calloc(1, sizeof(*boo));
+    boo->as.node = astnodeMake(AST_BOOL, booleanTokenLiteral, booleanTokenLiteral);
+    boo->token = token;
+    boo->value = value;
+    return boo;
 }

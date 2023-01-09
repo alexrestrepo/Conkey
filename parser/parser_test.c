@@ -11,157 +11,176 @@
 
 #include "parser.h"
 
+typedef enum {
+    TYPE_INT,
+    TYPE_STR,
+    TYPE_BOOL,
+} value_type;
+
+typedef struct {
+    value_type type;
+    union {
+        int64_t intValue;
+        charslice_t strValue;
+        bool boolValue;
+    };
+} Value;
+
+#define INT(value) (Value){.type = TYPE_INT, .intValue = (value)}
+#define BOOL(value) (Value){.type = TYPE_BOOL, .boolValue = (value)}
+#define STR(src) (Value){.type = TYPE_STR, .strValue = (charslice_t){(src), strlen((src))}}
+
 static bool testLetStatement(aststatement_t *statement, const char *name) {
-	charslice_t literal = statement->node.tokenLiteral(&statement->node);
-	if (literal.length != 3 || strncmp("let", literal.src, literal.length)) {
-		fprintf(stderr, "s.tokenLiteral not 'let'. got=%.*s\n", (int)literal.length, literal.src);
-		return false;
-	}
-	
-	if (statement->node.type != AST_LET) {
-		fprintf(stderr, "statement not letStatement. got=%d\n", statement->node.type);
-		return false;
-	}
-	
-	astletstatement_t *letStatement = (astletstatement_t *)statement;
-	if (strlen(name) != letStatement->name->value.length
+    charslice_t literal = statement->node.tokenLiteral(&statement->node);
+    if (literal.length != 3 || strncmp("let", literal.src, literal.length)) {
+        fprintf(stderr, "s.tokenLiteral not 'let'. got=%.*s\n", (int)literal.length, literal.src);
+        return false;
+    }
+
+    if (statement->node.type != AST_LET) {
+        fprintf(stderr, "statement not letStatement. got=%d\n", statement->node.type);
+        return false;
+    }
+
+    astletstatement_t *letStatement = (astletstatement_t *)statement;
+    if (strlen(name) != letStatement->name->value.length
         || strncmp(name, letStatement->name->value.src, letStatement->name->value.length)) {
-		fprintf(stderr, "letStatement.name.value not '%s'. got=%.*s\n", name,
-			(int)letStatement->name->value.length, letStatement->name->value.src);
-		return false;
-	}
-	
-	literal = letStatement->name->as.node.tokenLiteral((astnode_t *)letStatement->name);
-	if (strlen(name) != literal.length
+        fprintf(stderr, "letStatement.name.value not '%s'. got=%.*s\n", name,
+                (int)letStatement->name->value.length, letStatement->name->value.src);
+        return false;
+    }
+
+    literal = letStatement->name->as.node.tokenLiteral((astnode_t *)letStatement->name);
+    if (strlen(name) != literal.length
         || strncmp(name, literal.src, literal.length)) {
-		fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got=%.*s\n", name, (int)literal.length, literal.src);
-		return false;
-	}
-	
-	return true;
+        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got=%.*s\n", name, (int)literal.length, literal.src);
+        return false;
+    }
+
+    return true;
 }
 
 static bool checkParserErrors(parser_t *parser) {
-	if (!parser->errors || arrlen(parser->errors) == 0) {
-		return false;
-	}
-	
-	fprintf(stderr, "\nparser has %ld errors\n", arrlen(parser->errors));
-	for (size_t i = 0; i < arrlen(parser->errors); i++) {
-		fprintf(stderr, "parser error: %.*s\n", (int)parser->errors[i].length, parser->errors[i].src);
-	}
-	return true;
+    if (!parser->errors || arrlen(parser->errors) == 0) {
+        return false;
+    }
+
+    fprintf(stderr, "\nparser has %ld errors\n", arrlen(parser->errors));
+    for (size_t i = 0; i < arrlen(parser->errors); i++) {
+        fprintf(stderr, "parser error: %.*s\n", (int)parser->errors[i].length, parser->errors[i].src);
+    }
+    return true;
 }
 
 UTEST(parser, letStatements) {
-	const char *input = MONKEY(
-		let x = 5;
-		let y = 10;
-		let foobar = 838383;
-	);
-	
-	lexer_t *lexer = lexerCreate(input);
-	parser_t *parser = parserCreate(lexer);
-	astprogram_t *program = parserParseProgram(parser);
-	ASSERT_TRUE(program);
-	
-	bool errors = checkParserErrors(parser);
-	ASSERT_FALSE(errors);
-	
-	ASSERT_TRUE(program->statements);
-	ASSERT_EQ(arrlen(program->statements), 3);
-	
-	struct test {
-		const char *expectedIdentifier;
-	} tests[] = {
-		{"x"},
-		{"y"},
-		{"foobar"},
-	};
-	
-	for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
-		struct test test = tests[i];
-		aststatement_t *statement = program->statements[i];
-		ASSERT_TRUE(testLetStatement(statement, test.expectedIdentifier));
-	}
+    const char *input = MONKEY(
+                               let x = 5;
+                               let y = 10;
+                               let foobar = 838383;
+                               );
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+    ASSERT_TRUE(program);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(arrlen(program->statements), 3);
+
+    struct test {
+        const char *expectedIdentifier;
+    } tests[] = {
+        {"x"},
+        {"y"},
+        {"foobar"},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        aststatement_t *statement = program->statements[i];
+        ASSERT_TRUE(testLetStatement(statement, test.expectedIdentifier));
+    }
 }
 
 UTEST(parser, returnStatements) {
-	const char *input = MONKEY(
-		return 5;
-		return 10;
-		return 993322;
-	);
-	
-	lexer_t *lexer = lexerCreate(input);
-	parser_t *parser = parserCreate(lexer);
-	astprogram_t *program = parserParseProgram(parser);
-	ASSERT_TRUE(program);
-	
-	bool errors = checkParserErrors(parser);
-	ASSERT_FALSE(errors);
-	
-	ASSERT_TRUE(program->statements);
-	ASSERT_EQ(arrlen(program->statements), 3);
-	
-	for (int i = 0; i < arrlen(program->statements); i++) {
-		aststatement_t *stmt = program->statements[i];
-		ASSERT_EQ(stmt->node.type, AST_RETURN);
-		
-		ASSERT_STRNEQ("return", 
-			stmt->node.tokenLiteral(&stmt->node).src, 
-			stmt->node.tokenLiteral(&stmt->node).length);
-	}
+    const char *input = MONKEY(
+                               return 5;
+                               return 10;
+                               return 993322;
+                               );
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+    ASSERT_TRUE(program);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(arrlen(program->statements), 3);
+
+    for (int i = 0; i < arrlen(program->statements); i++) {
+        aststatement_t *stmt = program->statements[i];
+        ASSERT_EQ(stmt->node.type, AST_RETURN);
+
+        ASSERT_STRNEQ("return",
+                      stmt->node.tokenLiteral(&stmt->node).src,
+                      stmt->node.tokenLiteral(&stmt->node).length);
+    }
 }
 
 UTEST(parser, identifierExpression) {
-	const char *input = "foobar;";
-	
-	lexer_t *lexer = lexerCreate(input);
-	parser_t *parser = parserCreate(lexer);
-	
-	astprogram_t *program = parserParseProgram(parser);
-	bool errors = checkParserErrors(parser);
-	ASSERT_FALSE(errors);
-	
-	ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
-	
-	ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
-	astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
-	
-	ASSERT_NE(stmt->expression, NULL);
-	ASSERT_EQ(AST_IDENTIFIER, stmt->expression->node.type);
-	astidentifier_t *ident = (astidentifier_t *)stmt->expression;
-	
-	ASSERT_STRNEQ("foobar", ident->value.src, ident->value.length);
-	
-	charslice_t lit = ident->as.node.tokenLiteral(&ident->as.node);
-	ASSERT_STRNEQ("foobar", lit.src, lit.length);
+    const char *input = "foobar;";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+
+    astprogram_t *program = parserParseProgram(parser);
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_NE(stmt->expression, NULL);
+    ASSERT_EQ(AST_IDENTIFIER, stmt->expression->node.type);
+    astidentifier_t *ident = (astidentifier_t *)stmt->expression;
+
+    ASSERT_STRNEQ("foobar", ident->value.src, ident->value.length);
+
+    charslice_t lit = ident->as.node.tokenLiteral(&ident->as.node);
+    ASSERT_STRNEQ("foobar", lit.src, lit.length);
 }
 
 UTEST(parser, integerLiteralExpression) {
-	const char *input = "5;";
-	
-	lexer_t *lexer = lexerCreate(input);
-	parser_t *parser = parserCreate(lexer);
-	
-	astprogram_t *program = parserParseProgram(parser);
-	bool errors = checkParserErrors(parser);
-	ASSERT_FALSE(errors);
-	
-	ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
-	
-	ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
-	astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
-	
-	ASSERT_NE(stmt->expression, NULL);
-	ASSERT_EQ(AST_INTEGER, stmt->expression->node.type);
-	astinteger_t *literal = (astinteger_t *)stmt->expression;
-	
-	ASSERT_EQ(5, literal->value);
-	
-	charslice_t lit = literal->as.node.tokenLiteral(&literal->as.node);
-	ASSERT_STRNEQ("5", lit.src, lit.length);
+    const char *input = "5;";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+
+    astprogram_t *program = parserParseProgram(parser);
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_NE(stmt->expression, NULL);
+    ASSERT_EQ(AST_INTEGER, stmt->expression->node.type);
+    astinteger_t *literal = (astinteger_t *)stmt->expression;
+
+    ASSERT_EQ(5, literal->value);
+
+    charslice_t lit = literal->as.node.tokenLiteral(&literal->as.node);
+    ASSERT_STRNEQ("5", lit.src, lit.length);
 }
 
 static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
@@ -183,6 +202,101 @@ static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
         return false;
     }
 
+    return true;
+}
+
+static bool testIdentifier(astexpression_t *exp, charslice_t value) {
+    if (AST_IDENTIFIER != exp->node.type) {
+        fprintf(stderr, "exp not ast.identifier. got%s\n", token_types[exp->node.type]);
+        return false;
+    }
+    
+    astidentifier_t *identifier = (astidentifier_t *)exp;
+    if (value.length != identifier->value.length || strncmp(value.src, identifier->value.src, identifier->value.length)) {
+        fprintf(stderr, "identifier.value not %.*s. got=%.*s\n", 
+            (int)value.length, value.src,
+            (int)identifier->value.length, identifier->value.src
+        );
+        return false;
+    }
+    
+    charslice_t literal = exp->node.tokenLiteral(&exp->node);
+    if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
+        fprintf(stderr, "identifier.tokenLiteral not %.*s. got=%.*s\n", 
+            (int)value.length, value.src,
+            (int)literal.length, literal.src
+        );
+        return false;
+    }
+    
+    return true;
+}
+
+static bool testBooleanLiteral(astexpression_t *exp, bool value) {
+    if (exp->node.type != AST_BOOL) {
+        fprintf(stderr, "exp not astboolean. got%d\n", exp->node.type);
+        return false;
+    }
+
+    astboolean_t *boo = (astboolean_t *)exp;
+    if (boo->value != value) {
+        fprintf(stderr, "boo.value not %s. got=%s\n",
+                value ? "true":"false",
+                boo->value ? "true":"false");
+        return false;
+    }
+
+    charslice_t toklit = boo->as.node.tokenLiteral(&boo->as.node);
+    charslice_t val = charsliceMake("%s", value?"true":"false");
+    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
+        fprintf(stderr, "boo.tokenLiteral not %s. got=%.*s\n",
+                value ? "true":"false", (int)toklit.length, toklit.src);
+        return false;
+    }
+
+    return true;
+}
+
+static bool testLiteralExpression(astexpression_t *exp, Value expected) {
+    switch (expected.type) {
+        case TYPE_INT:
+            return testIntegerLiteral(exp, expected.intValue);
+            break;
+        
+        case TYPE_STR:
+            return testIdentifier(exp, expected.strValue);
+            break;
+            
+        case TYPE_BOOL:
+            return testBooleanLiteral(exp, expected.boolValue);
+            break;
+    }
+    fprintf(stderr, "type of exp not handled. got=%d", expected.type);
+    return false;
+}
+
+static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t operator, Value right) {
+    if (AST_INFIXEXPR != exp->node.type) {
+        fprintf(stderr, "exp not ast.infixExpression. got%s\n", token_types[exp->node.type]);
+        return false;
+    }
+    
+    astinfixexpression_t *opExp = (astinfixexpression_t *)exp;
+    if (!testLiteralExpression(opExp->left, left)) {
+        return false;
+    }
+    
+    if (opExp->operator.length != operator.length || strncmp(opExp->operator.src, operator.src, operator.length)) {
+        fprintf(stderr, "exp.operator is not %.*s. got=%.*s\n", 
+            (int)operator.length, operator.src,
+            (int)opExp->operator.length, opExp->operator.src
+        );
+        return false;
+    }
+    
+    if (!testLiteralExpression(opExp->right, right)) {
+        return false;
+    }
     return true;
 }
 
@@ -224,20 +338,31 @@ UTEST(parser, parsingPrefixExpressions) {
 UTEST(parser, parsingInfixExpressions) {
     struct test {
         const char *input;
-        int64_t leftValue;
-        const char *operator;
-        int64_t rightValue;
+        Value leftValue;
+        char *operator;
+        Value rightValue;
     } tests[] = {
-        {"5 + 5;", 5, "+", 5},
-        {"5 - 5;", 5, "-", 5},
-        {"5 * 5;", 5, "*", 5},
-        {"5 / 5;", 5, "/", 5},
-        {"5 > 5;", 5, ">", 5},
-        {"5 < 5;", 5, "<", 5},
-        {"5 == 5;", 5, "==", 5},
-        {"5 != 5;", 5, "!=", 5},
+        {"5 + 5;", INT(5), "+", INT(5)},
+        {"5 - 5;", INT(5), "-", INT(5)},
+        {"5 * 5;", INT(5), "*", INT(5)},
+        {"5 / 5;", INT(5), "/", INT(5)},
+        {"5 > 5;", INT(5), ">", INT(5)},
+        {"5 < 5;", INT(5), "<", INT(5)},
+        {"5 == 5;", INT(5), "==", INT(5)},
+        {"5 != 5;", INT(5), "!=", INT(5)},
+        {"foobar + barfoo;", STR("foobar"), "+", STR("barfoo")},
+        {"foobar - barfoo;", STR("foobar"), "-", STR("barfoo")},
+        {"foobar * barfoo;", STR("foobar"), "*", STR("barfoo")},
+        {"foobar / barfoo;", STR("foobar"), "/", STR("barfoo")},
+        {"foobar > barfoo;", STR("foobar"), ">", STR("barfoo")},
+        {"foobar < barfoo;", STR("foobar"), "<", STR("barfoo")},
+        {"foobar == barfoo;", STR("foobar"), "==", STR("barfoo")},
+        {"foobar != barfoo;", STR("foobar"), "!=", STR("barfoo")},
+        {"true == true", BOOL(true), "==", BOOL(true)},
+        {"true != false", BOOL(true), "!=", BOOL(false)},
+        {"false == false", BOOL(false), "==", BOOL(false)},
     };
-
+    
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
         lexer_t *lexer = lexerCreate(test.input);
@@ -256,12 +381,7 @@ UTEST(parser, parsingInfixExpressions) {
         astexpression_t *exp = ((astexpressionstatement_t *)stmt)->expression;
         ASSERT_EQ(AST_INFIXEXPR, exp->node.type);
 
-        astinfixexpression_t *infix = (astinfixexpression_t *)exp;
-        ASSERT_TRUE(testIntegerLiteral(infix->left, test.leftValue));
-
-        ASSERT_STRNEQ(test.operator, infix->operator.src, infix->operator.length);
-
-        ASSERT_TRUE(testIntegerLiteral(infix->right, test.rightValue));
+        ASSERT_TRUE(testInfixExpression(exp, test.leftValue, (charslice_t){test.operator, strlen(test.operator)}, test.rightValue));
     }
 }
 
@@ -318,6 +438,51 @@ UTEST(parser, operatorPrecedenceParsing) {
             "3 + 4 * 5 == 3 * 1 + 4 * 5",
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
         },
+        {
+            "true",
+            "true",
+        },
+        {
+            "false",
+            "false",
+        },
+        {
+            "3 > 5 == false",
+            "((3 > 5) == false)",
+        },
+        {
+            "3 < 5 == true",
+            "((3 < 5) == true)",
+        },
+    };
+    
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
+
+        bool errors = checkParserErrors(parser);
+        if (errors) {
+            printf("'%s'\n",test.input);
+        }
+        ASSERT_FALSE(errors);
+
+        ASSERT_TRUE(program->statements);
+
+        charslice_t actual = program->node.string(&program->node);
+        ASSERT_STRNEQ(test.expected, actual.src, actual.length);
+    }
+}
+
+UTEST(parser, booleanExpressions) {
+    struct test {
+        const char *input;
+        bool expected;
+    } tests [] = {
+        {"true;", true},
+        {"false;", false},
     };
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
@@ -333,8 +498,17 @@ UTEST(parser, operatorPrecedenceParsing) {
         }
         ASSERT_FALSE(errors);
 
-        charslice_t actual = program->node.string(&program->node);
-        ASSERT_STRNEQ(test.expected, actual.src, actual.length);
+        ASSERT_TRUE(program->statements);
+        ASSERT_EQ(1, arrlen(program->statements));
+
+        aststatement_t *stmt = program->statements[0];
+        ASSERT_EQ(AST_EXPRESSIONSTMT, stmt->node.type);
+
+        astexpressionstatement_t *exp = (astexpressionstatement_t *)stmt;
+        ASSERT_EQ(AST_BOOL, exp->expression->node.type);
+
+        astboolean_t *boo = (astboolean_t *)exp->expression;
+        ASSERT_EQ(boo->value, test.expected);
     }
 }
 

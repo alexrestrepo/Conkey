@@ -14,15 +14,15 @@ typedef astexpression_t *prefixParseFn(parser_t *parser);
 typedef astexpression_t *infixParseFn(parser_t *parser, astexpression_t *left);
 
 struct parser_t {
-	lexer_t *lexer;
-	charslice_t *errors;
-	
-	token_t currentToken;
-	token_t peekToken;
-	
-	// TODO: we can group these into a single prefix,infix tuple
-	prefixParseFn *prefixParseFns[TOKEN_TYPE_COUNT];
-	infixParseFn *infixParseFns[TOKEN_TYPE_COUNT];
+    lexer_t *lexer;
+    charslice_t *errors;
+    
+    token_t currentToken;
+    token_t peekToken;
+
+    // TODO: we can group these into a single prefix,infix tuple
+    prefixParseFn *prefixParseFns[TOKEN_TYPE_COUNT];
+    infixParseFn *infixParseFns[TOKEN_TYPE_COUNT];
 };
 
 parser_t *parserCreate(lexer_t *lexer);
