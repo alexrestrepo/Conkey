@@ -269,13 +269,13 @@ static charslice_t ifExpressionString(astnode_t *node) {
     char *out = NULL;
     charslice_t tmp = {0};
 
-    sarrprintf(out, "if");
+    sarrprintf(out, "if ");
 
     tmp = self->condition->node.string(&self->condition->node);
     sarrprintf(out, "%.*s ", (int)tmp.length, tmp.src);
 
     tmp = self->consequence->as.node.string(&self->consequence->as.node);
-    sarrprintf(out, "%.*s ", (int)tmp.length, tmp.src);
+    sarrprintf(out, "-> %.*s ", (int)tmp.length, tmp.src);
 
     if (self->alternative) {
         tmp = self->alternative->as.node.string(&self->alternative->as.node);
@@ -344,9 +344,9 @@ static charslice_t functionLiteralString(astnode_t *node) {
 
     charslice_t tmp = self->as.node.tokenLiteral(&self->as.node);
     if (params && arrlen(params) > 1) {
-        sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(params) - 1 /* null */, params);
+        sarrprintf(out, "%.*s(%.*s) ", (int)tmp.length, tmp.src, (int)arrlen(params) - 1 /* null */, params);
     } else {
-        sarrprintf(out, "%.*s()", (int)tmp.length, tmp.src);
+        sarrprintf(out, "%.*s() ", (int)tmp.length, tmp.src);
     }
 
     if (self->body) {
