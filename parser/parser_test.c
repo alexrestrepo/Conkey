@@ -605,7 +605,78 @@ UTEST(parser, ifElseExpressions) {
     ASSERT_EQ(AST_EXPRESSIONSTMT, exp->alternative->statements[0]->node.type);
     astexpressionstatement_t *alternative = (astexpressionstatement_t *)exp->alternative->statements[0];
 
-    ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));
+    ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));    
+}
+
+UTEST(parser, functionLiteralParsing) {
+    const char *input = "fn(x, y) { x + y; }";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_FNLIT, stmt->expression->node.type);
+    astfunctionliteral_t *function = (astfunctionliteral_t *)stmt->expression;
+
+    ASSERT_TRUE(function->parameters);
+    ASSERT_EQ(2, arrlen(function->parameters));
+
+    ASSERT_TRUE(testLiteralExpression((astexpression_t *)function->parameters[0], STR("x")));
+    ASSERT_TRUE(testLiteralExpression((astexpression_t *)function->parameters[1], STR("y")));
+
+    ASSERT_TRUE(function->body->statements);
+    ASSERT_EQ(1, arrlen(function->body->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, function->body->statements[0]->node.type);
+    astexpressionstatement_t *bodystmt = (astexpressionstatement_t *)function->body->statements[0];
+
+    ASSERT_TRUE(testInfixExpression(bodystmt->expression, STR("x"), (charslice_t){"+",1}, STR("y")));
+
+//    charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
+//    fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
+}
+
+UTEST(parser, functionParameterParsing) {
+    struct test {
+        const char *input;
+        char *expectedParams[3];
+        int parcnt;
+    } tests[] = {
+        {"fn() {};", {}, 0},
+        {"fn(x) {};", {"x"}, 1},
+        {"fn(x, y, z) {};", {"x", "y", "z"}, 3},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
+
+        bool errors = checkParserErrors(parser);
+        ASSERT_FALSE(errors);
+
+        ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+        astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+        ASSERT_EQ(AST_FNLIT, stmt->expression->node.type);
+        astfunctionliteral_t *function = (astfunctionliteral_t *)stmt->expression;
+
+        ASSERT_EQ(test.parcnt, arrlen(function->parameters));
+
+        for (int j = 0; j < test.parcnt; j++) {
+            testLiteralExpression((astexpression_t *)function->parameters[j], STR(test.expectedParams[j]));
+        }
+    }
 }
 
 UTEST_MAIN();

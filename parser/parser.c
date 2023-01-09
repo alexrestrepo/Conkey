@@ -250,6 +250,47 @@ static astexpression_t *parserParseIfExpression(parser_t *parser) {
     return (astexpression_t *)exp;
 }
 
+static astidentifier_t **parserParseFunctionParameters(parser_t *parser) {
+    astidentifier_t **identifiers = NULL;
+    if (parserPeekTokenIs(parser, TOKEN_RPAREN)) {
+        parserNextToken(parser);
+        return identifiers;
+    }
+    parserNextToken(parser);
+    astidentifier_t *ident = identifierCreate(parser->currentToken, parser->currentToken.literal);
+    arrput(identifiers, ident);
+
+    while (parserPeekTokenIs(parser, TOKEN_COMMA)) {
+        parserNextToken(parser); // id
+        parserNextToken(parser); //,
+        ident = identifierCreate(parser->currentToken, parser->currentToken.literal);
+        arrput(identifiers, ident);
+    }
+
+    if (!parserExpectPeek(parser, TOKEN_RPAREN)) {
+        return NULL;
+    }
+
+    return identifiers;
+}
+
+static astexpression_t *parserParseFunctionLiteral(parser_t *parser) {
+    astfunctionliteral_t *lit = functionLiteralCreate(parser->currentToken);
+
+    if (!parserExpectPeek(parser, TOKEN_LPAREN)) {
+        return NULL;
+    }
+
+    lit->parameters = parserParseFunctionParameters(parser);
+    if (!parserExpectPeek(parser, TOKEN_LBRACE)) {
+        return NULL;
+    }
+
+    lit->body = parserParseBlockStatement(parser);
+    return (astexpression_t *)lit;
+
+}
+
 astprogram_t *parserParseProgram(parser_t *parser) {
     astprogram_t *program = programCreate();
     
@@ -287,6 +328,7 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterPrefix(parser, TOKEN_TRUE, parserParseBoolean);
     parserRegisterPrefix(parser, TOKEN_LPAREN, parserParseGroupedExpression);
     parserRegisterPrefix(parser, TOKEN_IF, parserParseIfExpression);
+    parserRegisterPrefix(parser, TOKEN_FUNCTION, parserParseFunctionLiteral);
     
     parserRegisterInfix(parser, TOKEN_PLUS, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_MINUS, parserParseInfixExpression);

@@ -23,6 +23,7 @@ typedef enum {
     AST_INFIXEXPR,
     AST_BOOL,
     AST_IFEXPR,
+    AST_FNLIT,
 
 } astnode_type;
 
@@ -172,5 +173,16 @@ typedef struct {
     astblockstatement_t *alternative;
 } astifexpression_t;
 astifexpression_t *ifExpressionCreate(token_t token);
+
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } as;
+    token_t token;
+    astidentifier_t **parameters;
+    astblockstatement_t *body;
+} astfunctionliteral_t;
+astfunctionliteral_t *functionLiteralCreate(token_t token);
 
 #endif
