@@ -89,6 +89,27 @@ static bool parserExpectPeek(parser_t *parser, token_type type) {
     return false;
 }
 
+static astexpression_t *parserParseExpression(parser_t *parser, op_precedence precedence) {
+    prefixParseFn *prefix = parser->prefixParseFns[parser->currentToken.type];
+    if (!prefix) {
+        parserNoPrefixParseFnError(parser, parser->currentToken.type);
+        return NULL;
+    }
+
+    astexpression_t *leftExp = prefix(parser);
+    while (!parserPeekTokenIs(parser, TOKEN_SEMICOLON)
+           && precedence < parserPeekPrecedence(parser)) {
+        infixParseFn *infix = parser->infixParseFns[parser->peekToken.type];
+        if (!infix) {
+            return leftExp;
+        }
+        parserNextToken(parser);
+        leftExp = infix(parser, leftExp);
+    }
+
+    return leftExp;
+}
+
 static aststatement_t *parserParseLetStatement(parser_t *parser) {
     astletstatement_t *stmt = letStatementCreate(parser->currentToken);
     if (!parserExpectPeek(parser, TOKEN_IDENT)) {
@@ -100,44 +121,26 @@ static aststatement_t *parserParseLetStatement(parser_t *parser) {
         return NULL;
     }
     
-    // TODO: skipping expressions until semicolon
-    while (!parserCurTokenIs(parser, TOKEN_SEMICOLON)) {
+    parserNextToken(parser); // =
+
+    stmt->value = parserParseExpression(parser, PREC_LOWEST);
+    if (parserPeekTokenIs(parser, TOKEN_SEMICOLON)) {
         parserNextToken(parser);
     }
-    
+
     return (aststatement_t *)stmt;
-} 
+}
 
 static aststatement_t *parserParseReturnStatement(parser_t *parser) {
     astreturnstatement_t *stmt = returnStatementCreate(parser->currentToken);
     parserNextToken(parser);
     
-    // TODO: skipping expressions until semicolon
-    while (!parserCurTokenIs(parser, TOKEN_SEMICOLON)) {
+    stmt->returnValue = parserParseExpression(parser, PREC_LOWEST);
+    if (parserPeekTokenIs(parser, TOKEN_SEMICOLON)) {
         parserNextToken(parser);
     }
-    return &stmt->as.statement;
-}
 
-static astexpression_t *parserParseExpression(parser_t *parser, op_precedence precedence) {
-    prefixParseFn *prefix = parser->prefixParseFns[parser->currentToken.type];
-    if (!prefix) {
-        parserNoPrefixParseFnError(parser, parser->currentToken.type);
-        return NULL;
-    }
-    
-    astexpression_t *leftExp = prefix(parser);
-    while (!parserPeekTokenIs(parser, TOKEN_SEMICOLON)
-           && precedence < parserPeekPrecedence(parser)) {
-        infixParseFn *infix = parser->infixParseFns[parser->peekToken.type];
-        if (!infix) {
-            return leftExp;
-        }
-        parserNextToken(parser);
-        leftExp = infix(parser, leftExp);
-    }
-    
-    return leftExp;
+    return &stmt->as.statement;
 }
 
 static aststatement_t *parserParseExpressionStatement(parser_t *parser) {

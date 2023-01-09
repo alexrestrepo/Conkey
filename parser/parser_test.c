@@ -72,64 +72,191 @@ static bool checkParserErrors(parser_t *parser) {
     return true;
 }
 
+static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
+    if (il->node.type != AST_INTEGER) {
+        fprintf(stderr, "il not integerliteral. got%d\n", il->node.type);
+        return false;
+    }
+
+    astinteger_t *integ = (astinteger_t *)il;
+    if (integ->value != value) {
+        fprintf(stderr, "integ.value not %lld. got='%lld'\n", value, integ->value);
+        return false;
+    }
+
+    charslice_t toklit = integ->as.node.tokenLiteral(&integ->as.node);
+    charslice_t val = charsliceMake("%lld", value);
+    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
+        fprintf(stderr, "integ.tokenLiteral not %lld. got='%.*s'\n", value, (int)toklit.length, toklit.src);
+        return false;
+    }
+
+    return true;
+}
+
+static bool testIdentifier(astexpression_t *exp, charslice_t value) {
+    if (AST_IDENTIFIER != exp->node.type) {
+        fprintf(stderr, "exp not ast.identifier. got%s\n", token_types[exp->node.type]);
+        return false;
+    }
+
+    astidentifier_t *identifier = (astidentifier_t *)exp;
+    if (value.length != identifier->value.length || strncmp(value.src, identifier->value.src, identifier->value.length)) {
+        fprintf(stderr, "identifier.value not %.*s. got='%.*s'\n",
+                (int)value.length, value.src,
+                (int)identifier->value.length, identifier->value.src
+                );
+        return false;
+    }
+
+    charslice_t literal = exp->node.tokenLiteral(&exp->node);
+    if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
+        fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%.*s'\n",
+                (int)value.length, value.src,
+                (int)literal.length, literal.src
+                );
+        return false;
+    }
+
+    return true;
+}
+
+static bool testBooleanLiteral(astexpression_t *exp, bool value) {
+    if (exp->node.type != AST_BOOL) {
+        fprintf(stderr, "exp not astboolean. got%d\n", exp->node.type);
+        return false;
+    }
+
+    astboolean_t *boo = (astboolean_t *)exp;
+    if (boo->value != value) {
+        fprintf(stderr, "boo.value not %s. got='%s'\n",
+                value ? "true":"false",
+                boo->value ? "true":"false");
+        return false;
+    }
+
+    charslice_t toklit = boo->as.node.tokenLiteral(&boo->as.node);
+    charslice_t val = charsliceMake("%s", value?"true":"false");
+    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
+        fprintf(stderr, "boo.tokenLiteral not %s. got='%.*s'\n",
+                value ? "true":"false", (int)toklit.length, toklit.src);
+        return false;
+    }
+
+    return true;
+}
+
+static bool testLiteralExpression(astexpression_t *exp, Value expected) {
+    switch (expected.type) {
+        case TYPE_INT:
+            return testIntegerLiteral(exp, expected.intValue);
+            break;
+
+        case TYPE_STR:
+            return testIdentifier(exp, expected.strValue);
+            break;
+
+        case TYPE_BOOL:
+            return testBooleanLiteral(exp, expected.boolValue);
+            break;
+    }
+    fprintf(stderr, "type of exp not handled. got='%d'", expected.type);
+    return false;
+}
+
+static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t operator, Value right) {
+    if (AST_INFIXEXPR != exp->node.type) {
+        fprintf(stderr, "exp not ast.infixExpression. got%s\n", token_types[exp->node.type]);
+        return false;
+    }
+
+    astinfixexpression_t *opExp = (astinfixexpression_t *)exp;
+    if (!testLiteralExpression(opExp->left, left)) {
+        return false;
+    }
+
+    if (opExp->operator.length != operator.length || strncmp(opExp->operator.src, operator.src, operator.length)) {
+        fprintf(stderr, "exp.operator is not %.*s. got='%.*s'\n",
+                (int)operator.length, operator.src,
+                (int)opExp->operator.length, opExp->operator.src
+                );
+        return false;
+    }
+
+    if (!testLiteralExpression(opExp->right, right)) {
+        return false;
+    }
+    return true;
+}
+
 UTEST(parser, letStatements) {
-    const char *input = MONKEY(
-                               let x = 5;
-                               let y = 10;
-                               let foobar = 838383;
-                               );
-
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
-    astprogram_t *program = parserParseProgram(parser);
-    ASSERT_TRUE(program);
-
-    bool errors = checkParserErrors(parser);
-    ASSERT_FALSE(errors);
-
-    ASSERT_TRUE(program->statements);
-    ASSERT_EQ(arrlen(program->statements), 3);
-
     struct test {
-        const char *expectedIdentifier;
+        const char *input;
+        char *expectedIdentifier;
+        Value expectedValue;
+
     } tests[] = {
-        {"x"},
-        {"y"},
-        {"foobar"},
+        {"let x = 5;", "x", INT(5)},
+        {"let y = true;", "y", BOOL(true)},
+        {"let foobar = y;", "foobar", STR("y")},
     };
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        aststatement_t *statement = program->statements[i];
-        ASSERT_TRUE(testLetStatement(statement, test.expectedIdentifier));
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
+
+        bool errors = checkParserErrors(parser);
+        if (errors) {
+            printf("[%d]:'%s'\n", i, test.input);
+        }
+        ASSERT_FALSE(errors);
+
+        ASSERT_TRUE(program->statements);
+        ASSERT_EQ(1, arrlen(program->statements));
+
+        aststatement_t *stmt = program->statements[0];
+        ASSERT_TRUE(testLetStatement(stmt, test.expectedIdentifier));
+
+        astexpression_t *value = ((astletstatement_t *)stmt)->value;
+        ASSERT_TRUE(testLiteralExpression(value, test.expectedValue));
     }
 }
 
 UTEST(parser, returnStatements) {
-    const char *input = MONKEY(
-                               return 5;
-                               return 10;
-                               return 993322;
-                               );
+    struct test {
+        const char *input;
+        Value expectedValue;
+    } tests[] = {
+        {"return 5;", INT(5)},
+        {"return true;", BOOL(true)},
+        {"return foobar;", STR("foobar")},
+    };
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
-    astprogram_t *program = parserParseProgram(parser);
-    ASSERT_TRUE(program);
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        lexer_t *lexer = lexerCreate(test.input);
+        parser_t *parser = parserCreate(lexer);
+        astprogram_t *program = parserParseProgram(parser);
 
-    bool errors = checkParserErrors(parser);
-    ASSERT_FALSE(errors);
+        bool errors = checkParserErrors(parser);
+        if (errors) {
+            printf("[%d]:'%s'\n", i, test.input);
+        }
+        ASSERT_FALSE(errors);
 
-    ASSERT_TRUE(program->statements);
-    ASSERT_EQ(arrlen(program->statements), 3);
+        ASSERT_TRUE(program->statements);
+        ASSERT_EQ(1, arrlen(program->statements));
 
-    for (int i = 0; i < arrlen(program->statements); i++) {
-        aststatement_t *stmt = program->statements[i];
-        ASSERT_EQ(stmt->node.type, AST_RETURN);
+        aststatement_t *stmt = program->statements[0];
+        ASSERT_EQ(AST_RETURN, stmt->node.type);
 
-        ASSERT_STRNEQ("return",
-                      stmt->node.tokenLiteral(&stmt->node).src,
-                      stmt->node.tokenLiteral(&stmt->node).length);
+        astreturnstatement_t *ret = (astreturnstatement_t *)stmt;
+        charslice_t lit = ret->as.node.tokenLiteral(&ret->as.node);
+        ASSERT_STRNEQ("return", lit.src, lit.length);
+
+        ASSERT_TRUE(testLiteralExpression(ret->returnValue, test.expectedValue));
     }
 }
 
@@ -181,123 +308,6 @@ UTEST(parser, integerLiteralExpression) {
 
     charslice_t lit = literal->as.node.tokenLiteral(&literal->as.node);
     ASSERT_STRNEQ("5", lit.src, lit.length);
-}
-
-static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
-    if (il->node.type != AST_INTEGER) {
-        fprintf(stderr, "il not integerliteral. got%d\n", il->node.type);
-        return false;
-    }
-
-    astinteger_t *integ = (astinteger_t *)il;
-    if (integ->value != value) {
-        fprintf(stderr, "integ.value not %lld. got='%lld'\n", value, integ->value);
-        return false;
-    }
-
-    charslice_t toklit = integ->as.node.tokenLiteral(&integ->as.node);
-    charslice_t val = charsliceMake("%lld", value);
-    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "integ.tokenLiteral not %lld. got='%.*s'\n", value, (int)toklit.length, toklit.src);
-        return false;
-    }
-
-    return true;
-}
-
-static bool testIdentifier(astexpression_t *exp, charslice_t value) {
-    if (AST_IDENTIFIER != exp->node.type) {
-        fprintf(stderr, "exp not ast.identifier. got%s\n", token_types[exp->node.type]);
-        return false;
-    }
-    
-    astidentifier_t *identifier = (astidentifier_t *)exp;
-    if (value.length != identifier->value.length || strncmp(value.src, identifier->value.src, identifier->value.length)) {
-        fprintf(stderr, "identifier.value not %.*s. got='%.*s'\n",
-                (int)value.length, value.src,
-                (int)identifier->value.length, identifier->value.src
-                );
-        return false;
-    }
-    
-    charslice_t literal = exp->node.tokenLiteral(&exp->node);
-    if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
-        fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%.*s'\n",
-                (int)value.length, value.src,
-                (int)literal.length, literal.src
-                );
-        return false;
-    }
-    
-    return true;
-}
-
-static bool testBooleanLiteral(astexpression_t *exp, bool value) {
-    if (exp->node.type != AST_BOOL) {
-        fprintf(stderr, "exp not astboolean. got%d\n", exp->node.type);
-        return false;
-    }
-
-    astboolean_t *boo = (astboolean_t *)exp;
-    if (boo->value != value) {
-        fprintf(stderr, "boo.value not %s. got='%s'\n",
-                value ? "true":"false",
-                boo->value ? "true":"false");
-        return false;
-    }
-
-    charslice_t toklit = boo->as.node.tokenLiteral(&boo->as.node);
-    charslice_t val = charsliceMake("%s", value?"true":"false");
-    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "boo.tokenLiteral not %s. got='%.*s'\n",
-                value ? "true":"false", (int)toklit.length, toklit.src);
-        return false;
-    }
-
-    return true;
-}
-
-static bool testLiteralExpression(astexpression_t *exp, Value expected) {
-    switch (expected.type) {
-        case TYPE_INT:
-            return testIntegerLiteral(exp, expected.intValue);
-            break;
-
-        case TYPE_STR:
-            return testIdentifier(exp, expected.strValue);
-            break;
-            
-        case TYPE_BOOL:
-            return testBooleanLiteral(exp, expected.boolValue);
-            break;
-    }
-    fprintf(stderr, "type of exp not handled. got='%d'", expected.type);
-    return false;
-}
-
-static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t operator, Value right) {
-    if (AST_INFIXEXPR != exp->node.type) {
-        fprintf(stderr, "exp not ast.infixExpression. got%s\n", token_types[exp->node.type]);
-        return false;
-    }
-    
-    astinfixexpression_t *opExp = (astinfixexpression_t *)exp;
-    if (!testLiteralExpression(opExp->left, left)) {
-        return false;
-    }
-    
-    if (opExp->operator.length != operator.length || strncmp(opExp->operator.src, operator.src, operator.length)) {
-        fprintf(stderr, "exp.operator is not %.*s. got='%.*s'\n",
-                (int)operator.length, operator.src,
-                (int)opExp->operator.length, opExp->operator.src
-                );
-        return false;
-    }
-    
-    if (!testLiteralExpression(opExp->right, right)) {
-        return false;
-    }
-    return true;
 }
 
 UTEST(parser, parsingPrefixExpressions) {

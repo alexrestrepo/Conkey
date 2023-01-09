@@ -342,7 +342,6 @@ static charslice_t functionLiteralString(astnode_t *node) {
         }
     }
 
-    // TODO: fix when params and body are null. cuz reasons.
     charslice_t tmp = self->as.node.tokenLiteral(&self->as.node);
     if (params && arrlen(params) > 1) {
         sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(params) - 1 /* null */, params);
@@ -387,9 +386,8 @@ static charslice_t callExpressionString(astnode_t *node) {
         }
     }
 
-    // TODO: fix when params and body are null. cuz reasons.
     charslice_t tmp = self->function->node.tokenLiteral(&self->function->node);
-    if (args && arrlen(args) > 2) {
+    if (args && arrlen(args) > 1) {
         sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(args) - 1 /* null */, args);
     } else {
         sarrprintf(out, "%.*s()", (int)tmp.length, tmp.src);
