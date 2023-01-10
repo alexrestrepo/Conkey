@@ -13,6 +13,10 @@
     sarrprintf:
      char *sarrprintf(char* a, const char *fmt, ...);
       "Prints" formatted string to the array. Don't self reference the array as a parameter.
+
+    sarrvprintf:
+     char *sarrvprintf(char* a, const char *fmt, va_list args);
+      "Prints" formatted string to the array. Don't self reference the array as a parameter.
  */
 
 #include "stb_ds.h"
@@ -39,10 +43,8 @@ extern char *stbds_sarrvprintf_fn(char *buf, const char *fmt, va_list args) __pr
 #include <stdio.h>
 
 // from https://github.com/pervognsen/bitwise/blob/5a261e99efea080e1111a312d897f8d794f061a7/ion/common.c#L133
+// NOTE: not null terminated.
 char *stbds_sarrvprintf_fn(char *buf, const char *fmt, va_list list) {
-    if (buf && arrlen(buf) > 0 && arrlast(buf) == '\0') {
-        arrpop(buf); // kill trailing null...?
-    }
     va_list args;
     va_copy(args, list);
     size_t cap = arrcap(buf) - arrlen(buf);
@@ -59,7 +61,7 @@ char *stbds_sarrvprintf_fn(char *buf, const char *fmt, va_list list) {
 
         assert(n <= cap);
     }
-    stbds_header(buf)->length += n;
+    stbds_header(buf)->length += n - 1; // remove trailing \0
     return buf;
 }
 

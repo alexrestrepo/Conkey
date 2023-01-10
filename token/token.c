@@ -46,7 +46,7 @@ charslice_t charsliceMake(const char *fmt, ...) {
     sarrvprintf(slice.src, fmt, args);
     va_end(args);
 
-    slice.length = arrlen(slice.src) - 1;
+    slice.length = arrlen(slice.src);
     slice.internal = true;
     // p *((stbds_array_header *)(slice.src) - 1)
     return slice;

@@ -9,7 +9,7 @@
 #define STB_DS_IMPLEMENTATION
 #include "../stb_ds_x.h"
 
-#define SLCE(a) ((a) ? (charslice_t){(a), arrlen((a)) - 1 } : (charslice_t){"", 0})
+#define SLCE(a) ((a) ? (charslice_t){(a), arrlen((a))} : (charslice_t){"", 0})
 
 static inline astnode_t astnodeMake(astnode_type type, literal_fn literal, string_fn string) {
 	return (astnode_t) {
@@ -344,7 +344,7 @@ static charslice_t functionLiteralString(astnode_t *node) {
 
     charslice_t tmp = self->as.node.tokenLiteral(&self->as.node);
     if (params && arrlen(params) > 1) {
-        sarrprintf(out, "%.*s(%.*s) ", (int)tmp.length, tmp.src, (int)arrlen(params) - 1 /* null */, params);
+        sarrprintf(out, "%.*s(%.*s) ", (int)tmp.length, tmp.src, (int)arrlen(params), params);
     } else {
         sarrprintf(out, "%.*s() ", (int)tmp.length, tmp.src);
     }
@@ -388,7 +388,7 @@ static charslice_t callExpressionString(astnode_t *node) {
 
     charslice_t tmp = self->function->node.tokenLiteral(&self->function->node);
     if (args && arrlen(args) > 1) {
-        sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(args) - 1 /* null */, args);
+        sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(args), args);
     } else {
         sarrprintf(out, "%.*s()", (int)tmp.length, tmp.src);
     }
