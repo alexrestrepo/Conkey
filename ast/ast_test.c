@@ -17,7 +17,7 @@ UTEST(ast, testString) {
 	
 	arrput(program->statements, (aststatement_t *)let);
 	
-	charslice_t str = program->node.string(&(program->node));
+	charslice_t str = program->as.node.string(AS_NODE(program));
 	ASSERT_STRNEQ("let myVar = anotherVar;", str.src, str.length);
 }
 

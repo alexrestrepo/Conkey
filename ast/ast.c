@@ -23,7 +23,7 @@ static charslice_t programTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_PROGRAM);
 	astprogram_t *self = (astprogram_t *)node;
 	if (self->statements && arrlen(self->statements) > 0) {
-		return self->statements[0]->node.tokenLiteral(node);
+		return self->statements[0]->as.node.tokenLiteral(node);
 	}
 	
 	return (charslice_t){"", 0};
@@ -39,7 +39,7 @@ static charslice_t programString(astnode_t *node) {
 	if (self->statements) {
 		for (int i = 0; i < arrlen(self->statements); i++) {
 			aststatement_t *stmt = self->statements[i];
-			charslice_t str = stmt->node.string(&(stmt->node));
+			charslice_t str = stmt->as.node.string(AS_NODE(stmt));
             sarrprintf(out, "%.*s", (int)str.length, str.src);
 		}
 	}
@@ -49,7 +49,7 @@ static charslice_t programString(astnode_t *node) {
 
 astprogram_t *programCreate() {
 	astprogram_t *program = calloc(1, sizeof(*program));
-	program->node = astnodeMake(AST_PROGRAM, programTokenLiteral, programString);
+	program->as.node = astnodeMake(AST_PROGRAM, programTokenLiteral, programString);
 	return program;
 }
 
@@ -98,7 +98,7 @@ static charslice_t letStatementString(astnode_t *node) {
     sarrprintf(out, "%.*s %.*s = ", (int)lit.length, lit.src, (int)str.length, str. src);
 
 	if (self->value) {
-		str = self->value->node.string(&(self->value->node));
+		str = self->value->as.node.string(AS_NODE(self->value));
         sarrprintf(out, "%.*s", (int)str.length, str.src);
 	}
     sarrprintf(out, ";");
@@ -129,7 +129,7 @@ static charslice_t returnStatementString(astnode_t *node) {
     sarrprintf(out, "%.*s ", (int)str.length, str.src);
 	
 	if (self->returnValue) {
-		str = self->returnValue->node.string(&(self->returnValue->node));
+		str = self->returnValue->as.node.string(AS_NODE(self->returnValue));
         sarrprintf(out, "%.*s", (int)str.length, str.src);
 	}
     sarrprintf(out, ";");
@@ -155,7 +155,7 @@ static charslice_t expressionStatementString(astnode_t *node) {
 	astexpressionstatement_t *self = (astexpressionstatement_t *)node;
 	
 	if (self->expression) {
-		return self->expression->node.string(&(self->expression->node));
+		return self->expression->as.node.string(AS_NODE(self->expression));
 	}
 	
 	return (charslice_t){"", 0};
@@ -198,7 +198,7 @@ static charslice_t prefixExpressionString(astnode_t *node) {
     astprefixexpression_t *self = (astprefixexpression_t *)node;
 
     // TODO: figure out mem usage, all the leaks! :)
-    charslice_t rightstr = self->right->node.string(&(self->right->node));
+    charslice_t rightstr = self->right->as.node.string(AS_NODE(self->right));
     charslice_t out = charsliceMake("(%.*s%.*s)", (int)self->operator.length, self->operator.src,
                                     (int)rightstr.length, rightstr.src);
     return out;
@@ -223,8 +223,8 @@ static charslice_t infixExpressionString(astnode_t *node) {
     astinfixexpression_t *self = (astinfixexpression_t *)node;
 
     // TODO: figure out mem usage, all the leaks! :)
-    charslice_t lefttstr = self->left->node.string(&(self->left->node));
-    charslice_t rightstr = self->right->node.string(&(self->right->node));
+    charslice_t lefttstr = self->left->as.node.string(AS_NODE(self->left));
+    charslice_t rightstr = self->right->as.node.string(AS_NODE(self->right));
     charslice_t out = charsliceMake("(%.*s %.*s %.*s)",
                                     (int)lefttstr.length, lefttstr.src,
                                     (int)self->operator.length, self->operator.src,
@@ -271,14 +271,14 @@ static charslice_t ifExpressionString(astnode_t *node) {
 
     sarrprintf(out, "if ");
 
-    tmp = self->condition->node.string(&self->condition->node);
+    tmp = self->condition->as.node.string(AS_NODE(self->condition));
     sarrprintf(out, "%.*s ", (int)tmp.length, tmp.src);
 
-    tmp = self->consequence->as.node.string(&self->consequence->as.node);
+    tmp = self->consequence->as.node.string(AS_NODE(self->consequence));
     sarrprintf(out, "-> %.*s ", (int)tmp.length, tmp.src);
 
     if (self->alternative) {
-        tmp = self->alternative->as.node.string(&self->alternative->as.node);
+        tmp = self->alternative->as.node.string(AS_NODE(self->alternative));
         sarrprintf(out, "else %.*s ", (int)tmp.length, tmp.src);
     }
 
@@ -305,7 +305,7 @@ static charslice_t blockStatementString(astnode_t *node) {
     char *out = NULL;
     if (self->statements) {
         for (int i = 0; i < arrlen(self->statements); i++) {
-            charslice_t str = self->statements[i]->node.string(&(self->statements[i]->node));
+            charslice_t str = self->statements[i]->as.node.string(AS_NODE(self->statements[i]));
             sarrprintf(out, "%.*s", (int)str.length, str.src);
         }
     }
@@ -378,7 +378,7 @@ static charslice_t callExpressionString(astnode_t *node) {
     char *args = NULL;
     if (self->arguments) {
         for (int i = 0; i < arrlen(self->arguments); i++) {
-            charslice_t str = self->arguments[i]->node.string(&(self->arguments[i]->node));
+            charslice_t str = self->arguments[i]->as.node.string(AS_NODE(self->arguments[i]));
             sarrprintf(args, "%.*s", (int)str.length, str.src);
             if (i < arrlen(self->arguments) - 1) {
                 sarrprintf(args, ", ");
@@ -386,7 +386,7 @@ static charslice_t callExpressionString(astnode_t *node) {
         }
     }
 
-    charslice_t tmp = self->function->node.tokenLiteral(&self->function->node);
+    charslice_t tmp = self->function->as.node.tokenLiteral(AS_NODE(self->function));
     if (args && arrlen(args) > 1) {
         sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(args), args);
     } else {

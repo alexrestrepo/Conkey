@@ -1,12 +1,14 @@
 #import "repl.h"
 
 #include <stdio.h>
-#include "../token/token.h"
-#include "../lexer/lexer.h"
-#include "../parser/parser.h"
+
 #include "../ast/ast.h"
-#include "../stb_ds_x.h"
+#include "../evaluator/evaluator.h"
+#include "../lexer/lexer.h"
 #include "../macros.h"
+#include "../parser/parser.h"
+#include "../stb_ds_x.h"
+#include "../token/token.h"
 
 static const char *monkey_face =
 "             __,__\n"
@@ -48,8 +50,11 @@ void replStart() {
             continue;
         }
 
-        charslice_t str = program->node.string(&program->node);
-        printf("%.*s\n", (int)str.length, str.src);
+        mky_object_t *evaluated = mkyeval(AS_NODE(program));
+        if (evaluated) {
+            charslice_t inspect = evaluated->inspect(evaluated);
+            printf("%.*s\n", (int)inspect.length, inspect.src);
+        }
 
         parserRelease(&parser);
 		lexerRelease(&lexer);

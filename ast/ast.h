@@ -28,6 +28,8 @@ typedef enum {
 
 } astnode_type;
 
+// TODO: a tree structure dump?
+
 typedef struct astnode astnode_t;
 typedef charslice_t literal_fn(astnode_t *node);
 typedef charslice_t string_fn(astnode_t *node);
@@ -38,16 +40,22 @@ struct astnode {
 };
 
 typedef struct {
-	astnode_t node;
+    union {
+        astnode_t node;
+    } as;
 } aststatement_t;
 
 typedef struct {
-	astnode_t node;
+    union {
+        astnode_t node;
+    } as;
 } astexpression_t;
 
 // node < astprogram
 typedef struct {
-	astnode_t node;
+    union {
+        astnode_t node;
+    } as;
 	aststatement_t **statements;
 } astprogram_t;
 astprogram_t *programCreate(void);
@@ -196,5 +204,10 @@ typedef struct {
     astexpression_t **arguments;
 } astcallexpression_t;
 astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *function);
+
+#define AST_TYPE(n) ((n)->as.node.type)
+#define AS_NODE(n) (&((n)->as.node))
+#define AS_STMT(n) (&((n)->as.statement))
+#define AS_EXPR(n) (&((n)->as.expression))
 
 #endif

@@ -31,14 +31,14 @@ typedef struct {
 #define STR(src) (Value){.type = TYPE_STR, .strValue = (charslice_t){(src), strlen((src))}}
 
 static bool testLetStatement(aststatement_t *statement, const char *name) {
-    charslice_t literal = statement->node.tokenLiteral(&statement->node);
+    charslice_t literal = statement->as.node.tokenLiteral(AS_NODE(statement));
     if (literal.length != 3 || strncmp("let", literal.src, literal.length)) {
         fprintf(stderr, "s.tokenLiteral not 'let'. got='%.*s'\n", (int)literal.length, literal.src);
         return false;
     }
 
-    if (statement->node.type != AST_LET) {
-        fprintf(stderr, "statement not letStatement. got='%d'\n", statement->node.type);
+    if (statement->as.node.type != AST_LET) {
+        fprintf(stderr, "statement not letStatement. got='%d'\n", statement->as.node.type);
         return false;
     }
 
@@ -73,8 +73,8 @@ static bool checkParserErrors(parser_t *parser) {
 }
 
 static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
-    if (il->node.type != AST_INTEGER) {
-        fprintf(stderr, "il not integerliteral. got%d\n", il->node.type);
+    if (il->as.node.type != AST_INTEGER) {
+        fprintf(stderr, "il not integerliteral. got%d\n", il->as.node.type);
         return false;
     }
 
@@ -95,8 +95,8 @@ static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
 }
 
 static bool testIdentifier(astexpression_t *exp, charslice_t value) {
-    if (AST_IDENTIFIER != exp->node.type) {
-        fprintf(stderr, "exp not ast.identifier. got%s\n", token_types[exp->node.type]);
+    if (AST_IDENTIFIER != exp->as.node.type) {
+        fprintf(stderr, "exp not ast.identifier. got%s\n", token_types[exp->as.node.type]);
         return false;
     }
 
@@ -109,7 +109,7 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
         return false;
     }
 
-    charslice_t literal = exp->node.tokenLiteral(&exp->node);
+    charslice_t literal = exp->as.node.tokenLiteral(AS_NODE(exp));
     if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
         fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%.*s'\n",
                 (int)value.length, value.src,
@@ -122,8 +122,8 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
 }
 
 static bool testBooleanLiteral(astexpression_t *exp, bool value) {
-    if (exp->node.type != AST_BOOL) {
-        fprintf(stderr, "exp not astboolean. got%d\n", exp->node.type);
+    if (exp->as.node.type != AST_BOOL) {
+        fprintf(stderr, "exp not astboolean. got%d\n", exp->as.node.type);
         return false;
     }
 
@@ -165,8 +165,8 @@ static bool testLiteralExpression(astexpression_t *exp, Value expected) {
 }
 
 static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t operator, Value right) {
-    if (AST_INFIXEXPR != exp->node.type) {
-        fprintf(stderr, "exp not ast.infixExpression. got%s\n", token_types[exp->node.type]);
+    if (AST_INFIXEXPR != exp->as.node.type) {
+        fprintf(stderr, "exp not ast.infixExpression. got%s\n", token_types[exp->as.node.type]);
         return false;
     }
 
@@ -250,7 +250,7 @@ UTEST(parser, returnStatements) {
         ASSERT_EQ(1, arrlen(program->statements));
 
         aststatement_t *stmt = program->statements[0];
-        ASSERT_EQ(AST_RETURN, stmt->node.type);
+        ASSERT_EQ(AST_RETURN, AST_TYPE(stmt));
 
         astreturnstatement_t *ret = (astreturnstatement_t *)stmt;
         charslice_t lit = ret->as.node.tokenLiteral(&ret->as.node);
@@ -272,11 +272,11 @@ UTEST(parser, identifierExpression) {
 
     ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
     astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
 
     ASSERT_NE(stmt->expression, NULL);
-    ASSERT_EQ(AST_IDENTIFIER, stmt->expression->node.type);
+    ASSERT_EQ(AST_IDENTIFIER, AST_TYPE(stmt->expression));
     astidentifier_t *ident = (astidentifier_t *)stmt->expression;
 
     ASSERT_STRNEQ("foobar", ident->value.src, ident->value.length);
@@ -297,11 +297,11 @@ UTEST(parser, integerLiteralExpression) {
 
     ASSERT_TRUE(program->statements && arrlen(program->statements) == 1);
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
     astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
 
     ASSERT_NE(stmt->expression, NULL);
-    ASSERT_EQ(AST_INTEGER, stmt->expression->node.type);
+    ASSERT_EQ(AST_INTEGER, AST_TYPE(stmt->expression));
     astinteger_t *literal = (astinteger_t *)stmt->expression;
 
     ASSERT_EQ(5, literal->value);
@@ -336,10 +336,10 @@ UTEST(parser, parsingPrefixExpressions) {
         ASSERT_EQ(1, arrlen(program->statements));
 
         aststatement_t *stmt = program->statements[0];
-        ASSERT_EQ(AST_EXPRESSIONSTMT, stmt->node.type);
+        ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(stmt));
 
         astexpression_t *exp = ((astexpressionstatement_t *)stmt)->expression;
-        ASSERT_EQ(AST_PREFIXEXPR, exp->node.type);
+        ASSERT_EQ(AST_PREFIXEXPR, AST_TYPE(exp));
 
         astprefixexpression_t *prefix = (astprefixexpression_t *)exp;
         ASSERT_STRNEQ(test.operator, prefix->operator.src, prefix->operator.length);
@@ -392,10 +392,10 @@ UTEST(parser, parsingInfixExpressions) {
         ASSERT_EQ(1, arrlen(program->statements));
 
         aststatement_t *stmt = program->statements[0];
-        ASSERT_EQ(AST_EXPRESSIONSTMT, stmt->node.type);
+        ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(stmt));
 
         astexpression_t *exp = ((astexpressionstatement_t *)stmt)->expression;
-        ASSERT_EQ(AST_INFIXEXPR, exp->node.type);
+        ASSERT_EQ(AST_INFIXEXPR, AST_TYPE(exp));
 
         ASSERT_TRUE(testInfixExpression(exp, test.leftValue, (charslice_t){test.operator, strlen(test.operator)}, test.rightValue));
     }
@@ -519,7 +519,7 @@ UTEST(parser, operatorPrecedenceParsing) {
 
         ASSERT_TRUE(program->statements);
 
-        charslice_t actual = program->node.string(&program->node);
+        charslice_t actual = program->as.node.string(AS_NODE(program));
         ASSERT_STRNEQ(test.expected, actual.src, actual.length);
     }
 }
@@ -550,10 +550,10 @@ UTEST(parser, booleanExpressions) {
         ASSERT_EQ(1, arrlen(program->statements));
 
         aststatement_t *stmt = program->statements[0];
-        ASSERT_EQ(AST_EXPRESSIONSTMT, stmt->node.type);
+        ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(stmt));
 
         astexpressionstatement_t *exp = (astexpressionstatement_t *)stmt;
-        ASSERT_EQ(AST_BOOL, exp->expression->node.type);
+        ASSERT_EQ(AST_BOOL, AST_TYPE(exp->expression));
 
         astboolean_t *boo = (astboolean_t *)exp->expression;
         ASSERT_EQ(boo->value, test.expected);
@@ -573,10 +573,10 @@ UTEST(parser, ifExpressions) {
     ASSERT_TRUE(program->statements);
     ASSERT_EQ(1, arrlen(program->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
 
     astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
-    ASSERT_EQ(AST_IFEXPR, stmt->expression->node.type);
+    ASSERT_EQ(AST_IFEXPR, AST_TYPE(stmt->expression));
 
     astifexpression_t *exp = (astifexpression_t *)stmt->expression;
     ASSERT_TRUE(testInfixExpression(exp->condition, STR("x"), (charslice_t){"<", 1}, STR("y")));
@@ -584,7 +584,7 @@ UTEST(parser, ifExpressions) {
     ASSERT_TRUE(exp->consequence->statements);
     ASSERT_EQ(1, arrlen(exp->consequence->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, exp->consequence->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(exp->consequence->statements[0]));
     astexpressionstatement_t *consequence = (astexpressionstatement_t *)exp->consequence->statements[0];
 
     ASSERT_TRUE(testIdentifier(consequence->expression, (charslice_t){"x", 1}));
@@ -605,10 +605,10 @@ UTEST(parser, ifElseExpressions) {
     ASSERT_TRUE(program->statements);
     ASSERT_EQ(1, arrlen(program->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
 
     astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
-    ASSERT_EQ(AST_IFEXPR, stmt->expression->node.type);
+    ASSERT_EQ(AST_IFEXPR, AST_TYPE(stmt->expression));
 
     astifexpression_t *exp = (astifexpression_t *)stmt->expression;
     ASSERT_TRUE(testInfixExpression(exp->condition, STR("x"), (charslice_t){"<", 1}, STR("y")));
@@ -616,7 +616,7 @@ UTEST(parser, ifElseExpressions) {
     ASSERT_TRUE(exp->consequence->statements);
     ASSERT_EQ(1, arrlen(exp->consequence->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, exp->consequence->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(exp->consequence->statements[0]));
     astexpressionstatement_t *consequence = (astexpressionstatement_t *)exp->consequence->statements[0];
 
     ASSERT_TRUE(testIdentifier(consequence->expression, (charslice_t){"x", 1}));
@@ -624,7 +624,7 @@ UTEST(parser, ifElseExpressions) {
     ASSERT_TRUE(exp->alternative->statements);
     ASSERT_EQ(1, arrlen(exp->alternative->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, exp->alternative->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(exp->alternative->statements[0]));
     astexpressionstatement_t *alternative = (astexpressionstatement_t *)exp->alternative->statements[0];
 
     ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));
@@ -643,10 +643,10 @@ UTEST(parser, functionLiteralParsing) {
     ASSERT_TRUE(program->statements);
     ASSERT_EQ(1, arrlen(program->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
     astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
 
-    ASSERT_EQ(AST_FNLIT, stmt->expression->node.type);
+    ASSERT_EQ(AST_FNLIT, AST_TYPE(stmt->expression));
     astfunctionliteral_t *function = (astfunctionliteral_t *)stmt->expression;
 
     ASSERT_TRUE(function->parameters);
@@ -658,7 +658,7 @@ UTEST(parser, functionLiteralParsing) {
     ASSERT_TRUE(function->body->statements);
     ASSERT_EQ(1, arrlen(function->body->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, function->body->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(function->body->statements[0]));
     astexpressionstatement_t *bodystmt = (astexpressionstatement_t *)function->body->statements[0];
 
     ASSERT_TRUE(testInfixExpression(bodystmt->expression, STR("x"), (charslice_t){"+",1}, STR("y")));
@@ -687,10 +687,10 @@ UTEST(parser, functionParameterParsing) {
         bool errors = checkParserErrors(parser);
         ASSERT_FALSE(errors);
 
-        ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+        ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
         astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
 
-        ASSERT_EQ(AST_FNLIT, stmt->expression->node.type);
+        ASSERT_EQ(AST_FNLIT, AST_TYPE(stmt->expression));
         astfunctionliteral_t *function = (astfunctionliteral_t *)stmt->expression;
 
         ASSERT_EQ(test.parcnt, arrlen(function->parameters));
@@ -717,10 +717,10 @@ UTEST(parser, callExpressionParsing) {
     ASSERT_TRUE(program->statements);
     ASSERT_EQ(1, arrlen(program->statements));
 
-    ASSERT_EQ(AST_EXPRESSIONSTMT, program->statements[0]->node.type);
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
     astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
 
-    ASSERT_EQ(AST_CALL, stmt->expression->node.type);
+    ASSERT_EQ(AST_CALL, AST_TYPE(stmt->expression));
     astcallexpression_t *call = (astcallexpression_t *)stmt->expression;
 
     ASSERT_TRUE(testIdentifier(call->function, (charslice_t){"add", 3}));

@@ -28,6 +28,22 @@
 		FA380C9E296778580006FA9A /* token.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C5A296776050006FA9A /* token.c */; };
 		FA380C9F296778580006FA9A /* ast.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C5D296776050006FA9A /* ast.c */; };
 		FA380CA0296778580006FA9A /* lexer.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C65296776050006FA9A /* lexer.c */; };
+		FAC7B550296F597100578C21 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B54F296F597100578C21 /* object.c */; };
+		FAC7B551296F597100578C21 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B54F296F597100578C21 /* object.c */; };
+		FAC7B552296F597100578C21 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B54F296F597100578C21 /* object.c */; };
+		FAC7B553296F597100578C21 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B54F296F597100578C21 /* object.c */; };
+		FAC7B55C296F701100578C21 /* evaluator_test.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B55B296F701100578C21 /* evaluator_test.c */; };
+		FAC7B562296F752700578C21 /* evaluator.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B561296F752700578C21 /* evaluator.c */; };
+		FAC7B563296F752700578C21 /* evaluator.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B561296F752700578C21 /* evaluator.c */; };
+		FAC7B564296F752700578C21 /* evaluator.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B561296F752700578C21 /* evaluator.c */; };
+		FAC7B565296F752700578C21 /* evaluator.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B561296F752700578C21 /* evaluator.c */; };
+		FAC7B566296F752700578C21 /* evaluator.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B561296F752700578C21 /* evaluator.c */; };
+		FAC7B567296F76A300578C21 /* parser.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C53296776050006FA9A /* parser.c */; };
+		FAC7B568296F76A300578C21 /* repl.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C57296776050006FA9A /* repl.c */; };
+		FAC7B569296F76A300578C21 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B54F296F597100578C21 /* object.c */; };
+		FAC7B56A296F76A300578C21 /* token.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C5A296776050006FA9A /* token.c */; };
+		FAC7B56B296F76B200578C21 /* ast.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C5D296776050006FA9A /* ast.c */; };
+		FAC7B56C296F76B200578C21 /* lexer.c in Sources */ = {isa = PBXBuildFile; fileRef = FA380C65296776050006FA9A /* lexer.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -67,6 +83,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		FAC7B557296F701100578C21 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +118,12 @@
 		FA380C85296777D40006FA9A /* lexer_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lexer_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA380C952967782C0006FA9A /* parser_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = parser_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA894341296A8CD400D52466 /* stb_ds_x.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_ds_x.h; sourceTree = "<group>"; };
+		FAC7B54E296F597100578C21 /* object.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = object.h; sourceTree = "<group>"; };
+		FAC7B54F296F597100578C21 /* object.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = object.c; sourceTree = "<group>"; };
+		FAC7B559296F701100578C21 /* evaluator_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = evaluator_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		FAC7B55B296F701100578C21 /* evaluator_test.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = evaluator_test.c; sourceTree = "<group>"; };
+		FAC7B560296F752700578C21 /* evaluator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = evaluator.h; sourceTree = "<group>"; };
+		FAC7B561296F752700578C21 /* evaluator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = evaluator.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +155,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FAC7B556296F701100578C21 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -136,8 +174,10 @@
 				FA380C50296776050006FA9A /* stb_ds.h */,
 				FA894341296A8CD400D52466 /* stb_ds_x.h */,
 				FA380C5C296776050006FA9A /* ast */,
+				FAC7B55A296F701100578C21 /* evaluator */,
 				FA380C64296776050006FA9A /* lexer */,
 				FA380C60296776050006FA9A /* main */,
+				FAC7B54D296F594600578C21 /* object */,
 				FA380C51296776050006FA9A /* parser */,
 				FA380C56296776050006FA9A /* repl */,
 				FA380C59296776050006FA9A /* token */,
@@ -152,6 +192,7 @@
 				FA380C752967773F0006FA9A /* ast_test */,
 				FA380C85296777D40006FA9A /* lexer_test */,
 				FA380C952967782C0006FA9A /* parser_test */,
+				FAC7B559296F701100578C21 /* evaluator_test */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -210,6 +251,25 @@
 				FA380C67296776050006FA9A /* lexer_test.c */,
 			);
 			path = lexer;
+			sourceTree = "<group>";
+		};
+		FAC7B54D296F594600578C21 /* object */ = {
+			isa = PBXGroup;
+			children = (
+				FAC7B54E296F597100578C21 /* object.h */,
+				FAC7B54F296F597100578C21 /* object.c */,
+			);
+			path = object;
+			sourceTree = "<group>";
+		};
+		FAC7B55A296F701100578C21 /* evaluator */ = {
+			isa = PBXGroup;
+			children = (
+				FAC7B561296F752700578C21 /* evaluator.c */,
+				FAC7B560296F752700578C21 /* evaluator.h */,
+				FAC7B55B296F701100578C21 /* evaluator_test.c */,
+			);
+			path = evaluator;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -283,6 +343,23 @@
 			productReference = FA380C952967782C0006FA9A /* parser_test */;
 			productType = "com.apple.product-type.tool";
 		};
+		FAC7B558296F701100578C21 /* evaluator_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FAC7B55D296F701100578C21 /* Build configuration list for PBXNativeTarget "evaluator_test" */;
+			buildPhases = (
+				FAC7B555296F701100578C21 /* Sources */,
+				FAC7B556296F701100578C21 /* Frameworks */,
+				FAC7B557296F701100578C21 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = evaluator_test;
+			productName = evaluator_test;
+			productReference = FAC7B559296F701100578C21 /* evaluator_test */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -304,6 +381,9 @@
 					FA380C942967782C0006FA9A = {
 						CreatedOnToolsVersion = 14.2;
 					};
+					FAC7B558296F701100578C21 = {
+						CreatedOnToolsVersion = 14.2;
+					};
 				};
 			};
 			buildConfigurationList = FA03615B2967756E00280D2D /* Build configuration list for PBXProject "conkey" */;
@@ -323,6 +403,7 @@
 				FA380C742967773F0006FA9A /* ast_test */,
 				FA380C84296777D40006FA9A /* lexer_test */,
 				FA380C942967782C0006FA9A /* parser_test */,
+				FAC7B558296F701100578C21 /* evaluator_test */,
 			);
 		};
 /* End PBXProject section */
@@ -333,11 +414,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA380C6F296776050006FA9A /* lexer.c in Sources */,
+				FAC7B550296F597100578C21 /* object.c in Sources */,
 				FA380C6A296776050006FA9A /* repl.c in Sources */,
 				FA380C6C296776050006FA9A /* ast.c in Sources */,
 				FA380C6B296776050006FA9A /* token.c in Sources */,
 				FA380C68296776050006FA9A /* parser.c in Sources */,
 				FA380C6E296776050006FA9A /* main.c in Sources */,
+				FAC7B562296F752700578C21 /* evaluator.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,6 +428,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAC7B551296F597100578C21 /* object.c in Sources */,
+				FAC7B563296F752700578C21 /* evaluator.c in Sources */,
 				FA380C7E296777790006FA9A /* lexer.c in Sources */,
 				FA380C7D296777750006FA9A /* ast.c in Sources */,
 				FA380C7F296777830006FA9A /* parser.c in Sources */,
@@ -357,6 +442,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAC7B552296F597100578C21 /* object.c in Sources */,
+				FAC7B564296F752700578C21 /* evaluator.c in Sources */,
 				FA380C8E296777F10006FA9A /* token.c in Sources */,
 				FA380C8D296777F10006FA9A /* lexer.c in Sources */,
 				FA380C8F296777F10006FA9A /* ast.c in Sources */,
@@ -369,11 +456,28 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAC7B553296F597100578C21 /* object.c in Sources */,
+				FAC7B565296F752700578C21 /* evaluator.c in Sources */,
 				FA380C9E296778580006FA9A /* token.c in Sources */,
 				FA380CA0296778580006FA9A /* lexer.c in Sources */,
 				FA380C9D296778580006FA9A /* parser.c in Sources */,
 				FA380C9F296778580006FA9A /* ast.c in Sources */,
 				FA380C9C296778500006FA9A /* parser_test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAC7B555296F701100578C21 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAC7B56C296F76B200578C21 /* lexer.c in Sources */,
+				FAC7B55C296F701100578C21 /* evaluator_test.c in Sources */,
+				FAC7B56B296F76B200578C21 /* ast.c in Sources */,
+				FAC7B567296F76A300578C21 /* parser.c in Sources */,
+				FAC7B569296F76A300578C21 /* object.c in Sources */,
+				FAC7B56A296F76A300578C21 /* token.c in Sources */,
+				FAC7B568296F76A300578C21 /* repl.c in Sources */,
+				FAC7B566296F752700578C21 /* evaluator.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -559,6 +663,24 @@
 			};
 			name = Release;
 		};
+		FAC7B55E296F701100578C21 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 12.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		FAC7B55F296F701100578C21 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 12.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -603,6 +725,15 @@
 			buildConfigurations = (
 				FA380C9A2967782C0006FA9A /* Debug */,
 				FA380C9B2967782C0006FA9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FAC7B55D296F701100578C21 /* Build configuration list for PBXNativeTarget "evaluator_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAC7B55E296F701100578C21 /* Debug */,
+				FAC7B55F296F701100578C21 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
