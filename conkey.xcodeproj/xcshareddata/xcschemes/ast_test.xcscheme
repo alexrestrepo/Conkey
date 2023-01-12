@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FA380C84296777D40006FA9A"
-               BuildableName = "lexer_test"
-               BlueprintName = "lexer_test"
+               BlueprintIdentifier = "FA380C742967773F0006FA9A"
+               BuildableName = "ast_test"
+               BlueprintName = "ast_test"
                ReferencedContainer = "container:conkey.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,9 +45,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FA380C84296777D40006FA9A"
-            BuildableName = "lexer_test"
-            BlueprintName = "lexer_test"
+            BlueprintIdentifier = "FA380C742967773F0006FA9A"
+            BuildableName = "ast_test"
+            BlueprintName = "ast_test"
             ReferencedContainer = "container:conkey.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -68,9 +68,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FA380C84296777D40006FA9A"
-            BuildableName = "lexer_test"
-            BlueprintName = "lexer_test"
+            BlueprintIdentifier = "FA380C742967773F0006FA9A"
+            BuildableName = "ast_test"
+            BlueprintName = "ast_test"
             ReferencedContainer = "container:conkey.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -40,6 +40,7 @@ void tokenPrint(token_t token) {
 
 
 // move this into a core, or common thing. add a basic root obj with refcount, add slices and ast objs...
+// also intern all strings
 charslice_t charsliceMake(const char *fmt, ...) {
     charslice_t slice = {0};
     va_list args;

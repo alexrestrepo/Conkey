@@ -14,10 +14,21 @@
 
 
 static mky_object_t *testEval(const char *input) {
+    mky_object_t *obj = objNull();
+
     lexer_t *lexer = lexerCreate(input);
     parser_t *parser = parserCreate(lexer);
     astprogram_t *program = parserParseProgram(parser);
-    return mkyeval(AS_NODE(program));
+    environment_t *env = environmentCreate();
+
+    obj = mkyeval(AS_NODE(program), env);
+
+    environmentRelease(&env);
+    programRelease(&program);
+    parserRelease(&parser);
+    lexerRelease(&lexer);
+
+    return obj;
 }
 
 static bool testIntegerObject(mky_object_t *obj, int64_t expected) {
@@ -253,10 +264,10 @@ UTEST(eval, errorHandling) {
             ),
             "unknown operator: BOOLEAN + BOOLEAN",
         },
-//        {
-//            "foobar",
-//            "identifier not found: foobar",
-//        },
+        {
+            "foobar",
+            "identifier not found: foobar",
+        },
     };
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
@@ -269,6 +280,24 @@ UTEST(eval, errorHandling) {
         } else {
             EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
         }
+    }
+}
+
+UTEST(eval, letStatements) {
+    struct test {
+        const char *input;
+        int64_t expected;
+    } tests[] = {
+        {"let a = 5; a;", 5},
+        {"let a = 5 * 5; a;", 25},
+        {"let a = 5; let b = a; b;", 5},
+        {"let a = 5; let b = a; let c = a + b + 5; c;", 15}
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        mky_object_t *evaluated = testEval(test.input);
+        ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
 }
 

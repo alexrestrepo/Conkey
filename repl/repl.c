@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "../ast/ast.h"
+#include "../environment/environment.h"
 #include "../evaluator/evaluator.h"
 #include "../lexer/lexer.h"
 #include "../macros.h"
@@ -34,6 +35,8 @@ void printParserErrors(charslice_t *errors) {
 
 void replStart() {
 	char line[1024];
+    environment_t *env = environmentCreate();
+
 	for (;;) {
 		printf("\033[32m>> \033[0m");
 		if (!fgets(line, sizeof(line), stdin)) {
@@ -50,7 +53,7 @@ void replStart() {
             continue;
         }
 
-        mky_object_t *evaluated = mkyeval(AS_NODE(program));
+        mky_object_t *evaluated = mkyeval(AS_NODE(program), env);
         if (evaluated) {
             charslice_t inspect = evaluated->inspect(evaluated);
             printf("%.*s\n", (int)inspect.length, inspect.src);

@@ -6,28 +6,31 @@
 //
 
 #include "evaluator.h"
+
+#include <assert.h>
+
 #include "../stb_ds_x.h"
 
-static mky_object_t *evalProgram(astprogram_t *program) {
-    mky_object_t *result = objNull();
+static mky_object_t *evalProgram(astprogram_t *program, environment_t *env) {
+    mky_object_t *result = NULL;
 
     for (int i = 0; i < arrlen(program->statements); i++) {
-        result = mkyeval((astnode_t *)program->statements[i]);
-        if (result->type == RETURN_VALUE_OBJ) {
+        result = mkyeval((astnode_t *)program->statements[i], env);
+        if (result && result->type == RETURN_VALUE_OBJ) {
             return ((mky_returnvalue_t *)result)->value;
 
-        } else if (result->type == ERROR_OBJ) {
+        } else if (result && result->type == ERROR_OBJ) {
             return result;
         }
     }
     return result;
 }
 
-static mky_object_t *evalBlockStatement(astblockstatement_t *block) {
-    mky_object_t *result = objNull();
+static mky_object_t *evalBlockStatement(astblockstatement_t *block, environment_t *env) {
+    mky_object_t *result = NULL;
 
     for (int i = 0; i < arrlen(block->statements); i++) {
-        result = mkyeval((astnode_t *)block->statements[i]);
+        result = mkyeval((astnode_t *)block->statements[i], env);
         if (result && (result->type == RETURN_VALUE_OBJ || result->type == ERROR_OBJ) ) {
             return result;
         }
@@ -184,39 +187,51 @@ static bool isTruthy(mky_object_t *value) {
     return true;
 }
 
-static mky_object_t *evalIfExpression(astifexpression_t *exp) {
-    mky_object_t *condition = mkyeval(AS_NODE(exp->condition));
+static mky_object_t *evalIfExpression(astifexpression_t *exp, environment_t *env) {
+    mky_object_t *condition = mkyeval(AS_NODE(exp->condition), env);
     if (condition->type == ERROR_OBJ) {
         return condition;
     }
 
     if (isTruthy(condition)) {
-        return mkyeval(AS_NODE(exp->consequence));
+        return mkyeval(AS_NODE(exp->consequence), env);
 
     } else if (exp->alternative) {
-        return mkyeval(AS_NODE(exp->alternative));
+        return mkyeval(AS_NODE(exp->alternative), env);
     }
 
     return objNull();
 }
 
-mky_object_t *mkyeval(astnode_t *node) {
+static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) {
+    assert(AST_TYPE(ident) == AST_IDENTIFIER);
+    mky_object_t *obj = objectEnvGet(env, ident->value);
+    if (obj) {
+        return obj;
+    }
+
+    return (mky_object_t *)errorCreate(charsliceMake("identifier not found: %.*s", (int)ident->value.length, ident->value.src));
+}
+
+mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
     switch (node->type) {
-
         case AST_PROGRAM:
-            return evalProgram((astprogram_t *)node);
+            return evalProgram((astprogram_t *)node, env);
             break;
-
-        case AST_EXPRESSIONSTMT:
-            return mkyeval(AS_NODE(((astexpressionstatement_t *)node)->expression));
-            break;
-
-        case AST_LET:
+// statements
+        case AST_LET: {
+            astletstatement_t *let = (astletstatement_t *)node;
+            mky_object_t *val = mkyeval(AS_NODE(let->value), env);
+            if (val->type == ERROR_OBJ) {
+                return val;
+            }
+            objectSetEnv(env, let->name->value, val);
+        }
             break;
 
         case AST_RETURN: {
             astexpression_t *rs = ((astreturnstatement_t *)node)->returnValue;
-            mky_object_t *val = mkyeval(AS_NODE(rs));
+            mky_object_t *val = mkyeval(AS_NODE(rs), env);
             if (val->type == ERROR_OBJ) {
                 return val;
             }
@@ -224,11 +239,18 @@ mky_object_t *mkyeval(astnode_t *node) {
         }
             break;
 
-        case AST_BLOCKSTMT:
-            return evalBlockStatement((astblockstatement_t *)node);
+        case AST_EXPRESSIONSTMT:
+            return mkyeval(AS_NODE(((astexpressionstatement_t *)node)->expression), env);
             break;
 
-        case AST_IDENTIFIER:
+        case AST_BLOCKSTMT:
+            return evalBlockStatement((astblockstatement_t *)node, env);
+            break;
+
+// expressions
+        case AST_IDENTIFIER: {
+            return evalIdentifier((astidentifier_t *)node, env);
+        }
             break;
 
         case AST_INTEGER:
@@ -237,7 +259,7 @@ mky_object_t *mkyeval(astnode_t *node) {
 
         case AST_PREFIXEXPR: {
             astprefixexpression_t *exp = (astprefixexpression_t *)node;
-            mky_object_t *right = mkyeval(AS_NODE(exp->right));
+            mky_object_t *right = mkyeval(AS_NODE(exp->right), env);
             if (right->type == ERROR_OBJ) {
                 return right;
             }
@@ -246,11 +268,11 @@ mky_object_t *mkyeval(astnode_t *node) {
             break;
 
         case AST_INFIXEXPR: {
-            mky_object_t *left = mkyeval(AS_NODE(((astinfixexpression_t *)node)->left));
+            mky_object_t *left = mkyeval(AS_NODE(((astinfixexpression_t *)node)->left), env);
             if (left->type == ERROR_OBJ) {
                 return left;
             }
-            mky_object_t *right = mkyeval(AS_NODE(((astinfixexpression_t *)node)->right));
+            mky_object_t *right = mkyeval(AS_NODE(((astinfixexpression_t *)node)->right), env);
             if (right->type == ERROR_OBJ) {
                 return right;
             }
@@ -263,7 +285,7 @@ mky_object_t *mkyeval(astnode_t *node) {
             break;
 
         case AST_IFEXPR:
-            return evalIfExpression((astifexpression_t *)node);
+            return evalIfExpression((astifexpression_t *)node, env);
             break;
 
         case AST_FNLIT:
@@ -272,5 +294,5 @@ mky_object_t *mkyeval(astnode_t *node) {
         case AST_CALL:
             break;
     }
-    return objNull();
+    return NULL;
 }
