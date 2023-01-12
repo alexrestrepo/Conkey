@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-charslice_t intInspect(mky_object_t *obj) {
+static charslice_t intInspect(mky_object_t *obj) {
     assert(obj->type == INTEGER_OBJ);
     mky_integer_t *self = (mky_integer_t *)obj;
     return charsliceMake("%lld", self->value);
@@ -21,7 +21,7 @@ mky_integer_t *objIntegerCreate(int64_t value) {
     return i;
 }
 
-charslice_t boolInspect(mky_object_t *obj) {
+static charslice_t boolInspect(mky_object_t *obj) {
     assert(obj->type == BOOLEAN_OBJ);
     mky_boolean_t *self = (mky_boolean_t *)obj;
     return charsliceMake("%s", self->value ? "true" : "false");
@@ -39,7 +39,7 @@ mky_boolean_t *objBoolean(bool value) {
     }
 }
 
-charslice_t nullInspect(mky_object_t *obj) {
+static charslice_t nullInspect(mky_object_t *obj) {
     assert(obj->type == NULL_OBJ);    
     return charsliceMake("null");
 }
@@ -49,7 +49,7 @@ mky_object_t *objNull() {
     return &nullObj;
 }
 
-charslice_t returnInspect(mky_object_t *obj) {
+static charslice_t returnInspect(mky_object_t *obj) {
     assert(obj->type == RETURN_VALUE_OBJ);
     mky_returnvalue_t *self = (mky_returnvalue_t *)obj;
     return self->value->inspect(self->value);
@@ -60,4 +60,17 @@ mky_returnvalue_t *returnValueCreate(mky_object_t *value) {
     val->super = (mky_object_t){RETURN_VALUE_OBJ, returnInspect};
     val->value = value;
     return val;
+}
+
+static charslice_t errorInspect(mky_object_t *obj) {
+    assert(obj->type == RETURN_VALUE_OBJ);
+    mky_error_t *error = (mky_error_t *)obj;
+    return charsliceMake("ERROR: %.*s", (int)error->message.length, error->message.src);
+}
+
+mky_error_t *errorCreate(charslice_t message) {
+    mky_error_t *error = calloc(1, sizeof(*error));
+    error->super = (mky_object_t){ERROR_OBJ, errorInspect};
+    error->message = message;
+    return error;
 }

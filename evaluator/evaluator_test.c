@@ -208,4 +208,68 @@ UTEST(eval, returnStatements) {
     }
 }
 
+UTEST(eval, errorHandling) {
+    struct test {
+        const char *input;
+        const char *expected;
+    } tests[] = {
+        {
+            "5 + true;",
+            "type mismatch: INTEGER + BOOLEAN",
+        },
+        {
+            "5 + true; 5;",
+            "type mismatch: INTEGER + BOOLEAN",
+        },
+        {
+            "-true",
+            "unknown operator: -BOOLEAN",
+        },
+        {
+            "true + false;",
+            "unknown operator: BOOLEAN + BOOLEAN",
+        },
+        {
+            "true + false + true + false;",
+            "unknown operator: BOOLEAN + BOOLEAN",
+        },
+        {
+            "5; true + false; 5",
+            "unknown operator: BOOLEAN + BOOLEAN",
+        },
+        {
+            "if (10 > 1) { true + false; }",
+            "unknown operator: BOOLEAN + BOOLEAN",
+        },
+        {
+            MONKEY(
+            if (10 > 1) {
+                if (10 > 1) {
+                    return true + false;
+                }
+
+                return 1;
+            }
+            ),
+            "unknown operator: BOOLEAN + BOOLEAN",
+        },
+//        {
+//            "foobar",
+//            "identifier not found: foobar",
+//        },
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        mky_object_t *evaluated = testEval(test.input);
+        if (ERROR_OBJ == evaluated->type) {
+            mky_error_t *error = (mky_error_t *)evaluated;
+            EXPECT_STRNEQ(test.expected, error->message.src, strlen(test.expected));
+
+        } else {
+            EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
+        }
+    }
+}
+
 UTEST_MAIN();

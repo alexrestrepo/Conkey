@@ -15,6 +15,9 @@ static mky_object_t *evalProgram(astprogram_t *program) {
         result = mkyeval((astnode_t *)program->statements[i]);
         if (result->type == RETURN_VALUE_OBJ) {
             return ((mky_returnvalue_t *)result)->value;
+
+        } else if (result->type == ERROR_OBJ) {
+            return result;
         }
     }
     return result;
@@ -25,7 +28,7 @@ static mky_object_t *evalBlockStatement(astblockstatement_t *block) {
 
     for (int i = 0; i < arrlen(block->statements); i++) {
         result = mkyeval((astnode_t *)block->statements[i]);
-        if (result && result->type == RETURN_VALUE_OBJ) {
+        if (result && (result->type == RETURN_VALUE_OBJ || result->type == ERROR_OBJ) ) {
             return result;
         }
     }
@@ -53,7 +56,9 @@ static mky_object_t *evalBangOperatorExpression(mky_object_t *value) {
 
 static mky_object_t *evalMinusPrefixOperatorExpression(mky_object_t *right) {
     if (right->type != INTEGER_OBJ) {
-        return objNull();
+        return (mky_object_t *)errorCreate(charsliceMake("unknown operator: -%s",
+                                                         obj_types[right->type]
+                                                         ));
     }
 
     int64_t value = ((mky_integer_t *)right)->value;
@@ -74,7 +79,10 @@ static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) 
             break;
     }
 
-    return objNull();
+    return (mky_object_t *)errorCreate(charsliceMake("unknown operator: %s%s",
+                                                     token_str[type],
+                                                     obj_types[right->type]
+                                                     ));
 }
 
 static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
@@ -117,7 +125,11 @@ static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *l
         default:
             break;
     }
-    return objNull();
+    return (mky_object_t *)errorCreate(charsliceMake("unknown operator: %s %s %s",
+                                                     obj_types[left->type],
+                                                     token_str[type],
+                                                     obj_types[right->type]
+                                                     ));
 }
 
 static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
@@ -138,7 +150,19 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
             break;
     }
 
-    return objNull();
+    if (left->type != right->type) {
+        return (mky_object_t *)errorCreate(charsliceMake("type mismatch: %s %s %s",
+                                                         obj_types[left->type],
+                                                         token_str[type],
+                                                         obj_types[right->type]
+                                                         ));
+    }
+
+    return (mky_object_t *)errorCreate(charsliceMake("unknown operator: %s %s %s",
+                                                     obj_types[left->type],
+                                                     token_str[type],
+                                                     obj_types[right->type]
+                                                     ));
 }
 
 static bool isTruthy(mky_object_t *value) {
@@ -162,6 +186,9 @@ static bool isTruthy(mky_object_t *value) {
 
 static mky_object_t *evalIfExpression(astifexpression_t *exp) {
     mky_object_t *condition = mkyeval(AS_NODE(exp->condition));
+    if (condition->type == ERROR_OBJ) {
+        return condition;
+    }
 
     if (isTruthy(condition)) {
         return mkyeval(AS_NODE(exp->consequence));
@@ -189,7 +216,11 @@ mky_object_t *mkyeval(astnode_t *node) {
 
         case AST_RETURN: {
             astexpression_t *rs = ((astreturnstatement_t *)node)->returnValue;
-            return (mky_object_t *)returnValueCreate(mkyeval(AS_NODE(rs)));
+            mky_object_t *val = mkyeval(AS_NODE(rs));
+            if (val->type == ERROR_OBJ) {
+                return val;
+            }
+            return (mky_object_t *)returnValueCreate(val);
         }
             break;
 
@@ -207,13 +238,22 @@ mky_object_t *mkyeval(astnode_t *node) {
         case AST_PREFIXEXPR: {
             astprefixexpression_t *exp = (astprefixexpression_t *)node;
             mky_object_t *right = mkyeval(AS_NODE(exp->right));
+            if (right->type == ERROR_OBJ) {
+                return right;
+            }
             return evalPrefixExpression(exp->token.type, right);
         }
             break;
 
         case AST_INFIXEXPR: {
             mky_object_t *left = mkyeval(AS_NODE(((astinfixexpression_t *)node)->left));
+            if (left->type == ERROR_OBJ) {
+                return left;
+            }
             mky_object_t *right = mkyeval(AS_NODE(((astinfixexpression_t *)node)->right));
+            if (right->type == ERROR_OBJ) {
+                return right;
+            }
             return evalInfixExpression(((astinfixexpression_t *)node)->token.type, left, right);
         }
             break;

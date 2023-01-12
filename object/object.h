@@ -14,7 +14,8 @@
 OBJ(INTEGER) \
 OBJ(BOOLEAN) \
 OBJ(NULL) \
-OBJ(RETURN_VALUE)
+OBJ(RETURN_VALUE) \
+OBJ(ERROR)
 
 #define OBJ(type) type##_OBJ,
 typedef enum {
@@ -59,5 +60,11 @@ typedef struct {
     mky_object_t *value;
 } mky_returnvalue_t;
 mky_returnvalue_t *returnValueCreate(mky_object_t *value);
+
+typedef struct {
+    mky_object_t super;
+    charslice_t message;
+} mky_error_t;
+mky_error_t *errorCreate(charslice_t message);
 
 #endif /* _object_h_ */
