@@ -50,11 +50,8 @@ typedef struct {
     mky_object_t super;
     bool value;
 } mky_boolean_t;
-mky_boolean_t *objBooleanCreate(bool value);
+mky_boolean_t *objBoolean(bool value);
 
-typedef struct {
-    mky_object_t super;
-} mky_null_t;
-mky_object_t *objNullCreate(void);
+mky_object_t *objNull(void);
 
 #endif /* _object_h_ */

@@ -27,11 +27,16 @@ charslice_t boolInspect(mky_object_t *obj) {
     return charsliceMake("%s", self->value ? "true" : "false");
 }
 
-mky_boolean_t *objBooleanCreate(bool value) {
-    mky_boolean_t *b = calloc(1, sizeof(*b));
-    b->super = (mky_object_t){INTEGER_OBJ, intInspect};
-    b->value = value;
-    return b;
+mky_boolean_t *objBoolean(bool value) {
+    static mky_boolean_t boolTrue = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, true};
+    static mky_boolean_t boolFalse = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, false};
+
+    if (value) {
+        return &boolTrue;
+        
+    } else {
+        return &boolFalse;
+    }
 }
 
 charslice_t nullInspect(mky_object_t *obj) {
@@ -39,11 +44,7 @@ charslice_t nullInspect(mky_object_t *obj) {
     return charsliceMake("null");
 }
 
-static mky_object_t gNullObj = {
-    .type = NULL_OBJ,
-    .inspect = nullInspect
-};
-
-mky_object_t *objNullCreate() {
-    return &gNullObj;
+mky_object_t *objNull() {
+    static mky_object_t nullObj = (mky_object_t){NULL_OBJ, nullInspect};
+    return &nullObj;
 }

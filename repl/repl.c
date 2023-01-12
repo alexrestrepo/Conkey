@@ -35,7 +35,7 @@ void printParserErrors(charslice_t *errors) {
 void replStart() {
 	char line[1024];
 	for (;;) {
-		printf(">> ");
+		printf("\033[32m>> \033[0m");
 		if (!fgets(line, sizeof(line), stdin)) {
 			printf("\n");
 			break;
