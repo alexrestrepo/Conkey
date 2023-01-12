@@ -127,6 +127,38 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
     return objNull();
 }
 
+static bool isTruthy(mky_object_t *value) {
+    mky_object_t *TRUE_OBJ = (mky_object_t *)objBoolean(true);
+    mky_object_t *FALSE_OBJ = (mky_object_t *)objBoolean(false);
+    mky_object_t *NULL_OBJ = objNull();
+
+
+    if (value == NULL_OBJ) {
+        return false;
+
+    } else if (value == TRUE_OBJ) {
+        return true;
+
+    } else if (value == FALSE_OBJ) {
+        return false;
+    }
+
+    return true;
+}
+
+static mky_object_t *evalIfExpression(astifexpression_t *exp) {
+    mky_object_t *condition = mkyeval(AS_NODE(exp->condition));
+
+    if (isTruthy(condition)) {
+        return mkyeval(AS_NODE(exp->consequence));
+
+    } else if (exp->alternative) {
+        return mkyeval(AS_NODE(exp->alternative));
+    }
+
+    return objNull();
+}
+
 mky_object_t *mkyeval(astnode_t *node) {
     switch (node->type) {
 
@@ -145,6 +177,7 @@ mky_object_t *mkyeval(astnode_t *node) {
             break;
 
         case AST_BLOCKSTMT:
+            return evalStatements(((astblockstatement_t *)node)->statements);
             break;
 
         case AST_IDENTIFIER:
@@ -173,6 +206,7 @@ mky_object_t *mkyeval(astnode_t *node) {
             break;
 
         case AST_IFEXPR:
+            return evalIfExpression((astifexpression_t *)node);
             break;
 
         case AST_FNLIT:

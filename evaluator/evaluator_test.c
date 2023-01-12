@@ -48,6 +48,14 @@ static bool testbooleanObject(mky_object_t *obj, bool expected) {
     return true;
 }
 
+static bool testNullObject(mky_object_t *obj) {
+    if (obj && obj != objNull()) {
+        fprintf(stderr, "object is not null. got=%s\n", obj ? obj_types[obj->type] : "<nil>");
+        return false;
+    }
+    return true;
+}
+
 UTEST(eval, integerExpression) {
     struct test {
         const char *input;
@@ -127,6 +135,50 @@ UTEST(eval, bangOperator) {
         struct test test = tests[i];
         mky_object_t *evaluated = testEval(test.input);
         ASSERT_TRUE(testbooleanObject(evaluated, test.expected));
+    }
+}
+
+UTEST(eval, ifElseExpressions) {
+    typedef enum {
+        NONE,
+        INT,
+    } valtype;
+
+    typedef struct {
+        valtype type;
+        union {
+            int64_t intVal;
+        };
+    } val;
+
+#define INTV(x) ((val){.type = INT, .intVal = x})
+#define NILV ((val){.type = NONE})
+
+    struct test {
+        const char *input;
+        val expected;
+
+    } tests[] = {
+        {"if (true) { 10 }", INTV(10)},
+        {"if (false) { 10 }", NILV},
+        {"if (1) { 10 }", INTV(10)},
+        {"if (1 < 2) { 10 }", INTV(10)},
+        {"if (1 > 2) { 10 }", NILV},
+        {"if (1 > 2) { 10 } else { 20 }", INTV(20)},
+        {"if (1 < 2) { 10 } else { 20 }", INTV(10)},
+    };
+#undef INTV
+#undef NILV
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        mky_object_t *evaluated = testEval(test.input);
+        if (test.expected.type == INT) {
+            ASSERT_TRUE(testIntegerObject(evaluated, test.expected.intVal));
+
+        } else {
+            ASSERT_TRUE(testNullObject(evaluated));
+        }
     }
 }
 
