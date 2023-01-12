@@ -63,7 +63,7 @@ mky_returnvalue_t *returnValueCreate(mky_object_t *value) {
 }
 
 static charslice_t errorInspect(mky_object_t *obj) {
-    assert(obj->type == RETURN_VALUE_OBJ);
+    assert(obj->type == ERROR_OBJ);
     mky_error_t *error = (mky_error_t *)obj;
     return charsliceMake("ERROR: %.*s", (int)error->message.length, error->message.src);
 }

@@ -37,8 +37,9 @@ void replStart() {
 	char line[1024];
     environment_t *env = environmentCreate();
 
-	for (;;) {
-		printf("\033[32m>> \033[0m");
+	while (true) {
+		// printf("\033[32m>> \033[0m");
+        printf(">> ");
 		if (!fgets(line, sizeof(line), stdin)) {
 			printf("\n");
 			break;

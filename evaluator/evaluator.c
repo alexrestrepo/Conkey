@@ -222,10 +222,12 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
         case AST_LET: {
             astletstatement_t *let = (astletstatement_t *)node;
             mky_object_t *val = mkyeval(AS_NODE(let->value), env);
-            if (val->type == ERROR_OBJ) {
+            if (val && val->type == ERROR_OBJ) {
                 return val;
             }
-            objectSetEnv(env, let->name->value, val);
+            if (val) {
+                objectSetEnv(env, let->name->value, val);
+            }
         }
             break;
 
