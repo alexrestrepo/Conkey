@@ -5,11 +5,13 @@
 
 #include "../utest.h"
 
+#include "evaluator.h"
 #include "../lexer/lexer.h"
 #include "../parser/parser.h"
 #include "../object/object.h"
 #include "../ast/ast.h"
-#include "evaluator.h"
+#include "../macros.h"
+
 
 static mky_object_t *testEval(const char *input) {
     lexer_t *lexer = lexerCreate(input);
@@ -179,6 +181,30 @@ UTEST(eval, ifElseExpressions) {
         } else {
             ASSERT_TRUE(testNullObject(evaluated));
         }
+    }
+}
+
+UTEST(eval, returnStatements) {
+    struct test {
+        const char *input;
+        int64_t expected;
+    } tests[] = {
+        {"return 10;", 10},
+        {"return 10; 9;", 10},
+        {"return 2 * 5; 9;", 10},
+        {"9; return 2 * 5; 9;", 10},
+        {MONKEY(if (10 > 1) {
+            if (10 > 1) {
+                return 10;
+            }
+
+            return 1;}), 10},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        mky_object_t *evaluated = testEval(test.input);
+        ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
 }
 

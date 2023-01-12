@@ -13,7 +13,8 @@
 #define OBJ_TYPES \
 OBJ(INTEGER) \
 OBJ(BOOLEAN) \
-OBJ(NULL)
+OBJ(NULL) \
+OBJ(RETURN_VALUE)
 
 #define OBJ(type) type##_OBJ,
 typedef enum {
@@ -51,7 +52,12 @@ typedef struct {
     bool value;
 } mky_boolean_t;
 mky_boolean_t *objBoolean(bool value);
-
 mky_object_t *objNull(void);
+
+typedef struct {
+    mky_object_t super;
+    mky_object_t *value;
+} mky_returnvalue_t;
+mky_returnvalue_t *returnValueCreate(mky_object_t *value);
 
 #endif /* _object_h_ */

@@ -8,12 +8,26 @@
 #include "evaluator.h"
 #include "../stb_ds_x.h"
 
-// NOTE: most likely we don't need ptrs and just use a value struct
-static mky_object_t *evalStatements(aststatement_t **statements) {
+static mky_object_t *evalProgram(astprogram_t *program) {
     mky_object_t *result = objNull();
 
-    for (int i = 0; i < arrlen(statements); i++) {
-        result = mkyeval((astnode_t *)statements[i]);
+    for (int i = 0; i < arrlen(program->statements); i++) {
+        result = mkyeval((astnode_t *)program->statements[i]);
+        if (result->type == RETURN_VALUE_OBJ) {
+            return ((mky_returnvalue_t *)result)->value;
+        }
+    }
+    return result;
+}
+
+static mky_object_t *evalBlockStatement(astblockstatement_t *block) {
+    mky_object_t *result = objNull();
+
+    for (int i = 0; i < arrlen(block->statements); i++) {
+        result = mkyeval((astnode_t *)block->statements[i]);
+        if (result && result->type == RETURN_VALUE_OBJ) {
+            return result;
+        }
     }
     return result;
 }
@@ -163,7 +177,7 @@ mky_object_t *mkyeval(astnode_t *node) {
     switch (node->type) {
 
         case AST_PROGRAM:
-            return evalStatements(((astprogram_t *)node)->statements);
+            return evalProgram((astprogram_t *)node);
             break;
 
         case AST_EXPRESSIONSTMT:
@@ -173,11 +187,14 @@ mky_object_t *mkyeval(astnode_t *node) {
         case AST_LET:
             break;
 
-        case AST_RETURN:
+        case AST_RETURN: {
+            astexpression_t *rs = ((astreturnstatement_t *)node)->returnValue;
+            return (mky_object_t *)returnValueCreate(mkyeval(AS_NODE(rs)));
+        }
             break;
 
         case AST_BLOCKSTMT:
-            return evalStatements(((astblockstatement_t *)node)->statements);
+            return evalBlockStatement((astblockstatement_t *)node);
             break;
 
         case AST_IDENTIFIER:

@@ -48,3 +48,16 @@ mky_object_t *objNull() {
     static mky_object_t nullObj = (mky_object_t){NULL_OBJ, nullInspect};
     return &nullObj;
 }
+
+charslice_t returnInspect(mky_object_t *obj) {
+    assert(obj->type == RETURN_VALUE_OBJ);
+    mky_returnvalue_t *self = (mky_returnvalue_t *)obj;
+    return self->value->inspect(self->value);
+}
+
+mky_returnvalue_t *returnValueCreate(mky_object_t *value) {
+    mky_returnvalue_t *val = calloc(1, sizeof(*val));
+    val->super = (mky_object_t){RETURN_VALUE_OBJ, returnInspect};
+    val->value = value;
+    return val;
+}
