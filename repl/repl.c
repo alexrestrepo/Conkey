@@ -60,7 +60,7 @@ void replStart() {
             printf("%.*s\n", (int)inspect.length, inspect.src);
         }
 
-        parserRelease(&parser);
-		lexerRelease(&lexer);
+//        parserRelease(&parser);
+//		  lexerRelease(&lexer);
 	}
 }

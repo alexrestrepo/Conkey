@@ -209,5 +209,7 @@ astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *functi
 #define AS_NODE(n) (&((n)->as.node))
 #define AS_STMT(n) (&((n)->as.statement))
 #define AS_EXPR(n) (&((n)->as.expression))
+#define ASTN_STRING(n) (AS_NODE((n))->string(AS_NODE((n))))
+#define ASTN_TOKLIT(n) (AS_NODE((n))->tokenLiteral(AS_NODE((n))))
 
 #endif

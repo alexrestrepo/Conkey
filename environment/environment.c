@@ -6,12 +6,14 @@
 #include "environment.h"
 
 #include "../stb_ds_x.h"
+#include "../object/object.h"
 
 struct environment {
     struct {
         char *key;
         mky_object_t *value;
     } *store;
+    environment_t *outer;
 };
 
 void environmentRelease(environment_t **env) {
@@ -19,6 +21,8 @@ void environmentRelease(environment_t **env) {
         shfree((*env)->store);
         free(*env);
         *env = NULL;
+
+        // release outer...
     }
 }
 
@@ -27,6 +31,8 @@ environment_t *environmentCreate(void) {
 
     env->store = NULL;
     sh_new_strdup(env->store); // or arena?
+
+    env->outer = NULL;
 
     return env;
 }
@@ -38,6 +44,10 @@ mky_object_t *objectEnvGet(environment_t *env, charslice_t name) {
 
     mky_object_t *obj = shget(env->store, key);
     arrfree(key);
+
+    if (!obj && env->outer) {
+        obj = objectEnvGet(env->outer, name);
+    }
 
     return obj;
 }
@@ -51,4 +61,10 @@ mky_object_t *objectSetEnv(environment_t *env, charslice_t name, mky_object_t *o
     arrfree(key);
 
     return obj;
+}
+
+environment_t *enclosedEnvironmentCreate(environment_t *outer) {
+    environment_t *env = environmentCreate();
+    env->outer = outer;
+    return env;
 }

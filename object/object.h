@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include "../ast/ast.h"
+#include "../environment/environment.h"
 #include "../token/token.h"
 
 #define OBJ_TYPES \
@@ -15,7 +17,8 @@ OBJ(INTEGER) \
 OBJ(BOOLEAN) \
 OBJ(NULL) \
 OBJ(RETURN_VALUE) \
-OBJ(ERROR)
+OBJ(ERROR) \
+OBJ(FUNCTION)
 
 #define OBJ(type) type##_OBJ,
 typedef enum {
@@ -66,5 +69,13 @@ typedef struct {
     charslice_t message;
 } mky_error_t;
 mky_error_t *errorCreate(charslice_t message);
+
+typedef struct {
+    mky_object_t super;
+    astidentifier_t **parameters;
+    astblockstatement_t *body;
+    environment_t *env;
+} mky_function_t;
+mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, environment_t *env);
 
 #endif /* _object_h_ */

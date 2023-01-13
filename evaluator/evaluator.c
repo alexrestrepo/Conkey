@@ -203,6 +203,51 @@ static mky_object_t *evalIfExpression(astifexpression_t *exp, environment_t *env
     return objNull();
 }
 
+static mky_object_t *unwrapReturnValue(mky_object_t *obj) {
+    if (obj && obj->type == RETURN_VALUE_OBJ) {
+        return ((mky_returnvalue_t *)obj)->value;
+    }
+    return obj;
+}
+
+static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args) {
+    environment_t *env = enclosedEnvironmentCreate(fn->env);
+    if (fn->parameters && args) {
+        assert(arrlen(fn->parameters) == arrlen(args));
+        for (int i = 0; i < arrlen(fn->parameters); i++) {
+            objectSetEnv(env, fn->parameters[i]->value, args[i]);
+        }
+    }
+
+    return env;
+}
+
+static mky_object_t *applyFunction(mky_object_t *fn, mky_object_t **args) {
+    if (fn->type != FUNCTION_OBJ) {
+        return (mky_object_t *)errorCreate(charsliceMake("not a function: %s", obj_types[fn->type]));
+    }
+    mky_function_t *function = (mky_function_t *)fn;
+    environment_t *extendedEnv = extendFunctionEnv(function, args);
+    mky_object_t *evaluated = mkyeval(AS_NODE(function->body), extendedEnv);
+    return unwrapReturnValue(evaluated);
+}
+
+static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env) {
+    mky_object_t **result = NULL;
+    if (exps) {
+        for (int i = 0; i < arrlen(exps); i++) {
+            mky_object_t *evaluated = mkyeval(AS_NODE(exps[i]), env);
+            if (evaluated && evaluated->type == ERROR_OBJ) {
+                arrclear(result);
+                arrput(result, evaluated);
+                return result;
+            }
+            arrput(result, evaluated);
+        }
+    }
+    return result;
+}
+
 static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) {
     assert(AST_TYPE(ident) == AST_IDENTIFIER);
     mky_object_t *obj = objectEnvGet(env, ident->value);
@@ -290,10 +335,25 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             return evalIfExpression((astifexpression_t *)node, env);
             break;
 
-        case AST_FNLIT:
+        case AST_FNLIT: {
+            astfunctionliteral_t *fn = (astfunctionliteral_t *)node;
+            return (mky_object_t *)functionCrate(fn->parameters, fn->body, env);
+        }
             break;
 
-        case AST_CALL:
+        case AST_CALL: {
+            astcallexpression_t *call = (astcallexpression_t *)node;
+            mky_object_t *function = mkyeval(AS_NODE(call->function), env);
+            if (function->type == ERROR_OBJ) {
+                return function;
+            }
+            mky_object_t **args = evalExpressions(call->arguments, env);
+            if (args && arrlen(args) == 1 && args[0]->type == ERROR_OBJ) {
+                return args[0];
+            }
+
+            return applyFunction(function, args);
+        }
             break;
     }
     return NULL;

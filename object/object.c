@@ -8,6 +8,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "../stb_ds_x.h"
+
 static charslice_t intInspect(mky_object_t *obj) {
     assert(obj->type == INTEGER_OBJ);
     mky_integer_t *self = (mky_integer_t *)obj;
@@ -73,4 +75,37 @@ mky_error_t *errorCreate(charslice_t message) {
     error->super = (mky_object_t){ERROR_OBJ, errorInspect};
     error->message = message;
     return error;
+}
+
+static charslice_t functionInspect(mky_object_t *obj) {
+    assert(obj->type == FUNCTION_OBJ);
+    mky_function_t *self = (mky_function_t *)obj;
+
+    char *out = NULL;
+    char *params = NULL;
+    for (int i = 0; i < arrlen(self->parameters); i++) {
+        charslice_t str = AS_NODE(self->parameters[i])->string(AS_NODE(self->parameters[i]));
+        sarrprintf(params, "%.*s", (int)str.length, str.src);
+        if (i < arrlen(self->parameters) - 1) {
+            sarrprintf(params, ", ");
+        }
+    }
+
+    sarrprintf(out, "fn(");
+    sarrprintf(out, "%.*s", (int)arrlen(params), params);
+    sarrprintf(out, ") {\n");
+    charslice_t body = self->body->as.node.string(AS_NODE(self->body));
+    sarrprintf(out, "%.*s", (int)body.length, body.src);
+    sarrprintf(out, "\n}");
+
+    return (charslice_t){out, arrlen(out)};
+}
+
+mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, environment_t *env) {
+    mky_function_t *fn = calloc(1, sizeof(*fn));
+    fn->super = (mky_object_t){FUNCTION_OBJ, functionInspect};
+    fn->parameters = parameters;
+    fn->body = body;
+    fn->env = env;
+    return fn;
 }

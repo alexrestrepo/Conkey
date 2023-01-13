@@ -11,6 +11,7 @@
 #include "../object/object.h"
 #include "../ast/ast.h"
 #include "../macros.h"
+#include "../stb_ds_x.h"
 
 
 static mky_object_t *testEval(const char *input) {
@@ -204,12 +205,28 @@ UTEST(eval, returnStatements) {
         {"return 10; 9;", 10},
         {"return 2 * 5; 9;", 10},
         {"9; return 2 * 5; 9;", 10},
+        
         {MONKEY(if (10 > 1) {
             if (10 > 1) {
                 return 10;
             }
 
             return 1;}), 10},
+
+        {MONKEY(let f = fn(x) {
+                    return x;
+                    x + 10;
+                };
+                f(10);),10},
+
+        {MONKEY(let f = fn(x) {
+                    let result = x + 10;
+                    return result;
+                    return 10;
+                };
+                f(10);),20
+        },
+
     };
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
@@ -299,6 +316,57 @@ UTEST(eval, letStatements) {
         mky_object_t *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
+}
+
+UTEST(eval, functionObject) {
+    const char *input = "fn(x) { x + 2; };";
+    mky_object_t *evaluated = testEval(input);
+
+    ASSERT_TRUE(evaluated);
+    ASSERT_STREQ(obj_types[FUNCTION_OBJ], obj_types[evaluated->type]);
+
+    mky_function_t *fn = (mky_function_t *)evaluated;
+    ASSERT_TRUE(fn->parameters);
+    ASSERT_EQ(1, arrlen(fn->parameters));
+
+    charslice_t str = fn->parameters[0]->as.node.string(AS_NODE(fn->parameters[0]));
+    ASSERT_STRNEQ("x", str.src, 1);
+
+    const char *expectedBody = "(x + 2)";
+    str = fn->body->as.node.string(AS_NODE(fn->body));
+    ASSERT_STRNEQ(expectedBody, str.src, strlen(expectedBody));
+}
+
+UTEST(eval, functionApplication) {
+    struct test {
+        const char *input;
+        int64_t expected;
+    } tests[] = {
+        {"let identity = fn(x) { x; }; identity(5);", 5},
+        {"let identity = fn(x) { return x; }; identity(5);", 5},
+        {"let double = fn(x) { x * 2; }; double(5);", 10},
+        {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+        {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+        {"fn(x) { x; }(5)", 5},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        mky_object_t *evaluated = testEval(test.input);
+        ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
+    }
+}
+
+UTEST(eval, testClosures) {
+    const char *input = MONKEY(
+                               let newAdder = fn(x) {
+                                   fn(y) { x + y };
+                               };
+                               let addTwo = newAdder(2);
+                               addTwo(2);
+                               );
+    mky_object_t *evaluated = testEval(input);
+    ASSERT_TRUE(testIntegerObject(evaluated, 4));
 }
 
 UTEST_MAIN();
