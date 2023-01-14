@@ -1,8 +1,8 @@
-#include "../utest.h"
-
 #include "ast.h"
+
+#include "../common/stb_ds_x.h"
+#include "../testing/utest.h"
 #include "../token/token.h"
-#include "../stb_ds_x.h"
 
 UTEST(ast, testString) {
 	astprogram_t *program = programCreate();

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "../stb_ds_x.h"
+#include "../common/stb_ds_x.h"
 
 token_type tokenLookupIdentifier(charslice_t ident) {
 	struct keyword {

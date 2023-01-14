@@ -1,9 +1,10 @@
 #include <string.h>
 
-#include "../utest.h"
-#include "../token/token.h"
 #include "lexer.h"
-#include "../macros.h"
+#include "../testing/utest.h"
+#include "../token/token.h"
+#include "../common/macros.h"
+#include "../ast/ast.h"
 
 typedef struct {
 	token_type expectedType;

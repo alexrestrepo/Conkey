@@ -175,10 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				FA380C55296776050006FA9A /* README.md */,
-				FA380C62296776050006FA9A /* macros.h */,
-				FA380C63296776050006FA9A /* utest.h */,
-				FA380C50296776050006FA9A /* stb_ds.h */,
-				FA894341296A8CD400D52466 /* stb_ds_x.h */,
+				FAEFBBD529720E6C00861215 /* common */,
 				FA380C5C296776050006FA9A /* ast */,
 				FAC215F12970951400F12219 /* environment */,
 				FAC7B55A296F701100578C21 /* evaluator */,
@@ -188,6 +185,7 @@
 				FA380C51296776050006FA9A /* parser */,
 				FA380C56296776050006FA9A /* repl */,
 				FA380C59296776050006FA9A /* token */,
+				FAEFBBD62972100900861215 /* testing */,
 				FA0361612967756E00280D2D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -286,6 +284,24 @@
 				FAC7B55B296F701100578C21 /* evaluator_test.c */,
 			);
 			path = evaluator;
+			sourceTree = "<group>";
+		};
+		FAEFBBD529720E6C00861215 /* common */ = {
+			isa = PBXGroup;
+			children = (
+				FA380C50296776050006FA9A /* stb_ds.h */,
+				FA894341296A8CD400D52466 /* stb_ds_x.h */,
+				FA380C62296776050006FA9A /* macros.h */,
+			);
+			path = common;
+			sourceTree = "<group>";
+		};
+		FAEFBBD62972100900861215 /* testing */ = {
+			isa = PBXGroup;
+			children = (
+				FA380C63296776050006FA9A /* utest.h */,
+			);
+			path = testing;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -1,15 +1,15 @@
+#include "parser.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
 
 #include "../ast/ast.h"
+#include "../common/macros.h"
+#include "../common/stb_ds_x.h"
 #include "../lexer/lexer.h"
-#include "../macros.h"
-#include "../utest.h"
-#include "../stb_ds_x.h"
-
-#include "parser.h"
+#include "../testing/utest.h"
 
 typedef enum {
     TYPE_INT,

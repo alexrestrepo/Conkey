@@ -3,15 +3,15 @@
 //  Created by Alex Restrepo on 1/11/23.
 //
 
-#include "../utest.h"
-
 #include "evaluator.h"
-#include "../lexer/lexer.h"
-#include "../parser/parser.h"
-#include "../object/object.h"
+
 #include "../ast/ast.h"
-#include "../macros.h"
-#include "../stb_ds_x.h"
+#include "../common/macros.h"
+#include "../common/stb_ds_x.h"
+#include "../lexer/lexer.h"
+#include "../object/object.h"
+#include "../parser/parser.h"
+#include "../testing/utest.h"
 
 
 static mky_object_t *testEval(const char *input) {

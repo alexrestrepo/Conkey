@@ -3,12 +3,12 @@
 #include <stdio.h>
 
 #include "../ast/ast.h"
+#include "../common/macros.h"
+#include "../common/stb_ds_x.h"
 #include "../environment/environment.h"
 #include "../evaluator/evaluator.h"
 #include "../lexer/lexer.h"
-#include "../macros.h"
 #include "../parser/parser.h"
-#include "../stb_ds_x.h"
 #include "../token/token.h"
 
 static const char *monkey_face =

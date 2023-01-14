@@ -7,7 +7,7 @@
 #include "ast.h"
 
 #define STB_DS_IMPLEMENTATION
-#include "../stb_ds_x.h"
+#include "../common/stb_ds_x.h"
 
 #define SLCE(a) ((a) ? (charslice_t){(a), arrlen((a))} : (charslice_t){"", 0})
 

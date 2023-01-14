@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "../stb_ds_x.h"
+#include "../common/stb_ds_x.h"
 
 static charslice_t intInspect(mky_object_t *obj) {
     assert(obj->type == INTEGER_OBJ);

@@ -3,10 +3,11 @@
 // Created by Alex Restrepo on 1/2/23.
 
 #include "parser.h"
+
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "../stb_ds_x.h"
+#include "../common/stb_ds_x.h"
 
 typedef enum {
     PREC_NONE,

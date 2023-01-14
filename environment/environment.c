@@ -5,7 +5,7 @@
 
 #include "environment.h"
 
-#include "../stb_ds_x.h"
+#include "../common/stb_ds_x.h"
 #include "../object/object.h"
 
 struct environment {
