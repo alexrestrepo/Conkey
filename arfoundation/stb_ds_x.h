@@ -19,7 +19,7 @@
       "Prints" formatted string to the array. Don't self reference the array as a parameter.
  */
 
-#include "stb_ds.h"
+#include "vendor/stb_ds.h"
 #include <stdarg.h>
 
 #ifndef STBDS_NO_SHORT_NAMES

@@ -5,13 +5,13 @@
 
 #include "evaluator.h"
 
+#include "../macros.h"
 #include "../ast/ast.h"
-#include "../common/macros.h"
-#include "../common/stb_ds_x.h"
+#include "../arfoundation/arfoundation.h"
 #include "../lexer/lexer.h"
 #include "../object/object.h"
 #include "../parser/parser.h"
-#include "../testing/utest.h"
+#include "../arfoundation/vendor/utest.h"
 
 
 static mky_object_t *testEval(const char *input) {
@@ -206,25 +206,31 @@ UTEST(eval, returnStatements) {
         {"return 2 * 5; 9;", 10},
         {"9; return 2 * 5; 9;", 10},
         
-        {MONKEY(if (10 > 1) {
-            if (10 > 1) {
-                return 10;
-            }
+        {MONKEY(
+                if (10 > 1) {
+                    if (10 > 1) {
+                        return 10;
+                    }
+                    return 1;
+                }
+                ), 10},
 
-            return 1;}), 10},
-
-        {MONKEY(let f = fn(x) {
+        {MONKEY(
+                let f = fn(x) {
                     return x;
                     x + 10;
                 };
-                f(10);),10},
+                f(10);
+                ),10},
 
-        {MONKEY(let f = fn(x) {
+        {MONKEY(
+                let f = fn(x) {
                     let result = x + 10;
                     return result;
                     return 10;
                 };
-                f(10);),20
+                f(10);
+                ),20
         },
 
     };

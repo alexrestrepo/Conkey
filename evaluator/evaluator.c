@@ -9,7 +9,7 @@
 
 #include <assert.h>
 
-#include "../common/stb_ds_x.h"
+#include "../arfoundation/arfoundation.h"
 
 static mky_object_t *evalProgram(astprogram_t *program, environment_t *env) {
     mky_object_t *result = NULL;

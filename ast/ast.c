@@ -2,12 +2,12 @@
 // ast.c
 // Created by Alex Restrepo on 1/2/23.
 
-#include <stdlib.h>
-
 #include "ast.h"
 
-#define STB_DS_IMPLEMENTATION
-#include "../common/stb_ds_x.h"
+#include <stdlib.h>
+#include <assert.h>
+
+#include "../arfoundation/arfoundation.h"
 
 #define SLCE(a) ((a) ? (charslice_t){(a), arrlen((a))} : (charslice_t){"", 0})
 

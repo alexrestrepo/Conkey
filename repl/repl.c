@@ -2,9 +2,9 @@
 
 #include <stdio.h>
 
+#include "../macros.h"
 #include "../ast/ast.h"
-#include "../common/macros.h"
-#include "../common/stb_ds_x.h"
+#include "../arfoundation/arfoundation.h"
 #include "../environment/environment.h"
 #include "../evaluator/evaluator.h"
 #include "../lexer/lexer.h"

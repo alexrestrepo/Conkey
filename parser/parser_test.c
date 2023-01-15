@@ -5,11 +5,11 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "../macros.h"
 #include "../ast/ast.h"
-#include "../common/macros.h"
-#include "../common/stb_ds_x.h"
+#include "../arfoundation/arfoundation.h"
 #include "../lexer/lexer.h"
-#include "../testing/utest.h"
+#include "../arfoundation/vendor/utest.h"
 
 typedef enum {
     TYPE_INT,

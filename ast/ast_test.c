@@ -1,7 +1,7 @@
 #include "ast.h"
 
-#include "../common/stb_ds_x.h"
-#include "../testing/utest.h"
+#include "../arfoundation/arfoundation.h"
+#include "../arfoundation/vendor/utest.h"
 #include "../token/token.h"
 
 UTEST(ast, testString) {

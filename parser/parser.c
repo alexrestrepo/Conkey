@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "../common/stb_ds_x.h"
+#include "../arfoundation/arfoundation.h"
 
 typedef enum {
     PREC_NONE,

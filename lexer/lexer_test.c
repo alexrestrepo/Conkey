@@ -1,9 +1,9 @@
 #include <string.h>
 
 #include "lexer.h"
-#include "../testing/utest.h"
+#include "../macros.h"
+#include "../arfoundation/vendor/utest.h"
 #include "../token/token.h"
-#include "../common/macros.h"
 #include "../ast/ast.h"
 
 typedef struct {
