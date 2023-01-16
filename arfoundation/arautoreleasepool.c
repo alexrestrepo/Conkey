@@ -1,13 +1,12 @@
 //
 //  arautoreleasepool.c
-//  conkey
-//
 //  Created by Alex Restrepo on 1/16/23.
 //
 
 #include "arautoreleasepool.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "stb_ds_x.h"
 
@@ -66,10 +65,13 @@ void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool) {
         return;
     }
 
+    fprintf(stderr, "--- draining ---\n");
+
     for (int i = 0; i < arrlen(pool->objects); i++) {
         ARRelease(pool->objects[i]);
     }
 
+    fprintf(stderr, "----------------\n");
     arrclear(pool->objects);
 }
 

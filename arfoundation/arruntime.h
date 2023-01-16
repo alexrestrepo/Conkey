@@ -1,7 +1,5 @@
 //
 //  arruntime.h
-//  conkey
-//
 //  Created by Alex Restrepo on 1/14/23.
 //  loosely based on CoreFoundation and XSFoundation, no autorelease (yet?) so all +1 rc
 

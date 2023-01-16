@@ -1,7 +1,5 @@
 //
 //  arstring.h
-//  conkey
-//
 //  Created by Alex Restrepo on 1/14/23.
 //
 
