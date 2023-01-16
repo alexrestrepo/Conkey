@@ -14,6 +14,8 @@
 
 #include "arstring.h"
 
+extern const int32_t AR_RUNTIME_UNRELEASABLE;
+
 typedef struct {
     uint32_t classID;
 } ar_class_id;
@@ -56,4 +58,5 @@ const char *ARRuntimeClassName(ar_class_id classid);
 const runtime_class_info *ARRuntimeClassInfo(ar_class_id classid);
 ARStringRef ARRuntimeDescription(ARObjectRef obj);
 int32_t ARRuntimeRefCount(ARObjectRef obj);
+ARObjectRef ARRuntimeMakeConstant(ARObjectRef obj); // makes obj unreleasable.
 #endif /* arruntime_h */

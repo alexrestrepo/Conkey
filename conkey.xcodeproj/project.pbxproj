@@ -319,18 +319,18 @@
 		FAF9881A29731A2F0027D98D /* arfoundation */ = {
 			isa = PBXGroup;
 			children = (
-				FAF988332973AFCF0027D98D /* vendor */,
 				FAF9881E29731BD00027D98D /* arfoundation.h */,
+				FAF988352975B44A0027D98D /* arautoreleasepool.c */,
+				FAF988342975B44A0027D98D /* arautoreleasepool.h */,
 				FAF9881D29731BD00027D98D /* arcommon.c */,
 				FAF9881B29731BD00027D98D /* arcommon.h */,
 				FAF9881C29731BD00027D98D /* armacros.h */,
-				FA894341296A8CD400D52466 /* stb_ds_x.h */,
-				FAF988242973206F0027D98D /* arruntime.h */,
 				FAF988252973206F0027D98D /* arruntime.c */,
-				FAF9882C297344290027D98D /* arstring.h */,
+				FAF988242973206F0027D98D /* arruntime.h */,
 				FAF9882D297344290027D98D /* arstring.c */,
-				FAF988342975B44A0027D98D /* arautoreleasepool.h */,
-				FAF988352975B44A0027D98D /* arautoreleasepool.c */,
+				FAF9882C297344290027D98D /* arstring.h */,
+				FA894341296A8CD400D52466 /* stb_ds_x.h */,
+				FAF988332973AFCF0027D98D /* vendor */,
 			);
 			path = arfoundation;
 			sourceTree = "<group>";

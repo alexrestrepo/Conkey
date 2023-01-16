@@ -17,6 +17,8 @@
 #include "stb_ds_x.h"
 #include <stdio.h>
 
+#define AR_RUNTIME_VERBOSE 1
+
 typedef enum {
     AR_RUNTIME_NOT_INITIALIZED,
     AR_RUNTIME_INITIALIZING,
@@ -24,6 +26,7 @@ typedef enum {
 } ar_runtime_status;
 
 const uint32_t AR_RUNTIME_NOT_OBJECT = 0;      // special/any
+const int32_t AR_RUNTIME_UNRELEASABLE = -1;
 static _Atomic ar_runtime_status runtime_status;
 static _Atomic uint32_t ar_runtime_class_count;
 static runtime_class_info *ar_runtime_classes;      // TODO: not thread safe?
@@ -47,12 +50,6 @@ void ARRuntimeInitialize(void) {
     // register base classes
     ARAutoreleasePoolInitialize();
     ARStringInitialize();
-
-//    ARStringRef str = ARStringCreateWithFormat("hello %s", "world");
-//    ARStringRef desc = ARRuntimeDescription(str);
-//    printf("%s -> %s\n", ARStringCString(str), ARStringCString(desc));
-//    str = ARRelease(str);
-//    desc = ARRelease(desc);
 }
 
 ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass) {
@@ -61,7 +58,7 @@ ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass) {
     }
 
     if (!klass) {
-        ar_fatal("Can't register NULL class info");
+        ar_fatal("Can't register NULL class info\n");
     }
 
     ar_runtime_class_count = arrlen(ar_runtime_classes);
@@ -83,7 +80,11 @@ ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
     object->classid = classid;
 
     ARObjectRef obj = (char *)object + sizeof(ar_object_base);
-    printf("\033[33mallocated \033[0mid:%d s:%zu bytes @%p\n", classid.classID, size, obj);
+
+#if AR_RUNTIME_VERBOSE
+    printf("\033[33mAllocated \033[0mid:%d s:%zu bytes @%p\n", classid.classID, size, obj);
+#endif
+
     return obj;
 }
 
@@ -107,68 +108,6 @@ ARObjectRef ARRuntimeCreateInstance(ar_class_id classid) {
     }
 
     return object;
-}
-
-ARObjectRef ARRetain(ARObjectRef obj) {
-    if (!obj) {
-        return NULL;
-    }
-
-    ar_object_base *base = ar_object_header(obj);
-    if (base->refcount < 0) {
-        return obj;
-    }
-
-    base->refcount++;
-    return obj;
-}
-
-ARObjectRef ARRelease(ARObjectRef obj) {
-    if (!obj) {
-        return NULL;
-    }
-
-    ar_object_base *base = ar_object_header(obj);
-    if (base->refcount < 0) {
-        return obj;
-    }
-
-    assert(base->refcount > 0);
-    base->refcount--;
-
-    if (base->refcount == 0) {
-        const runtime_class_info *klass = ARRuntimeClassInfo(base->classid);
-        if (klass) {
-            if (klass->descriptor->destructor) {
-                klass->descriptor->destructor(obj);
-            }
-            printf("\033[31mdeallocating \033[0m%s(%d) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
-            
-        } else {
-            printf("\033[31mdeallocating \033[0m<unknown?> @%p\n", obj);
-        }
-        free(base);
-        return NULL;
-    }
-
-    return obj;
-}
-ARObjectRef ARAutorelease(ARObjectRef obj) {
-    if (!obj) {
-        return NULL;
-    }
-    ARAutoreleasePoolRef pool = ARAutoreleasePoolGetCurrent();
-    if (pool) {
-        ARAutoreleasePoolAddObject(pool, obj);
-
-    } else {
-        ar_object_base *base = ar_object_header(obj);
-        ar_class_id classid = base->classid;
-        const runtime_class_info *info = ARRuntimeClassInfo(classid);
-        fprintf(stderr, "\033[31mAutoreleasing object '%s' with no pool in place. Leaking %zu. bytes\n", info->descriptor->classname, base->size);
-    }
-
-    return obj;
 }
 
 const char *ARRuntimeClassName(ar_class_id classid) {
@@ -206,15 +145,17 @@ bool ARRuntimeIsRegisteredClass(ar_class_id classid) {
 
 ARStringRef ARRuntimeDescription(ARObjectRef obj) {
     if (!obj) {
-        return ARStringCreateWithFormat("(null)");
+        return ARStringWithFormat("(null)");
     }
 
     ar_object_base *base = ar_object_header(obj);
+    assert(base);
+
     ar_class_id classid = base->classid;
     const runtime_class_info *info = ARRuntimeClassInfo(classid);
 
     if (!ARRuntimeIsRegisteredClass(classid) || !info->descriptor->classname) {
-        return ARStringCreateWithFormat("<0x%p>", obj);
+        return ARStringWithFormat("<0x%p>", obj);
     }
 
     ARStringRef description = NULL;
@@ -223,11 +164,13 @@ ARStringRef ARRuntimeDescription(ARObjectRef obj) {
     }
 
     if (description && ARStringLength(description) > 0) {
-        return ARStringCreateWithFormat("<%s %p> %s", info->descriptor->classname, obj, ARStringCString(description));
+        return ARStringWithFormat("<%s %p> %s", info->descriptor->classname, obj, ARStringCString(description));
     }
 
-    return ARStringCreateWithFormat("<%s %p>", info->descriptor->classname, obj);
+    return ARStringWithFormat("<%s %p>", info->descriptor->classname, obj);
 }
+
+#pragma mark - Lifetime management
 
 int32_t ARRuntimeRefCount(ARObjectRef obj) {
     if (!obj) {
@@ -235,5 +178,87 @@ int32_t ARRuntimeRefCount(ARObjectRef obj) {
     }
 
     ar_object_base *base = ar_object_header(obj);
+    assert(base);
     return base->refcount;
+}
+
+ARObjectRef ARRetain(ARObjectRef obj) {
+    if (!obj) {
+        return NULL;
+    }
+
+    ar_object_base *base = ar_object_header(obj);
+    assert(base);
+
+    if (base->refcount < 0) {
+        return obj;
+    }
+
+    base->refcount++;
+    return obj;
+}
+
+ARObjectRef ARRelease(ARObjectRef obj) {
+    if (!obj) {
+        return NULL;
+    }
+
+    ar_object_base *base = ar_object_header(obj);
+    assert(base);
+
+    if (base->refcount < 0) {
+        return obj;
+    }
+
+    assert(base->refcount > 0);
+    base->refcount--;
+
+    if (base->refcount == 0) {
+        const runtime_class_info *klass = ARRuntimeClassInfo(base->classid);
+        if (klass) {
+            if (klass->descriptor->destructor) {
+                klass->descriptor->destructor(obj);
+            }
+
+#if AR_RUNTIME_VERBOSE
+            printf("\033[31mDeallocating \033[0m%s(%d) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
+        } else {
+            printf("\033[31mDeallocating \033[0m<unknown?> @%p\n", obj);
+#endif
+        }
+
+        free(base);
+        return NULL;
+    }
+
+    return obj;
+}
+ARObjectRef ARAutorelease(ARObjectRef obj) {
+    if (!obj) {
+        return NULL;
+    }
+    ARAutoreleasePoolRef pool = ARAutoreleasePoolGetCurrent();
+    if (pool) {
+        ARAutoreleasePoolAddObject(pool, obj);
+
+    } else {
+        ar_object_base *base = ar_object_header(obj);
+        assert(base);
+
+        ar_class_id classid = base->classid;
+        const runtime_class_info *info = ARRuntimeClassInfo(classid);
+        fprintf(stderr, "\033[31mAutoreleasing object '%s' with no pool in place. Leaking %zu. bytes\n", info->descriptor->classname, base->size);
+    }
+
+    return obj;
+}
+
+ARObjectRef ARRuntimeMakeConstant(ARObjectRef obj) {
+    if (obj) {
+        ar_object_base *base = ar_object_header(obj);
+        assert(base);
+
+        base->refcount = AR_RUNTIME_UNRELEASABLE;
+    }
+    return obj;
 }
