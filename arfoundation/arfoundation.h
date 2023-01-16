@@ -3,3 +3,4 @@
 #include "armacros.h"
 #include "arruntime.h"
 #include "arstring.h"
+#include "arautoreleasepool.h"

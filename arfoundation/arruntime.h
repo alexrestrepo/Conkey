@@ -46,6 +46,8 @@ void ARRuntimeInitialize(void) __attribute__((constructor));
 
 ARObjectRef ARRelease(ARObjectRef obj);
 ARObjectRef ARRetain(ARObjectRef obj);
+ARObjectRef ARAutorelease(ARObjectRef obj);
+
 ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid); // {0} class id adds refcnt header to any alloc.
 ARObjectRef ARRuntimeCreateInstance(ar_class_id classid);
 ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass);

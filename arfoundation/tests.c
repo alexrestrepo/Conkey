@@ -4,7 +4,7 @@
 #include "arfoundation.h"
 
 UTEST(arfoundation, ARString) {
-	ARStringRef string = ARStringCreateWithFormat("Hello %s", "world!");
+	ARStringRef string = ARStringCreateWithFormat("Hello %s", "world!\n");
 	ARStringRef desc = ARRuntimeDescription(string);
 	
 	fprintf(stderr, "%s -> %s", ARStringCString(string), ARStringCString(desc));
@@ -49,6 +49,18 @@ UTEST(arfoundation, nonClassRefCount) {
 	
 	someString = ARRelease(someString);
 	ASSERT_EQ(NULL, someString);
+}
+
+UTEST(arfoundation, autoreleasePool) {
+	ARAutoreleasePoolRef ap = ARAutoreleasePoolCreate();
+	
+	for (int i = 0; i < 256; i++) {
+		ARStringRef str = ARStringWithFormat("hello there");
+		ASSERT_EQ(1, ARRuntimeRefCount(str));
+	}
+	
+	ARRelease(ap);
+	ARStringRef str = ARStringWithFormat("hello there");
 }
 
 UTEST_MAIN();

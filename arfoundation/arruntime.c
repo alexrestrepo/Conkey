@@ -9,6 +9,7 @@
 
 #include "arcommon.h"
 #include "arstring.h"
+#include "arautoreleasepool.h"
 
 #ifndef STB_DS_IMPLEMENTATION
 #define STB_DS_IMPLEMENTATION
@@ -44,6 +45,7 @@ void ARRuntimeInitialize(void) {
     runtime_status = AR_RUNTIME_READY;
 
     // register base classes
+    ARAutoreleasePoolInitialize();
     ARStringInitialize();
 
 //    ARStringRef str = ARStringCreateWithFormat("hello %s", "world");
@@ -81,11 +83,15 @@ ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
     object->classid = classid;
 
     ARObjectRef obj = (char *)object + sizeof(ar_object_base);
-    printf("allocated id:%d s:%zu bytes @%p\n", classid.classID, size, obj);
+    printf("\033[33mallocated \033[0mid:%d s:%zu bytes @%p\n", classid.classID, size, obj);
     return obj;
 }
 
 ARObjectRef ARRuntimeCreateInstance(ar_class_id classid) {
+    if (runtime_status != AR_RUNTIME_READY) {
+        ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
+    }
+
     if (!ARRuntimeIsRegisteredClass(classid)) {
         return NULL;
     }
@@ -136,13 +142,30 @@ ARObjectRef ARRelease(ARObjectRef obj) {
             if (klass->descriptor->destructor) {
                 klass->descriptor->destructor(obj);
             }
-            printf("deallocating %s(%d) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
+            printf("\033[31mdeallocating \033[0m%s(%d) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
             
         } else {
-            printf("deallocating <unknown?> @%p\n", obj);
+            printf("\033[31mdeallocating \033[0m<unknown?> @%p\n", obj);
         }
         free(base);
         return NULL;
+    }
+
+    return obj;
+}
+ARObjectRef ARAutorelease(ARObjectRef obj) {
+    if (!obj) {
+        return NULL;
+    }
+    ARAutoreleasePoolRef pool = ARAutoreleasePoolGetCurrent();
+    if (pool) {
+        ARAutoreleasePoolAddObject(pool, obj);
+
+    } else {
+        ar_object_base *base = ar_object_header(obj);
+        ar_class_id classid = base->classid;
+        const runtime_class_info *info = ARRuntimeClassInfo(classid);
+        fprintf(stderr, "\033[31mAutoreleasing object '%s' with no pool in place. Leaking %zu. bytes\n", info->descriptor->classname, base->size);
     }
 
     return obj;
@@ -157,6 +180,10 @@ const char *ARRuntimeClassName(ar_class_id classid) {
 }
 
 const runtime_class_info *ARRuntimeClassInfo(ar_class_id classid) {
+    if (runtime_status != AR_RUNTIME_READY) {
+        ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
+    }
+
     if (!(ARRuntimeIsRegisteredClass(classid))) {
         return NULL;
     }

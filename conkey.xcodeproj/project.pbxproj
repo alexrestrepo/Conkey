@@ -63,6 +63,11 @@
 		FAF98830297344290027D98D /* arstring.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF9882D297344290027D98D /* arstring.c */; };
 		FAF98831297344290027D98D /* arstring.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF9882D297344290027D98D /* arstring.c */; };
 		FAF98832297344290027D98D /* arstring.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF9882D297344290027D98D /* arstring.c */; };
+		FAF988362975B44A0027D98D /* arautoreleasepool.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF988352975B44A0027D98D /* arautoreleasepool.c */; };
+		FAF988372975B44A0027D98D /* arautoreleasepool.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF988352975B44A0027D98D /* arautoreleasepool.c */; };
+		FAF988382975B44A0027D98D /* arautoreleasepool.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF988352975B44A0027D98D /* arautoreleasepool.c */; };
+		FAF988392975B44A0027D98D /* arautoreleasepool.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF988352975B44A0027D98D /* arautoreleasepool.c */; };
+		FAF9883A2975B44A0027D98D /* arautoreleasepool.c in Sources */ = {isa = PBXBuildFile; fileRef = FAF988352975B44A0027D98D /* arautoreleasepool.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -153,6 +158,8 @@
 		FAF988252973206F0027D98D /* arruntime.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = arruntime.c; sourceTree = "<group>"; };
 		FAF9882C297344290027D98D /* arstring.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = arstring.h; sourceTree = "<group>"; };
 		FAF9882D297344290027D98D /* arstring.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = arstring.c; sourceTree = "<group>"; };
+		FAF988342975B44A0027D98D /* arautoreleasepool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = arautoreleasepool.h; sourceTree = "<group>"; };
+		FAF988352975B44A0027D98D /* arautoreleasepool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = arautoreleasepool.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -322,6 +329,8 @@
 				FAF988252973206F0027D98D /* arruntime.c */,
 				FAF9882C297344290027D98D /* arstring.h */,
 				FAF9882D297344290027D98D /* arstring.c */,
+				FAF988342975B44A0027D98D /* arautoreleasepool.h */,
+				FAF988352975B44A0027D98D /* arautoreleasepool.c */,
 			);
 			path = arfoundation;
 			sourceTree = "<group>";
@@ -485,6 +494,7 @@
 				FA380C6C296776050006FA9A /* ast.c in Sources */,
 				FA380C6B296776050006FA9A /* token.c in Sources */,
 				FA380C68296776050006FA9A /* parser.c in Sources */,
+				FAF988362975B44A0027D98D /* arautoreleasepool.c in Sources */,
 				FAF9881F29731BD00027D98D /* arcommon.c in Sources */,
 				FA380C6E296776050006FA9A /* main.c in Sources */,
 				FAC7B562296F752700578C21 /* evaluator.c in Sources */,
@@ -498,6 +508,7 @@
 				FAC7B551296F597100578C21 /* object.c in Sources */,
 				FAC7B563296F752700578C21 /* evaluator.c in Sources */,
 				FA380C7E296777790006FA9A /* lexer.c in Sources */,
+				FAF988372975B44A0027D98D /* arautoreleasepool.c in Sources */,
 				FAF988272973206F0027D98D /* arruntime.c in Sources */,
 				FAC215F52970953200F12219 /* environment.c in Sources */,
 				FA380C7D296777750006FA9A /* ast.c in Sources */,
@@ -516,6 +527,7 @@
 				FAC7B552296F597100578C21 /* object.c in Sources */,
 				FAC7B564296F752700578C21 /* evaluator.c in Sources */,
 				FA380C8E296777F10006FA9A /* token.c in Sources */,
+				FAF988382975B44A0027D98D /* arautoreleasepool.c in Sources */,
 				FAF988282973206F0027D98D /* arruntime.c in Sources */,
 				FAC215F62970953200F12219 /* environment.c in Sources */,
 				FA380C8D296777F10006FA9A /* lexer.c in Sources */,
@@ -534,6 +546,7 @@
 				FAC7B553296F597100578C21 /* object.c in Sources */,
 				FAC7B565296F752700578C21 /* evaluator.c in Sources */,
 				FA380C9E296778580006FA9A /* token.c in Sources */,
+				FAF988392975B44A0027D98D /* arautoreleasepool.c in Sources */,
 				FAF988292973206F0027D98D /* arruntime.c in Sources */,
 				FAC215F72970953200F12219 /* environment.c in Sources */,
 				FA380CA0296778580006FA9A /* lexer.c in Sources */,
@@ -552,6 +565,7 @@
 				FAC7B56C296F76B200578C21 /* lexer.c in Sources */,
 				FAC7B55C296F701100578C21 /* evaluator_test.c in Sources */,
 				FAC215F82970953200F12219 /* environment.c in Sources */,
+				FAF9883A2975B44A0027D98D /* arautoreleasepool.c in Sources */,
 				FAF9882A2973206F0027D98D /* arruntime.c in Sources */,
 				FAC7B56B296F76B200578C21 /* ast.c in Sources */,
 				FAC7B567296F76A300578C21 /* parser.c in Sources */,

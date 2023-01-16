@@ -15,6 +15,7 @@ typedef struct ARString *ARStringRef;
 void ARStringInitialize(void);
 
 ARStringRef ARStringCreateWithFormat(const char *fmt, ...) __printflike(1, 2);
+ARStringRef ARStringWithFormat(const char *fmt, ...) __printflike(1, 2);
 size_t ARStringLength(ARStringRef str);
 const char *ARStringCString(ARStringRef str);
 

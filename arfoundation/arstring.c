@@ -27,7 +27,7 @@ static ARStringRef ARStringDescription(ARObjectRef str) {
     return str;
 }
 
-ar_class_descriptor ARStringClass = {
+static ar_class_descriptor ARStringClass = {
     "ARString",
     sizeof(struct ARString),
     NULL, // const
@@ -39,15 +39,21 @@ void ARStringInitialize(void) {
     ARStringClassID = ARRuntimeRegisterClass(&ARStringClass);
 }
 
-ARStringRef ARStringCreateWithFormat(const char *fmt, ...) {
+ARStringRef ARStringCreateWithFormatAndArgs(const char *fmt, va_list args) {
     ARStringRef instance = ARRuntimeCreateInstance(ARStringClassID);
     if (!instance) {
         return NULL;
     }
+    sarrvprintf(instance->cstr, fmt, args);
+    return instance;
+}
+
+ARStringRef ARStringCreateWithFormat(const char *fmt, ...) {
+    ARStringRef instance = NULL;
 
     va_list args;
     va_start(args, fmt);
-    sarrvprintf(instance->cstr, fmt, args);
+    instance = ARStringCreateWithFormatAndArgs(fmt, args);
     va_end(args);
     
     return instance;
@@ -67,4 +73,15 @@ const char *ARStringCString(ARStringRef str) {
     }
 
     return (const char *)str->cstr;
+}
+
+ARStringRef ARStringWithFormat(const char *fmt, ...) {
+    ARStringRef instance = NULL;
+
+    va_list args;
+    va_start(args, fmt);
+    instance = ARStringCreateWithFormatAndArgs(fmt, args);
+    va_end(args);
+
+    return ARAutorelease(instance);
 }
