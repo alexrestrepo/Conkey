@@ -5,8 +5,6 @@
 
 #include "arstring.h"
 
-#include <stdbool.h>
-
 #include "arruntime.h"
 #include "stb_ds_x.h"
 
@@ -82,4 +80,13 @@ ARStringRef ARStringWithFormat(const char *fmt, ...) {
     va_end(args);
 
     return ARAutorelease(instance);
+}
+
+ARStringRef ARStringAppendFormat(ARStringRef str, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    sarrvprintf(str->cstr, fmt, args);
+    va_end(args);
+
+    return str;
 }

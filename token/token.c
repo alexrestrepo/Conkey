@@ -49,7 +49,6 @@ charslice_t charsliceMake(const char *fmt, ...) {
     va_end(args);
 
     slice.length = arrlen(slice.src);
-    slice.internal = true;
     // p *((stbds_array_header *)(slice.src) - 1)
     return slice;
 }

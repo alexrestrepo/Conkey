@@ -1,6 +1,14 @@
 #ifndef _armacros_h_
 #define _armacros_h_
 
+#if !defined(AR_INLINE)
+#if defined(__GNUC__)
+#define AR_INLINE static __inline__ __attribute__((always_inline))
+#elif defined(__cplusplus)
+#define AR_INLINE static inline
+#endif
+#endif
+
 #ifndef MIN
 #define MIN(x,y) ((x) <= (y) ? (x) : (y))
 #endif

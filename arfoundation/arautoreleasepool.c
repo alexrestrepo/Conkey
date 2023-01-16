@@ -15,13 +15,13 @@ struct ARAutoreleasePool {
 };
 
 static ar_class_id ARAutoreleasePoolClassID = { 0 };
-static ARAutoreleasePoolRef *global_pools = NULL;
+static ARAutoreleasePoolRef *active_pools = NULL;
 
 static ARObjectRef ARAutoreleasePoolConstructor(ARObjectRef obj) {
     assert(obj);
 
     // add to stack
-    arrput(global_pools, obj);
+    arrput(active_pools, obj);
     return obj;
 }
 
@@ -33,12 +33,14 @@ static void ARAutoreleasePoolDestructor(ARObjectRef obj) {
     ARAutoreleasePoolDrain(pool);
 
     // remove from stack
-    for (int i = 0; i < arrlen(global_pools); i++) {
-        if (global_pools[i] == pool) {
-            arrdel(global_pools, i);
-            return;
+    for (int i = 0; i < arrlen(active_pools); i++) {
+        if (active_pools[i] == pool) {
+            arrdel(active_pools, i);
+            break;
         }
     }
+
+    arrfree(pool->objects);
 }
 
 static ar_class_descriptor ARAutoreleasePoolClass = {
@@ -57,27 +59,37 @@ ARAutoreleasePoolRef ARAutoreleasePoolCreate(void) {
 }
 
 void ARAutoreleasePoolAddObject(ARAutoreleasePoolRef pool, ARObjectRef obj) {
+    assert(pool);
+    assert(obj);
+    
     arrput(pool->objects, obj);
 }
 
 void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool) {
+    assert(pool);
+
     if (!pool->objects) {
         return;
     }
 
+#if AR_RUNTIME_VERBOSE
     fprintf(stderr, "--- draining ---\n");
+#endif
 
     for (int i = 0; i < arrlen(pool->objects); i++) {
         ARRelease(pool->objects[i]);
     }
 
+#if AR_RUNTIME_VERBOSE
     fprintf(stderr, "----------------\n");
+#endif
+    
     arrclear(pool->objects);
 }
 
 ARAutoreleasePoolRef ARAutoreleasePoolGetCurrent(void) {
-    if (global_pools && arrlen(global_pools) > 0) {
-        return arrlast(global_pools);
+    if (active_pools && arrlen(active_pools) > 0) {
+        return arrlast(active_pools);
     }
 
     return NULL;

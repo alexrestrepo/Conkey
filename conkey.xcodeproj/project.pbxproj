@@ -176,6 +176,7 @@
 		FAF988352975B44A0027D98D /* arautoreleasepool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = arautoreleasepool.c; sourceTree = "<group>"; };
 		FAF9883F2975D24C0027D98D /* foundation_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = foundation_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAF988412975D24C0027D98D /* arfoundation_test.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = arfoundation_test.c; sourceTree = "<group>"; };
+		FAF9884D2975F1530027D98D /* ARRange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ARRange.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,7 +240,6 @@
 				FA380C51296776050006FA9A /* parser */,
 				FA380C56296776050006FA9A /* repl */,
 				FA380C59296776050006FA9A /* token */,
-				FAF988402975D24C0027D98D /* foundation_test */,
 				FA0361612967756E00280D2D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -344,12 +344,13 @@
 		FAF9881A29731A2F0027D98D /* arfoundation */ = {
 			isa = PBXGroup;
 			children = (
+				FAF9881E29731BD00027D98D /* arfoundation.h */,
 				FAF988352975B44A0027D98D /* arautoreleasepool.c */,
 				FAF988342975B44A0027D98D /* arautoreleasepool.h */,
 				FAF9881D29731BD00027D98D /* arcommon.c */,
 				FAF9881B29731BD00027D98D /* arcommon.h */,
-				FAF9881E29731BD00027D98D /* arfoundation.h */,
 				FAF9881C29731BD00027D98D /* armacros.h */,
+				FAF9884D2975F1530027D98D /* ARRange.h */,
 				FAF988252973206F0027D98D /* arruntime.c */,
 				FAF988242973206F0027D98D /* arruntime.h */,
 				FAF9882D297344290027D98D /* arstring.c */,
@@ -368,13 +369,6 @@
 				FA380C50296776050006FA9A /* stb_ds.h */,
 			);
 			path = vendor;
-			sourceTree = "<group>";
-		};
-		FAF988402975D24C0027D98D /* foundation_test */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = foundation_test;
 			sourceTree = "<group>";
 		};
 		FAF988462975D2740027D98D /* tests */ = {

@@ -12,14 +12,16 @@
 
 #include "arstring.h"
 
-extern const int32_t AR_RUNTIME_UNRELEASABLE;
+#define AR_RUNTIME_VERBOSE 1
+
+extern const int64_t AR_RUNTIME_UNRELEASABLE;
 
 typedef struct {
-    uint32_t classID;
+    uint64_t classID;
 } ar_class_id;
 
 typedef struct {
-    _Atomic int32_t refcount;
+    _Atomic int64_t refcount;
     ar_class_id classid;
     size_t size; // base + descriptor
 
@@ -55,6 +57,6 @@ bool ARRuntimeIsRegisteredClass(ar_class_id classid);
 const char *ARRuntimeClassName(ar_class_id classid);
 const runtime_class_info *ARRuntimeClassInfo(ar_class_id classid);
 ARStringRef ARRuntimeDescription(ARObjectRef obj);
-int32_t ARRuntimeRefCount(ARObjectRef obj);
+int64_t ARRuntimeRefCount(ARObjectRef obj);
 ARObjectRef ARRuntimeMakeConstant(ARObjectRef obj); // makes obj unreleasable.
 #endif /* arruntime_h */

@@ -4,3 +4,4 @@
 #include "arruntime.h"
 #include "arstring.h"
 #include "arautoreleasepool.h"
+#include "ARRange.h"

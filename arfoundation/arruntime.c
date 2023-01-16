@@ -16,18 +16,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define AR_RUNTIME_VERBOSE 1
-
 typedef enum {
     AR_RUNTIME_NOT_INITIALIZED,
     AR_RUNTIME_INITIALIZING,
     AR_RUNTIME_READY,
 } ar_runtime_status;
 
-const uint32_t AR_RUNTIME_NOT_OBJECT = 0;      // special/any
-const int32_t AR_RUNTIME_UNRELEASABLE = -1;
+const uint64_t AR_RUNTIME_NOT_OBJECT = 0;      // special/any
+const int64_t AR_RUNTIME_UNRELEASABLE = -1;
 static _Atomic ar_runtime_status runtime_status;
-static _Atomic uint32_t ar_runtime_class_count;
+static _Atomic uint64_t ar_runtime_class_count;
 static runtime_class_info *ar_runtime_classes;      // TODO: not thread safe?
 
 #define ar_object_header(obj)  ((ar_object_base *) (obj) - 1)
@@ -81,7 +79,7 @@ ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
     ARObjectRef obj = (char *)object + sizeof(ar_object_base);
 
 #if AR_RUNTIME_VERBOSE
-    fprintf(stderr, "\033[33mAllocated \033[0mid:%d s:%zu bytes @%p\n", classid.classID, size, obj);
+    fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes @%p\n", classid.classID, size, obj);
 #endif
 
     return obj;
@@ -173,7 +171,7 @@ ARStringRef ARRuntimeDescription(ARObjectRef obj) {
 
 #pragma mark - Lifetime management
 
-int32_t ARRuntimeRefCount(ARObjectRef obj) {
+int64_t ARRuntimeRefCount(ARObjectRef obj) {
     if (!obj) {
         return 0;
     }
@@ -222,7 +220,7 @@ ARObjectRef ARRelease(ARObjectRef obj) {
             }
 
 #if AR_RUNTIME_VERBOSE
-            fprintf(stderr, "\033[31mDeallocating \033[0m%s(%d) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
+            fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
         } else {
             fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> @%p\n", base->size - sizeof(ar_object_base), obj);
 #endif

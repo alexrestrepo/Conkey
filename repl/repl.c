@@ -11,6 +11,8 @@
 #include "../parser/parser.h"
 #include "../token/token.h"
 
+#include "../arfoundation/arfoundation.h"
+
 static const char *monkey_face =
 "             __,__\n"
 "    .--.  .-\"     \"-.  .--.\n"
@@ -37,7 +39,9 @@ void replStart() {
 	char line[1024];
     environment_t *env = environmentCreate();
 
-	while (true) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    while (true) {
+
 		// printf("\033[32m>> \033[0m");
         printf(">> ");
 		if (!fgets(line, sizeof(line), stdin)) {
@@ -62,5 +66,8 @@ void replStart() {
 
 //        parserRelease(&parser);
 //		  lexerRelease(&lexer);
+
+        ARAutoreleasePoolDrain(autoreleasepool);
 	}
+    autoreleasepool = ARRelease(autoreleasepool);
 }

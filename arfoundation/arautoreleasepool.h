@@ -13,8 +13,8 @@ typedef struct ARAutoreleasePool *ARAutoreleasePoolRef;
 
 void ARAutoreleasePoolInitialize(void);
 ARAutoreleasePoolRef ARAutoreleasePoolCreate(void);
+ARAutoreleasePoolRef ARAutoreleasePoolGetCurrent(void);
 void ARAutoreleasePoolAddObject(ARAutoreleasePoolRef pool, ARObjectRef obj);
 void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool);
-ARAutoreleasePoolRef ARAutoreleasePoolGetCurrent(void);
 
 #endif /* arautoreleasepool_h */
