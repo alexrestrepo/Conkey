@@ -12,174 +12,174 @@
 #define SLCE(a) ((a) ? (charslice_t){(a), arrlen((a))} : (charslice_t){"", 0})
 
 static inline astnode_t astnodeMake(astnode_type type, literal_fn literal, string_fn string) {
-	return (astnode_t) {
-		.type = type,
-		.tokenLiteral = literal,
-		.string = string,
-	};
+    return (astnode_t) {
+        .type = type,
+        .tokenLiteral = literal,
+        .string = string,
+    };
 };
 
 static ARStringRef programTokenLiteral(astnode_t *node) {
-	assert(node->type == AST_PROGRAM);
-	astprogram_t *self = (astprogram_t *)node;
-	if (self->statements && arrlen(self->statements) > 0) {
-		return self->statements[0]->as.node.tokenLiteral(node);
-	}
-	
+    assert(node->type == AST_PROGRAM);
+    astprogram_t *self = (astprogram_t *)node;
+    if (self->statements && arrlen(self->statements) > 0) {
+        return self->statements[0]->as.node.tokenLiteral(node);
+    }
+
     return ARStringEmpty();
 }
 
 static ARStringRef programString(astnode_t *node) {
-	assert(node->type == AST_PROGRAM);
-	astprogram_t *self = (astprogram_t *)node;
-	
+    assert(node->type == AST_PROGRAM);
+    astprogram_t *self = (astprogram_t *)node;
+
     ARStringRef out = ARStringEmpty();
-	
-	if (self->statements) {
-		for (int i = 0; i < arrlen(self->statements); i++) {
-			aststatement_t *stmt = self->statements[i];
-			ARStringRef str = stmt->as.node.string(AS_NODE(stmt));
+
+    if (self->statements) {
+        for (int i = 0; i < arrlen(self->statements); i++) {
+            aststatement_t *stmt = self->statements[i];
+            ARStringRef str = stmt->as.node.string(AS_NODE(stmt));
             ARStringAppendFormat(out, "%s", ARStringCString(str));
-		}
-	}
-	
-	return out;
+        }
+    }
+
+    return out;
 }
 
 astprogram_t *programCreate() {
-	astprogram_t *program = calloc(1, sizeof(*program));
-	program->as.node = astnodeMake(AST_PROGRAM, programTokenLiteral, programString);
-	return program;
+    astprogram_t *program = calloc(1, sizeof(*program));
+    program->as.node = astnodeMake(AST_PROGRAM, programTokenLiteral, programString);
+    return program;
 }
 
 void programRelease(astprogram_t **program) {
-	if (program && *program) {
-		arrfree((*program)->statements);
-		free(*program);
-		*program = NULL;
-	}
+    if (program && *program) {
+        arrfree((*program)->statements);
+        free(*program);
+        *program = NULL;
+    }
 }
 
 static ARStringRef identifierTokenLiteral(astnode_t *node) {
-	assert(node->type == AST_IDENTIFIER);
-	astidentifier_t *self = (astidentifier_t *)node;
-	return ARStringWithSlice(self->token.literal);
+    assert(node->type == AST_IDENTIFIER);
+    astidentifier_t *self = (astidentifier_t *)node;
+    return ARStringWithSlice(self->token.literal);
 }
 
 static ARStringRef identifierString(astnode_t *node) {
-	assert(node->type == AST_IDENTIFIER);
-	astidentifier_t *self = (astidentifier_t *)node;
-	return ARStringWithSlice(self->value);
+    assert(node->type == AST_IDENTIFIER);
+    astidentifier_t *self = (astidentifier_t *)node;
+    return ARStringWithSlice(self->value);
 }
 
 astidentifier_t *identifierCreate(token_t token, charslice_t value) {
-	astidentifier_t *identifier = calloc(1, sizeof(*identifier));
-	identifier->as.node = astnodeMake(AST_IDENTIFIER, identifierTokenLiteral, identifierString);
-	identifier->token = token;
-	identifier->value = value;
-	return identifier;
+    astidentifier_t *identifier = calloc(1, sizeof(*identifier));
+    identifier->as.node = astnodeMake(AST_IDENTIFIER, identifierTokenLiteral, identifierString);
+    identifier->token = token;
+    identifier->value = value;
+    return identifier;
 }
 
 static ARStringRef letStatementTokenLiteral(astnode_t *node) {
-	assert(node->type == AST_LET);
-	astletstatement_t *self = (astletstatement_t *)node;
-	return ARStringWithSlice(self->token.literal);
+    assert(node->type == AST_LET);
+    astletstatement_t *self = (astletstatement_t *)node;
+    return ARStringWithSlice(self->token.literal);
 }
 
 static ARStringRef letStatementString(astnode_t *node) {
-	assert(node->type == AST_LET);
-	astletstatement_t *self = (astletstatement_t *)node;
-	
-	// TODO: figure out mem usage, all the leaks! :)
+    assert(node->type == AST_LET);
+    astletstatement_t *self = (astletstatement_t *)node;
+
+    // TODO: figure out mem usage, all the leaks! :)
     ARStringRef lit = ASTN_TOKLIT(self);
-    ARStringRef str = ASTN_STRING(self);
+    ARStringRef str = ASTN_STRING(self->name);
     ARStringRef out = ARStringWithFormat("%s %s = ", ARStringCString(lit), ARStringCString(str));
 
-	if (self->value) {
-		str = ASTN_STRING(self->value);
-        ARStringAppendFormat(str, "%s", ARStringCString(str));
-	}
-    ARStringAppendFormat(str, ";");
+    if (self->value) {
+        str = ASTN_STRING(self->value);
+        ARStringAppend(out, str);
+    }
+    ARStringAppendFormat(out, ";");
 
-	return out;
+    return out;
 }
 
 astletstatement_t *letStatementCreate(token_t token) {
-	astletstatement_t *let = calloc(1, sizeof(*let));
-	let->as.node = astnodeMake(AST_LET, letStatementTokenLiteral, letStatementString);
-	let->token = token;
-	return let;
+    astletstatement_t *let = calloc(1, sizeof(*let));
+    let->as.node = astnodeMake(AST_LET, letStatementTokenLiteral, letStatementString);
+    let->token = token;
+    return let;
 }
 
 static ARStringRef returnStatementTokenLiteral(astnode_t *node) {
-	assert(node->type == AST_RETURN);
-	astreturnstatement_t *self = (astreturnstatement_t *)node;
-	return ARStringWithSlice(self->token.literal);
+    assert(node->type == AST_RETURN);
+    astreturnstatement_t *self = (astreturnstatement_t *)node;
+    return ARStringWithSlice(self->token.literal);
 }
 
 static ARStringRef returnStatementString(astnode_t *node) {
-	assert(node->type == AST_RETURN);
-	astreturnstatement_t *self = (astreturnstatement_t *)node;
+    assert(node->type == AST_RETURN);
+    astreturnstatement_t *self = (astreturnstatement_t *)node;
 
-	ARStringRef str = ASTN_TOKLIT(self);
+    ARStringRef str = ASTN_TOKLIT(self);
     ARStringRef out = ARStringWithFormat("%s", ARStringCString(str));
 
-	if (self->returnValue) {
+    if (self->returnValue) {
         str = ASTN_STRING(self->returnValue);
         ARStringAppend(out, str);
-	}
+    }
     ARStringAppendFormat(out, ";");
-	return out;
+    return out;
 }
 
 astreturnstatement_t *returnStatementCreate(token_t token) {
-	astreturnstatement_t *ret = calloc(1, sizeof(*ret));
-	ret->as.node = astnodeMake(AST_RETURN, returnStatementTokenLiteral, returnStatementString);	
-	ret->token = token;
-	return ret;
+    astreturnstatement_t *ret = calloc(1, sizeof(*ret));
+    ret->as.node = astnodeMake(AST_RETURN, returnStatementTokenLiteral, returnStatementString);
+    ret->token = token;
+    return ret;
 }
 
 static ARStringRef expressionStatementTokenLiteral(astnode_t *node) {
-	assert(node->type == AST_EXPRESSIONSTMT);
-	astexpressionstatement_t *self = (astexpressionstatement_t *)node;
-	return ARStringWithSlice(self->token.literal);
+    assert(node->type == AST_EXPRESSIONSTMT);
+    astexpressionstatement_t *self = (astexpressionstatement_t *)node;
+    return ARStringWithSlice(self->token.literal);
 }
 
 static ARStringRef expressionStatementString(astnode_t *node) {
-	assert(node->type == AST_EXPRESSIONSTMT);
-	astexpressionstatement_t *self = (astexpressionstatement_t *)node;
-	
-	if (self->expression) {
+    assert(node->type == AST_EXPRESSIONSTMT);
+    astexpressionstatement_t *self = (astexpressionstatement_t *)node;
+
+    if (self->expression) {
         return ASTN_STRING(self->expression);
-	}
-	
-	return ARStringEmpty();
+    }
+
+    return ARStringEmpty();
 }
 
 astexpressionstatement_t *expressionStatementCreate(token_t token) {
-	astexpressionstatement_t *stmt = calloc(1, sizeof(*stmt));
-	stmt->as.node = astnodeMake(AST_EXPRESSIONSTMT, expressionStatementTokenLiteral, expressionStatementString);
-	stmt->token = token;
-	return stmt;
+    astexpressionstatement_t *stmt = calloc(1, sizeof(*stmt));
+    stmt->as.node = astnodeMake(AST_EXPRESSIONSTMT, expressionStatementTokenLiteral, expressionStatementString);
+    stmt->token = token;
+    return stmt;
 }
 
 static ARStringRef integerExpressionTokenLiteral(astnode_t *node) {
-	assert(node->type == AST_INTEGER);
-	astinteger_t *self = (astinteger_t *)node;
-	return ARStringWithSlice(self->token.literal);
+    assert(node->type == AST_INTEGER);
+    astinteger_t *self = (astinteger_t *)node;
+    return ARStringWithSlice(self->token.literal);
 }
 
 static ARStringRef integerExpressionString(astnode_t *node) {
-	assert(node->type == AST_INTEGER);
-	astinteger_t *self = (astinteger_t *)node;
-	return ARStringWithSlice(self->token.literal);
+    assert(node->type == AST_INTEGER);
+    astinteger_t *self = (astinteger_t *)node;
+    return ARStringWithSlice(self->token.literal);
 }
 
 astinteger_t *integerExpressionCreate(token_t token) {
-	astinteger_t *i = calloc(1, sizeof(*i));
-	i->as.node = astnodeMake(AST_INTEGER, integerExpressionTokenLiteral, integerExpressionString);
-	i->token = token;
-	return i;
+    astinteger_t *i = calloc(1, sizeof(*i));
+    i->as.node = astnodeMake(AST_INTEGER, integerExpressionTokenLiteral, integerExpressionString);
+    i->token = token;
+    return i;
 }
 
 static ARStringRef prefixExpressionTokenLiteral(astnode_t *node) {
