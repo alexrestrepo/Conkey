@@ -8,6 +8,7 @@
 #include "../ast/ast.h"
 #include "../lexer/lexer.h"
 #include "../token/token.h"
+#include "../arfoundation/arfoundation.h"
 
 typedef struct parser_t parser_t;
 typedef astexpression_t *prefixParseFn(parser_t *parser);
@@ -15,7 +16,7 @@ typedef astexpression_t *infixParseFn(parser_t *parser, astexpression_t *left);
 
 struct parser_t {
     lexer_t *lexer;
-    charslice_t *errors;
+    ARStringRef *errors;
     
     token_t currentToken;
     token_t peekToken;

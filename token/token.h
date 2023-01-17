@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "../arfoundation/arstring.h"
+
 #define TOKEN_DEFS \
 	TOK(EOF,     "EOF") \
 	TOK(ILLEGAL, "ILLEGAL") \
@@ -60,10 +62,9 @@ static const char *token_str[] = {
 #undef TOK
 
 typedef struct {
-	char *src;
+	const char *src;
 	size_t length;	
 } charslice_t;
-charslice_t charsliceMake(const char *fmt, ...) __printflike(1, 2);
 
 typedef struct {
 	token_type type;
@@ -72,5 +73,13 @@ typedef struct {
 
 token_type tokenLookupIdentifier(charslice_t ident);
 void tokenPrint(token_t token);
+
+AR_INLINE ARStringRef ARStringWithSlice(charslice_t slice) {
+    return ARStringWithFormat("%.*s", (int)slice.length, slice.src);
+}
+
+AR_INLINE void ARStringAppendSlice(ARStringRef str, charslice_t slice) {
+    ARStringAppendFormat(str, "%.*s", (int)slice.length, slice.src);
+}
 
 #endif

@@ -19,32 +19,31 @@ static inline astnode_t astnodeMake(astnode_type type, literal_fn literal, strin
 	};
 };
 
-static charslice_t programTokenLiteral(astnode_t *node) {
+static ARStringRef programTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_PROGRAM);
 	astprogram_t *self = (astprogram_t *)node;
 	if (self->statements && arrlen(self->statements) > 0) {
 		return self->statements[0]->as.node.tokenLiteral(node);
 	}
 	
-	return (charslice_t){"", 0};
+    return ARStringEmpty();
 }
 
-static charslice_t programString(astnode_t *node) {
+static ARStringRef programString(astnode_t *node) {
 	assert(node->type == AST_PROGRAM);
 	astprogram_t *self = (astprogram_t *)node;
 	
-	// TODO: figure out mem usage, all the leaks! :)
-    char *out = NULL;
+    ARStringRef out = ARStringEmpty();
 	
 	if (self->statements) {
 		for (int i = 0; i < arrlen(self->statements); i++) {
 			aststatement_t *stmt = self->statements[i];
-			charslice_t str = stmt->as.node.string(AS_NODE(stmt));
-            sarrprintf(out, "%.*s", (int)str.length, str.src);
+			ARStringRef str = stmt->as.node.string(AS_NODE(stmt));
+            ARStringAppendFormat(out, "%s", ARStringCString(str));
 		}
 	}
 	
-	return SLCE(out);
+	return out;
 }
 
 astprogram_t *programCreate() {
@@ -61,16 +60,16 @@ void programRelease(astprogram_t **program) {
 	}
 }
 
-static charslice_t identifierTokenLiteral(astnode_t *node) {
+static ARStringRef identifierTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_IDENTIFIER);
 	astidentifier_t *self = (astidentifier_t *)node;
-	return self->token.literal;
+	return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t identifierString(astnode_t *node) {
+static ARStringRef identifierString(astnode_t *node) {
 	assert(node->type == AST_IDENTIFIER);
 	astidentifier_t *self = (astidentifier_t *)node;
-	return self->value;
+	return ARStringWithSlice(self->value);
 }
 
 astidentifier_t *identifierCreate(token_t token, charslice_t value) {
@@ -81,29 +80,28 @@ astidentifier_t *identifierCreate(token_t token, charslice_t value) {
 	return identifier;
 }
 
-static charslice_t letStatementTokenLiteral(astnode_t *node) {
+static ARStringRef letStatementTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_LET);
 	astletstatement_t *self = (astletstatement_t *)node;
-	return self->token.literal;
+	return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t letStatementString(astnode_t *node) {
+static ARStringRef letStatementString(astnode_t *node) {
 	assert(node->type == AST_LET);
 	astletstatement_t *self = (astletstatement_t *)node;
 	
 	// TODO: figure out mem usage, all the leaks! :)
-	charslice_t lit = self->as.node.tokenLiteral(&(self->as.node));
-	charslice_t str = self->name->as.node.string(&(self->name->as.node));
-    char *out = NULL;
-    sarrprintf(out, "%.*s %.*s = ", (int)lit.length, lit.src, (int)str.length, str. src);
+    ARStringRef lit = ASTN_TOKLIT(self);
+    ARStringRef str = ASTN_STRING(self);
+    ARStringRef out = ARStringWithFormat("%s %s = ", ARStringCString(lit), ARStringCString(str));
 
 	if (self->value) {
-		str = self->value->as.node.string(AS_NODE(self->value));
-        sarrprintf(out, "%.*s", (int)str.length, str.src);
+		str = ASTN_STRING(self->value);
+        ARStringAppendFormat(str, "%s", ARStringCString(str));
 	}
-    sarrprintf(out, ";");
+    ARStringAppendFormat(str, ";");
 
-	return SLCE(out);
+	return out;
 }
 
 astletstatement_t *letStatementCreate(token_t token) {
@@ -113,28 +111,25 @@ astletstatement_t *letStatementCreate(token_t token) {
 	return let;
 }
 
-static charslice_t returnStatementTokenLiteral(astnode_t *node) {
+static ARStringRef returnStatementTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_RETURN);
 	astreturnstatement_t *self = (astreturnstatement_t *)node;
-	return self->token.literal;
+	return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t returnStatementString(astnode_t *node) {
+static ARStringRef returnStatementString(astnode_t *node) {
 	assert(node->type == AST_RETURN);
 	astreturnstatement_t *self = (astreturnstatement_t *)node;
-	
-	// TODO: figure out mem usage, all the leaks! :)
-	charslice_t str = self->as.node.tokenLiteral(&(self->as.node));	
-    char *out = NULL;
-    sarrprintf(out, "%.*s ", (int)str.length, str.src);
-	
-	if (self->returnValue) {
-		str = self->returnValue->as.node.string(AS_NODE(self->returnValue));
-        sarrprintf(out, "%.*s", (int)str.length, str.src);
-	}
-    sarrprintf(out, ";");
 
-	return SLCE(out);
+	ARStringRef str = ASTN_TOKLIT(self);
+    ARStringRef out = ARStringWithFormat("%s", ARStringCString(str));
+
+	if (self->returnValue) {
+        str = ASTN_STRING(self->returnValue);
+        ARStringAppend(out, str);
+	}
+    ARStringAppendFormat(out, ";");
+	return out;
 }
 
 astreturnstatement_t *returnStatementCreate(token_t token) {
@@ -144,21 +139,21 @@ astreturnstatement_t *returnStatementCreate(token_t token) {
 	return ret;
 }
 
-static charslice_t expressionStatementTokenLiteral(astnode_t *node) {
+static ARStringRef expressionStatementTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_EXPRESSIONSTMT);
 	astexpressionstatement_t *self = (astexpressionstatement_t *)node;
-	return self->token.literal;
+	return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t expressionStatementString(astnode_t *node) {
+static ARStringRef expressionStatementString(astnode_t *node) {
 	assert(node->type == AST_EXPRESSIONSTMT);
 	astexpressionstatement_t *self = (astexpressionstatement_t *)node;
 	
 	if (self->expression) {
-		return self->expression->as.node.string(AS_NODE(self->expression));
+        return ASTN_STRING(self->expression);
 	}
 	
-	return (charslice_t){"", 0};
+	return ARStringEmpty();
 }
 
 astexpressionstatement_t *expressionStatementCreate(token_t token) {
@@ -168,16 +163,16 @@ astexpressionstatement_t *expressionStatementCreate(token_t token) {
 	return stmt;
 }
 
-static charslice_t integerExpressionTokenLiteral(astnode_t *node) {
+static ARStringRef integerExpressionTokenLiteral(astnode_t *node) {
 	assert(node->type == AST_INTEGER);
 	astinteger_t *self = (astinteger_t *)node;
-	return self->token.literal;
+	return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t integerExpressionString(astnode_t *node) {
+static ARStringRef integerExpressionString(astnode_t *node) {
 	assert(node->type == AST_INTEGER);
 	astinteger_t *self = (astinteger_t *)node;
-	return self->token.literal;
+	return ARStringWithSlice(self->token.literal);
 }
 
 astinteger_t *integerExpressionCreate(token_t token) {
@@ -187,20 +182,19 @@ astinteger_t *integerExpressionCreate(token_t token) {
 	return i;
 }
 
-static charslice_t prefixExpressionTokenLiteral(astnode_t *node) {
+static ARStringRef prefixExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_PREFIXEXPR);
     astprefixexpression_t *self = (astprefixexpression_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t prefixExpressionString(astnode_t *node) {
+static ARStringRef prefixExpressionString(astnode_t *node) {
     assert(node->type == AST_PREFIXEXPR);
     astprefixexpression_t *self = (astprefixexpression_t *)node;
 
-    // TODO: figure out mem usage, all the leaks! :)
-    charslice_t rightstr = self->right->as.node.string(AS_NODE(self->right));
-    charslice_t out = charsliceMake("(%.*s%.*s)", (int)self->operator.length, self->operator.src,
-                                    (int)rightstr.length, rightstr.src);
+    ARStringRef rightstr = ASTN_STRING(self->right);
+    ARStringRef out = ARStringWithFormat("(%.*s%s)", (int)self->operator.length, self->operator.src,
+                                         ARStringCString(rightstr));
     return out;
 }
 
@@ -212,23 +206,22 @@ astprefixexpression_t *prefixExpressionCreate(token_t token, charslice_t operato
     return exp;
 }
 
-static charslice_t infixExpressionTokenLiteral(astnode_t *node) {
+static ARStringRef infixExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_INFIXEXPR);
     astinfixexpression_t *self = (astinfixexpression_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t infixExpressionString(astnode_t *node) {
+static ARStringRef infixExpressionString(astnode_t *node) {
     assert(node->type == AST_INFIXEXPR);
     astinfixexpression_t *self = (astinfixexpression_t *)node;
 
-    // TODO: figure out mem usage, all the leaks! :)
-    charslice_t lefttstr = self->left->as.node.string(AS_NODE(self->left));
-    charslice_t rightstr = self->right->as.node.string(AS_NODE(self->right));
-    charslice_t out = charsliceMake("(%.*s %.*s %.*s)",
-                                    (int)lefttstr.length, lefttstr.src,
-                                    (int)self->operator.length, self->operator.src,
-                                    (int)rightstr.length, rightstr.src);
+    ARStringRef lefttstr = ASTN_STRING(self->left);
+    ARStringRef rightstr = ASTN_STRING(self->right);
+    ARStringRef out = ARStringWithFormat("(%s %.*s %s)",
+                                         ARStringCString(lefttstr),
+                                         (int)self->operator.length, self->operator.src,
+                                         ARStringCString(rightstr));
     return out;
 }
 
@@ -241,10 +234,10 @@ astinfixexpression_t *infixExpressionCreate(token_t token, charslice_t operator,
     return exp;
 }
 
-static charslice_t booleanTokenLiteral(astnode_t *node) {
+static ARStringRef booleanTokenLiteral(astnode_t *node) {
     assert(node->type == AST_BOOL);
     astinfixexpression_t *self = (astinfixexpression_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
 astboolean_t *booleanCreate(token_t token, bool value) {
@@ -255,34 +248,30 @@ astboolean_t *booleanCreate(token_t token, bool value) {
     return boo;
 }
 
-static charslice_t ifexprTokenLiteral(astnode_t *node) {
+static ARStringRef ifexprTokenLiteral(astnode_t *node) {
     assert(node->type == AST_IFEXPR);
     astifexpression_t *self = (astifexpression_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t ifExpressionString(astnode_t *node) {
+static ARStringRef ifExpressionString(astnode_t *node) {
     assert(node->type == AST_IFEXPR);
     astifexpression_t *self = (astifexpression_t *)node;
 
-    // TODO: figure out mem usage, all the leaks! :)
-    char *out = NULL;
-    charslice_t tmp = {0};
+    ARStringRef out = ARStringWithFormat("if ");
 
-    sarrprintf(out, "if ");
+    ARStringRef tmp = ASTN_STRING(self->condition);
+    ARStringAppendFormat(out, "%s ", ARStringCString(tmp));
 
-    tmp = self->condition->as.node.string(AS_NODE(self->condition));
-    sarrprintf(out, "%.*s ", (int)tmp.length, tmp.src);
-
-    tmp = self->consequence->as.node.string(AS_NODE(self->consequence));
-    sarrprintf(out, "-> %.*s ", (int)tmp.length, tmp.src);
+    tmp = ASTN_STRING(self->consequence);
+    ARStringAppendFormat(out, "-> %s ", ARStringCString(tmp));
 
     if (self->alternative) {
-        tmp = self->alternative->as.node.string(AS_NODE(self->alternative));
-        sarrprintf(out, "else %.*s ", (int)tmp.length, tmp.src);
+        tmp = ASTN_STRING(self->alternative);
+        ARStringAppendFormat(out, "else %s ", ARStringCString(tmp));
     }
 
-    return SLCE(out);
+    return out;
 }
 
 astifexpression_t *ifExpressionCreate(token_t token) {
@@ -292,25 +281,25 @@ astifexpression_t *ifExpressionCreate(token_t token) {
     return ifexp;
 }
 
-static charslice_t blockStatementTokenLiteral(astnode_t *node) {
+static ARStringRef blockStatementTokenLiteral(astnode_t *node) {
     assert(node->type == AST_BLOCKSTMT);
     astblockstatement_t *self = (astblockstatement_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t blockStatementString(astnode_t *node) {
+static ARStringRef blockStatementString(astnode_t *node) {
     assert(node->type == AST_BLOCKSTMT);
     astblockstatement_t *self = (astblockstatement_t *)node;
 
-    char *out = NULL;
+    ARStringRef out = ARStringEmpty();
     if (self->statements) {
         for (int i = 0; i < arrlen(self->statements); i++) {
-            charslice_t str = self->statements[i]->as.node.string(AS_NODE(self->statements[i]));
-            sarrprintf(out, "%.*s", (int)str.length, str.src);
+            ARStringRef str = ASTN_STRING(self->statements[i]);
+            ARStringAppend(out, str);
         }
     }
     
-    return SLCE(out);
+    return out;
 }
 
 astblockstatement_t *blockStatementCreate(token_t token) {
@@ -320,41 +309,44 @@ astblockstatement_t *blockStatementCreate(token_t token) {
     return block;
 }
 
-static charslice_t functionLiteralTokenLiteral(astnode_t *node) {
+static ARStringRef functionLiteralTokenLiteral(astnode_t *node) {
     assert(node->type == AST_FNLIT);
     astfunctionliteral_t *self = (astfunctionliteral_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t functionLiteralString(astnode_t *node) {
+static ARStringRef functionLiteralString(astnode_t *node) {
     assert(node->type == AST_FNLIT);
     astfunctionliteral_t *self = (astfunctionliteral_t *)node;
 
-    char *out = NULL;
-    char *params = NULL;
+    ARStringRef params = NULL;
     if (self->parameters) {
+        params = ARStringEmpty();
+
         for (int i = 0; i < arrlen(self->parameters); i++) {
-            charslice_t str = self->parameters[i]->as.node.string(&(self->parameters[i]->as.node));
-            sarrprintf(params, "%.*s", (int)str.length, str.src);
+            ARStringRef str = ASTN_STRING(self->parameters[i]);
+            ARStringAppend(params, str);
             if (i < arrlen(self->parameters) - 1) {
-                sarrprintf(params, ", ");
+                ARStringAppendFormat(params, ", ");
             }
         }
     }
 
-    charslice_t tmp = self->as.node.tokenLiteral(&self->as.node);
-    if (params && arrlen(params) > 1) {
-        sarrprintf(out, "%.*s(%.*s) ", (int)tmp.length, tmp.src, (int)arrlen(params), params);
+    ARStringRef tmp = ASTN_TOKLIT(self);
+    ARStringRef out = ARStringEmpty();
+    if (params && ARStringLength(params) > 1) {
+        ARStringAppendFormat(out, "%s(%s) ", ARStringCString(tmp), ARStringCString(params));
+
     } else {
-        sarrprintf(out, "%.*s() ", (int)tmp.length, tmp.src);
+        ARStringAppendFormat(out, "%s() ", ARStringCString(tmp));
     }
 
     if (self->body) {
-        tmp = self->body->as.node.string(&self->body->as.node);
-        sarrprintf(out, "%.*s", (int)tmp.length, tmp.src);
+        tmp = ASTN_STRING(self->body);
+        ARStringAppend(out, tmp);
     }
 
-    return SLCE(out);
+    return out;
 }
 
 astfunctionliteral_t *functionLiteralCreate(token_t token) {
@@ -364,36 +356,38 @@ astfunctionliteral_t *functionLiteralCreate(token_t token) {
     return lit;
 }
 
-static charslice_t callExpressionTokenLiteral(astnode_t *node) {
+static ARStringRef callExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_CALL);
     astcallexpression_t *self = (astcallexpression_t *)node;
-    return self->token.literal;
+    return ARStringWithSlice(self->token.literal);
 }
 
-static charslice_t callExpressionString(astnode_t *node) {
+static ARStringRef callExpressionString(astnode_t *node) {
     assert(node->type == AST_CALL);
     astcallexpression_t *self = (astcallexpression_t *)node;
 
-    char *out = NULL;
-    char *args = NULL;
+    ARStringRef args = NULL;
     if (self->arguments) {
+        args = ARStringEmpty();
+
         for (int i = 0; i < arrlen(self->arguments); i++) {
-            charslice_t str = self->arguments[i]->as.node.string(AS_NODE(self->arguments[i]));
-            sarrprintf(args, "%.*s", (int)str.length, str.src);
+            ARStringRef str = ASTN_STRING(self->arguments[i]);
+            ARStringAppend(args, str);
             if (i < arrlen(self->arguments) - 1) {
-                sarrprintf(args, ", ");
+                ARStringAppendFormat(args, ", ");
             }
         }
     }
 
-    charslice_t tmp = self->function->as.node.tokenLiteral(AS_NODE(self->function));
-    if (args && arrlen(args) > 1) {
-        sarrprintf(out, "%.*s(%.*s)", (int)tmp.length, tmp.src, (int)arrlen(args), args);
+    ARStringRef out = ARStringEmpty();
+    ARStringRef tmp = ASTN_TOKLIT(self->function);
+    if (args && ARStringLength(args) > 1) {
+        ARStringAppendFormat(out, "%s(%s)", ARStringCString(tmp), ARStringCString(args));
     } else {
-        sarrprintf(out, "%.*s()", (int)tmp.length, tmp.src);
+        ARStringAppendFormat(out, "%s()", ARStringCString(tmp));
     }
 
-    return SLCE(out);
+    return out;
 }
 
 astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *function) {

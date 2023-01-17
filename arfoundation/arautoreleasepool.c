@@ -11,6 +11,7 @@
 #include "stb_ds_x.h"
 
 struct ARAutoreleasePool {
+    // maybe instead of an array use a dict, with the id being "alloc id" so you can't add an entry twice...?
     ARObjectRef *objects;
 };
 

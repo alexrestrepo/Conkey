@@ -31,9 +31,9 @@ typedef struct {
 #define STR(src) (Value){.type = TYPE_STR, .strValue = (charslice_t){(src), strlen((src))}}
 
 static bool testLetStatement(aststatement_t *statement, const char *name) {
-    charslice_t literal = statement->as.node.tokenLiteral(AS_NODE(statement));
-    if (literal.length != 3 || strncmp("let", literal.src, literal.length)) {
-        fprintf(stderr, "s.tokenLiteral not 'let'. got='%.*s'\n", (int)literal.length, literal.src);
+    ARStringRef literal = ASTN_TOKLIT(statement);
+    if (ARStringLength(literal) != 3 || strcmp("let", ARStringCString(literal))) {
+        fprintf(stderr, "s.tokenLiteral not 'let'. got='%s'\n", ARStringCString(literal));
         return false;
     }
 
@@ -50,10 +50,10 @@ static bool testLetStatement(aststatement_t *statement, const char *name) {
         return false;
     }
 
-    literal = letStatement->name->as.node.tokenLiteral((astnode_t *)letStatement->name);
-    if (strlen(name) != literal.length
-        || strncmp(name, literal.src, literal.length)) {
-        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got='%.*s'\n", name, (int)literal.length, literal.src);
+    literal = ASTN_TOKLIT(letStatement->name);
+    if (strlen(name) != ARStringLength(literal)
+        || strcmp(name, ARStringCString(literal))) {
+        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got='%s'\n", name, ARStringCString(literal));
         return false;
     }
 
@@ -67,7 +67,7 @@ static bool checkParserErrors(parser_t *parser) {
 
     fprintf(stderr, "\nparser has %ld errors\n", arrlen(parser->errors));
     for (size_t i = 0; i < arrlen(parser->errors); i++) {
-        fprintf(stderr, "parser error: %.*s\n", (int)parser->errors[i].length, parser->errors[i].src);
+        fprintf(stderr, "parser error: %s\n", ARStringCString(parser->errors[i]));
     }
     return true;
 }
@@ -84,10 +84,10 @@ static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
         return false;
     }
 
-    charslice_t toklit = integ->as.node.tokenLiteral(&integ->as.node);
-    charslice_t val = charsliceMake("%lld", value);
-    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "integ.tokenLiteral not %lld. got='%.*s'\n", value, (int)toklit.length, toklit.src);
+    ARStringRef toklit = ASTN_TOKLIT(integ);
+    ARStringRef val = ARStringWithFormat("%lld", value);
+    if (ARStringLength(toklit) != ARStringLength(val) || strcmp(ARStringCString(toklit), ARStringCString(val))) {
+        fprintf(stderr, "integ.tokenLiteral not %lld. got='%s'\n", value, ARStringCString(toklit));
         return false;
     }
 
@@ -109,12 +109,11 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
         return false;
     }
 
-    charslice_t literal = exp->as.node.tokenLiteral(AS_NODE(exp));
-    if (literal.length != value.length || strncmp(literal.src, value.src, value.length)) {
-        fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%.*s'\n",
+    ARStringRef literal = ASTN_TOKLIT(exp);
+    if (ARStringLength(literal) != value.length || strncmp(ARStringCString(literal), value.src, value.length)) {
+        fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%s'\n",
                 (int)value.length, value.src,
-                (int)literal.length, literal.src
-                );
+                ARStringCString(literal));
         return false;
     }
 
@@ -135,11 +134,12 @@ static bool testBooleanLiteral(astexpression_t *exp, bool value) {
         return false;
     }
 
-    charslice_t toklit = boo->as.node.tokenLiteral(&boo->as.node);
-    charslice_t val = charsliceMake("%s", value?"true":"false");
-    if (toklit.length != val.length || strncmp(toklit.src, val.src, val.length)) {
-        fprintf(stderr, "boo.tokenLiteral not %s. got='%.*s'\n",
-                value ? "true":"false", (int)toklit.length, toklit.src);
+    ARStringRef toklit = ASTN_TOKLIT(boo);
+    ARStringRef val = ARStringWithFormat("%s", value ? "true" : "false");
+    if (ARStringLength(toklit) != ARStringLength(val)
+        || strcmp(ARStringCString(toklit), ARStringCString(val))) {
+        fprintf(stderr, "boo.tokenLiteral not %s. got='%s'\n",
+                value ? "true":"false", ARStringCString(toklit));
         return false;
     }
 
@@ -190,6 +190,8 @@ static bool testInfixExpression(astexpression_t *exp, Value left, charslice_t op
 }
 
 UTEST(parser, letStatements) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         char *expectedIdentifier;
@@ -222,9 +224,13 @@ UTEST(parser, letStatements) {
         astexpression_t *value = ((astletstatement_t *)stmt)->value;
         ASSERT_TRUE(testLiteralExpression(value, test.expectedValue));
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, returnStatements) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         Value expectedValue;
@@ -253,14 +259,18 @@ UTEST(parser, returnStatements) {
         ASSERT_EQ(AST_RETURN, AST_TYPE(stmt));
 
         astreturnstatement_t *ret = (astreturnstatement_t *)stmt;
-        charslice_t lit = ret->as.node.tokenLiteral(&ret->as.node);
-        ASSERT_STRNEQ("return", lit.src, lit.length);
+        ARStringRef lit = ASTN_TOKLIT(ret);
+        ASSERT_STREQ("return", ARStringCString(lit));
 
         ASSERT_TRUE(testLiteralExpression(ret->returnValue, test.expectedValue));
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, identifierExpression) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     const char *input = "foobar;";
 
     lexer_t *lexer = lexerCreate(input);
@@ -281,11 +291,15 @@ UTEST(parser, identifierExpression) {
 
     ASSERT_STRNEQ("foobar", ident->value.src, ident->value.length);
 
-    charslice_t lit = ident->as.node.tokenLiteral(&ident->as.node);
-    ASSERT_STRNEQ("foobar", lit.src, lit.length);
+    ARStringRef lit = ASTN_TOKLIT(ident);
+    ASSERT_STREQ("foobar", ARStringCString(lit));
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, integerLiteralExpression) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     const char *input = "5;";
 
     lexer_t *lexer = lexerCreate(input);
@@ -306,11 +320,15 @@ UTEST(parser, integerLiteralExpression) {
 
     ASSERT_EQ(5, literal->value);
 
-    charslice_t lit = literal->as.node.tokenLiteral(&literal->as.node);
-    ASSERT_STRNEQ("5", lit.src, lit.length);
+    ARStringRef lit = ASTN_TOKLIT(literal);
+    ASSERT_STREQ("5", ARStringCString(lit));
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, parsingPrefixExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         const char *operator;
@@ -346,9 +364,13 @@ UTEST(parser, parsingPrefixExpressions) {
 
         ASSERT_TRUE(testIntegerLiteral(prefix->right, test.integerValue));
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, parsingInfixExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         Value leftValue;
@@ -399,9 +421,13 @@ UTEST(parser, parsingInfixExpressions) {
 
         ASSERT_TRUE(testInfixExpression(exp, test.leftValue, (charslice_t){test.operator, strlen(test.operator)}, test.rightValue));
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, operatorPrecedenceParsing) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         const char *expected;
@@ -519,12 +545,16 @@ UTEST(parser, operatorPrecedenceParsing) {
 
         ASSERT_TRUE(program->statements);
 
-        charslice_t actual = program->as.node.string(AS_NODE(program));
-        ASSERT_STRNEQ(test.expected, actual.src, actual.length);
+        ARStringRef actual = ASTN_STRING(program);
+        ASSERT_STREQ(test.expected, ARStringCString(actual));
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, booleanExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         bool expected;
@@ -558,9 +588,13 @@ UTEST(parser, booleanExpressions) {
         astboolean_t *boo = (astboolean_t *)exp->expression;
         ASSERT_EQ(boo->value, test.expected);
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, ifExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     const char *input = "if (x < y) { x }";
 
     lexer_t *lexer = lexerCreate(input);
@@ -590,9 +624,13 @@ UTEST(parser, ifExpressions) {
     ASSERT_TRUE(testIdentifier(consequence->expression, (charslice_t){"x", 1}));
 
     ASSERT_FALSE(exp->alternative);
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, ifElseExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     const char *input = "if (x < y) { x } else { y }";
 
     lexer_t *lexer = lexerCreate(input);
@@ -628,9 +666,13 @@ UTEST(parser, ifElseExpressions) {
     astexpressionstatement_t *alternative = (astexpressionstatement_t *)exp->alternative->statements[0];
 
     ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, functionLiteralParsing) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     const char *input = "fn(x, y) { x + y; }";
 
     lexer_t *lexer = lexerCreate(input);
@@ -665,9 +707,13 @@ UTEST(parser, functionLiteralParsing) {
 
     //    charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
     //    fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, functionParameterParsing) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     struct test {
         const char *input;
         char *expectedParams[3];
@@ -702,9 +748,13 @@ UTEST(parser, functionParameterParsing) {
         //        charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
         //        fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
     }
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST(parser, callExpressionParsing) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
     const char *input = "add(1, 2 * 3, 4 + 5);";
 
     lexer_t *lexer = lexerCreate(input);
@@ -731,6 +781,8 @@ UTEST(parser, callExpressionParsing) {
     ASSERT_TRUE(testLiteralExpression((astexpression_t *)call->arguments[0], INT(1)));
     ASSERT_TRUE(testInfixExpression((astexpression_t *)call->arguments[1], INT(2), (charslice_t){"*",1}, INT(3)));
     ASSERT_TRUE(testInfixExpression((astexpression_t *)call->arguments[2], INT(4), (charslice_t){"+",1}, INT(5)));
+
+    ARRelease(autoreleasepool);
 }
 
 UTEST_MAIN();

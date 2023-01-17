@@ -16,7 +16,11 @@ void ARStringInitialize(void);
 
 ARStringRef ARStringCreateWithFormat(const char *fmt, ...) __printflike(1, 2);
 ARStringRef ARStringWithFormat(const char *fmt, ...) __printflike(1, 2);
-ARStringRef ARStringAppendFormat(ARStringRef str, const char *fmt, ...) __printflike(2, 3);
+ARStringRef ARStringEmpty(void);
+
+void ARStringAppendFormat(ARStringRef str, const char *fmt, ...) __printflike(2, 3);
+void ARStringAppend(ARStringRef str, ARStringRef append);
+
 size_t ARStringLength(ARStringRef str);
 const char *ARStringCString(ARStringRef str);
 

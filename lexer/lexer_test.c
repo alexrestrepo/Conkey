@@ -4,7 +4,6 @@
 #include "../macros.h"
 #include "../arfoundation/vendor/utest.h"
 #include "../token/token.h"
-#include "../ast/ast.h"
 
 typedef struct {
 	token_type expectedType;

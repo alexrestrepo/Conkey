@@ -37,18 +37,3 @@ token_type tokenLookupIdentifier(charslice_t ident) {
 void tokenPrint(token_t token) {
 	printf("{Type:%s Literal:'%.*s'}\n", token_types[token.type], (int)token.literal.length, token.literal.src);
 }
-
-
-// move this into a core, or common thing. add a basic root obj with refcount, add slices and ast objs...
-// also intern all strings
-charslice_t charsliceMake(const char *fmt, ...) {
-    charslice_t slice = {0};
-    va_list args;
-    va_start(args, fmt);
-    sarrvprintf(slice.src, fmt, args);
-    va_end(args);
-
-    slice.length = arrlen(slice.src);
-    // p *((stbds_array_header *)(slice.src) - 1)
-    return slice;
-}

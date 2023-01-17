@@ -6,7 +6,9 @@
 #define _ast_h_
 
 #include <stdint.h>
+
 #include "../token/token.h"
+#include "../arfoundation/arfoundation.h"
 
 typedef enum {
 	AST_PROGRAM,
@@ -31,8 +33,9 @@ typedef enum {
 // TODO: a tree structure dump?
 
 typedef struct astnode astnode_t;
-typedef charslice_t literal_fn(astnode_t *node);
-typedef charslice_t string_fn(astnode_t *node);
+typedef ARStringRef literal_fn(astnode_t *node);
+typedef ARStringRef string_fn(astnode_t *node);
+
 struct astnode {
 	astnode_type type;
 	literal_fn *tokenLiteral;

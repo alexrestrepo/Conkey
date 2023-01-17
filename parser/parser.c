@@ -34,6 +34,11 @@ static op_precedence precedences[TOKEN_TYPE_COUNT] = {
 
 void parserRelease(parser_t **parser) {
     if (parser && *parser) {
+        if ((*parser)->errors) {
+            for (int i = 0; i < arrlen((*parser)->errors); i++) {
+                ARRelease((*parser)->errors[i]);
+            }
+        }
         free(*parser);
         *parser = NULL;
     }
@@ -45,10 +50,9 @@ void parserNextToken(parser_t *parser) {
 }
 
 static void parserPeekError(parser_t *parser, token_type type) {
-    charslice_t slice = charsliceMake("expected next token to be %s, got '%s' instead",
-                                      token_str[type], token_str[parser->peekToken.type]
-                                      );
-    arrput(parser->errors, slice);
+    ARStringRef error = ARStringCreateWithFormat("expected next token to be %s, got '%s' instead",
+                                                 token_str[type], token_str[parser->peekToken.type]);
+    arrput(parser->errors, error);
 }
 
 static op_precedence parserPeekPrecedence(parser_t *parser) {
@@ -68,7 +72,7 @@ static op_precedence parserCurrentPrecedence(parser_t *parser) {
 }
 
 static void parserNoPrefixParseFnError(parser_t *parser, token_type token) {
-    charslice_t error = charsliceMake("no prefix parse function for '%s' found", token_str[token]);
+    ARStringRef error = ARStringCreateWithFormat("no prefix parse function for '%s' found", token_str[token]);
     arrput(parser->errors, error);
 }
 

@@ -5,6 +5,8 @@
 
 #include "arstring.h"
 
+#include <assert.h>
+
 #include "arruntime.h"
 #include "stb_ds_x.h"
 
@@ -82,11 +84,19 @@ ARStringRef ARStringWithFormat(const char *fmt, ...) {
     return ARAutorelease(instance);
 }
 
-ARStringRef ARStringAppendFormat(ARStringRef str, const char *fmt, ...) {
+void ARStringAppendFormat(ARStringRef str, const char *fmt, ...) {
+    assert(str);
     va_list args;
     va_start(args, fmt);
     sarrvprintf(str->cstr, fmt, args);
     va_end(args);
+}
 
-    return str;
+void ARStringAppend(ARStringRef str, ARStringRef append) {
+    ARStringAppendFormat(str, "%s", ARStringCString(append));
+}
+
+ARStringRef ARStringEmpty(void) {
+    // make this immutable, constant...
+    return ARStringWithFormat("");
 }
