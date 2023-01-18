@@ -17,10 +17,10 @@ static ARStringRef intInspect(mky_object_t *obj) {
 }
 
 mky_integer_t *objIntegerCreate(int64_t value) {
-    mky_integer_t *i = calloc(1, sizeof(*i));
+    mky_integer_t *i = ARAllocRC(sizeof(*i));
     i->super = (mky_object_t){INTEGER_OBJ, intInspect};
     i->value = value;
-    return i;
+    return ARAutorelease(i);
 }
 
 static ARStringRef boolInspect(mky_object_t *obj) {
@@ -58,10 +58,10 @@ static ARStringRef returnInspect(mky_object_t *obj) {
 }
 
 mky_returnvalue_t *returnValueCreate(mky_object_t *value) {
-    mky_returnvalue_t *val = calloc(1, sizeof(*val));
+    mky_returnvalue_t *val = ARAllocRC(sizeof(*val));
     val->super = (mky_object_t){RETURN_VALUE_OBJ, returnInspect};
     val->value = value;
-    return val;
+    return ARAutorelease(val);
 }
 
 static ARStringRef errorInspect(mky_object_t *obj) {
@@ -71,10 +71,10 @@ static ARStringRef errorInspect(mky_object_t *obj) {
 }
 
 mky_error_t *errorCreate(ARStringRef message) {
-    mky_error_t *error = calloc(1, sizeof(*error));
+    mky_error_t *error = ARAllocRC(sizeof(*error));
     error->super = (mky_object_t){ERROR_OBJ, errorInspect};
-    error->message = ARRetain(message);
-    return error;
+    error->message = message; // this is autoreleased here but... the whole thing is so...
+    return ARAutorelease(error);
 }
 
 static ARStringRef functionInspect(mky_object_t *obj) {
@@ -101,10 +101,10 @@ static ARStringRef functionInspect(mky_object_t *obj) {
 }
 
 mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, environment_t *env) {
-    mky_function_t *fn = calloc(1, sizeof(*fn));
+    mky_function_t *fn = ARAllocRC(sizeof(*fn));
     fn->super = (mky_object_t){FUNCTION_OBJ, functionInspect};
     fn->parameters = parameters;
     fn->body = body;
     fn->env = env;
-    return fn;
+    return ARAutorelease(fn);
 }

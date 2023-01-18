@@ -12,7 +12,7 @@
 
 #include "arstring.h"
 
-#define AR_RUNTIME_VERBOSE 0
+#define AR_RUNTIME_VERBOSE 1
 
 extern const int64_t AR_RUNTIME_UNRELEASABLE;
 

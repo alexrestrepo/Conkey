@@ -27,7 +27,7 @@ void environmentRelease(environment_t **env) {
 }
 
 environment_t *environmentCreate(void) {
-    environment_t *env = calloc(1, sizeof(*env));
+    environment_t *env = ar_calloc(1, sizeof(*env));
 
     env->store = NULL;
     sh_new_strdup(env->store); // or arena?
@@ -48,6 +48,7 @@ mky_object_t *objectGetEnv(environment_t *env, const char *name) {
 }
 
 mky_object_t *objectSetEnv(environment_t *env, const char *name, mky_object_t *obj) {
+    ARRetain(obj);
     shput(env->store, name, obj);
     return obj;
 }

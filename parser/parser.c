@@ -348,7 +348,7 @@ void parserRegisterInfix(parser_t *parser, token_type type, infixParseFn *infixP
 }
 
 parser_t *parserCreate(lexer_t *lexer) {
-    parser_t *parser = calloc(1, sizeof(*parser));
+    parser_t *parser = ar_calloc(1, sizeof(*parser));
     parser->lexer = lexer;
     
     // read 2 tokens so current and peek are set
