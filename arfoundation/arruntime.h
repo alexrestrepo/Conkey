@@ -22,9 +22,9 @@ typedef struct {
 
 typedef struct {
     _Atomic int64_t refcount;
+    uint64_t allocid;
     ar_class_id classid;
     size_t size; // base + descriptor
-
 } ar_object_base;
 
 typedef void *ARObjectRef;
@@ -51,6 +51,10 @@ ARObjectRef ARRetain(ARObjectRef obj);
 ARObjectRef ARAutorelease(ARObjectRef obj);
 
 ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid); // {0} class id adds refcnt header to any alloc.
+AR_INLINE ARObjectRef ARAllocRC(size_t size) {
+    return ARRuntimeAllocRefCounted(size, (ar_class_id) {0});
+}
+
 ARObjectRef ARRuntimeCreateInstance(ar_class_id classid);
 ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass);
 bool ARRuntimeIsRegisteredClass(ar_class_id classid);

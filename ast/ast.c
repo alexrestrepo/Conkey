@@ -90,7 +90,6 @@ static ARStringRef letStatementString(astnode_t *node) {
     assert(node->type == AST_LET);
     astletstatement_t *self = (astletstatement_t *)node;
 
-    // TODO: figure out mem usage, all the leaks! :)
     ARStringRef lit = ASTN_TOKLIT(self);
     ARStringRef str = ASTN_STRING(self->name);
     ARStringRef out = ARStringWithFormat("%s %s = ", ARStringCString(lit), ARStringCString(str));

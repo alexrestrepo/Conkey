@@ -78,7 +78,7 @@ void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool) {
 #endif
 
     for (int i = 0; i < arrlen(pool->objects); i++) {
-        ARRelease(pool->objects[i]);
+        ARRelease(pool->objects[(arrlen(pool->objects) - 1) - i]);
     }
 
 #if AR_RUNTIME_VERBOSE

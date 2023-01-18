@@ -11,6 +11,7 @@
 #include "../ast/ast.h"
 #include "../environment/environment.h"
 #include "../token/token.h"
+#include "../arfoundation/arfoundation.h"
 
 #define OBJ_TYPES \
 OBJ(INTEGER) \
@@ -36,7 +37,7 @@ static const char *obj_types[] = {
 #undef OBJ
 
 typedef struct object_t mky_object_t;
-typedef charslice_t inspect_fn(mky_object_t *obj);
+typedef ARStringRef inspect_fn(mky_object_t *obj);
 
 struct object_t{
     object_type type;
@@ -66,9 +67,9 @@ mky_returnvalue_t *returnValueCreate(mky_object_t *value);
 
 typedef struct {
     mky_object_t super;
-    charslice_t message;
+    ARStringRef message;
 } mky_error_t;
-mky_error_t *errorCreate(charslice_t message);
+mky_error_t *errorCreate(ARStringRef message);
 
 typedef struct {
     mky_object_t super;

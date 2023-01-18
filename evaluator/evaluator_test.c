@@ -293,17 +293,19 @@ UTEST(eval, errorHandling) {
         },
     };
 
-    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
-        struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
-        if (ERROR_OBJ == evaluated->type) {
-            mky_error_t *error = (mky_error_t *)evaluated;
-            EXPECT_STRNEQ(test.expected, error->message.src, strlen(test.expected));
+    autoreleasepool(
+     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+         struct test test = tests[i];
+         mky_object_t *evaluated = testEval(test.input);
+         if (ERROR_OBJ == evaluated->type) {
+             mky_error_t *error = (mky_error_t *)evaluated;
+             EXPECT_STRNEQ(test.expected, ARStringCString(error->message), strlen(test.expected));
 
-        } else {
-            EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
-        }
-    }
+         } else {
+             EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
+         }
+     }
+     );
 }
 
 UTEST(eval, letStatements) {
@@ -325,6 +327,7 @@ UTEST(eval, letStatements) {
 }
 
 UTEST(eval, functionObject) {
+    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
     const char *input = "fn(x) { x + 2; };";
     mky_object_t *evaluated = testEval(input);
 
@@ -335,12 +338,13 @@ UTEST(eval, functionObject) {
     ASSERT_TRUE(fn->parameters);
     ASSERT_EQ(1, arrlen(fn->parameters));
 
-    charslice_t str = fn->parameters[0]->as.node.string(AS_NODE(fn->parameters[0]));
-    ASSERT_STRNEQ("x", str.src, 1);
+    ARStringRef str = ASTN_STRING(fn->parameters[0]);
+    ASSERT_STRNEQ("x", ARStringCString(str), 1);
 
     const char *expectedBody = "(x + 2)";
-    str = fn->body->as.node.string(AS_NODE(fn->body));
-    ASSERT_STRNEQ(expectedBody, str.src, strlen(expectedBody));
+    str = ASTN_STRING(fn->body);
+    ASSERT_STRNEQ(expectedBody, ARStringCString(str), strlen(expectedBody));
+    ARRelease(pool);
 }
 
 UTEST(eval, functionApplication) {

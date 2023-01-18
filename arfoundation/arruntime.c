@@ -66,8 +66,13 @@ ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass) {
 }
 
 ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
+    // maybe pass in an arena? https://www.rfleury.com/p/untangling-lifetimes-the-arena-allocator
+    // or flooh style typed arrays and return a {type} struct with the idx/offset?
+
     assert(size > 0);
     assert(classid.classID <= arrlen(ar_runtime_classes));
+
+    static _Atomic uint64_t allocid = 0;
 
     size_t allocSize = sizeof(ar_object_base) + size;
     ar_object_base *object = ar_calloc(1, allocSize);
@@ -75,11 +80,12 @@ ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
     object->refcount = 1;
     object->size = allocSize;
     object->classid = classid;
+    object->allocid = ++allocid;
 
     ARObjectRef obj = (char *)object + sizeof(ar_object_base);
 
 #if AR_RUNTIME_VERBOSE
-    fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes @%p\n", classid.classID, size, obj);
+    fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes [%llu]@%p\n", classid.classID, size, object->allocid, obj);
 #endif
 
     return obj;
@@ -211,18 +217,19 @@ ARObjectRef ARRelease(ARObjectRef obj) {
 
     assert(base->refcount > 0);
     base->refcount--;
-
     if (base->refcount == 0) {
         const runtime_class_info *klass = ARRuntimeClassInfo(base->classid);
+        const uint64_t allocid = base->allocid;
+
         if (klass) {
             if (klass->descriptor->destructor) {
                 klass->descriptor->destructor(obj);
             }
 
 #if AR_RUNTIME_VERBOSE
-            fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) @%p\n", klass->descriptor->classname, base->classid.classID, obj);
+            fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) [%llu]@%p\n", klass->descriptor->classname, base->classid.classID, allocid, obj);
         } else {
-            fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> @%p\n", base->size - sizeof(ar_object_base), obj);
+            fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> [%llu]@%p\n", base->size - sizeof(ar_object_base), allocid, obj);
 #endif
         }
 

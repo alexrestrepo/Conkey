@@ -26,12 +26,12 @@ static const char *monkey_face =
 "         '._ '-=-' _.'\n"
 "            '-----'\n";
 
-void printParserErrors(charslice_t *errors) {
+void printParserErrors(ARStringRef *errors) {
     printf("%s", monkey_face);
     printf("Woops! We ran into some monkey business here!\n");
     printf(" Parser errors:\n");
     for (int i = 0; i < arrlen(errors); i++) {
-        printf("\t%.*s\n", (int)errors[i].length, errors[i].src);
+        printf("\t%s\n", ARStringCString(errors[i]));
     }
 }
 
@@ -59,9 +59,8 @@ void replStart() {
         }
 
         mky_object_t *evaluated = mkyeval(AS_NODE(program), env);
-        if (evaluated) {
-            charslice_t inspect = evaluated->inspect(evaluated);
-            printf("%.*s\n", (int)inspect.length, inspect.src);
+        if (evaluated) {            
+            printf("%s\n", ARStringCString(evaluated->inspect(evaluated)));
         }
 
 //        parserRelease(&parser);

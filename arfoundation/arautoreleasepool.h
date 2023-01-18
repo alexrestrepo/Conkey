@@ -9,6 +9,13 @@
 
 #include "arruntime.h"
 
+#define autoreleasepool(...) \
+{ \
+    ARAutoreleasePoolRef _autoreleasepool = ARAutoreleasePoolCreate(); \
+    __VA_ARGS__ \
+    ARRelease(_autoreleasepool); \
+}
+
 typedef struct ARAutoreleasePool *ARAutoreleasePoolRef;
 
 void ARAutoreleasePoolInitialize(void);

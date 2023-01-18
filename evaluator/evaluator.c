@@ -59,9 +59,8 @@ static mky_object_t *evalBangOperatorExpression(mky_object_t *value) {
 
 static mky_object_t *evalMinusPrefixOperatorExpression(mky_object_t *right) {
     if (right->type != INTEGER_OBJ) {
-        return (mky_object_t *)errorCreate(charsliceMake("unknown operator: -%s",
-                                                         obj_types[right->type]
-                                                         ));
+        return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: -%s",
+                                                              obj_types[right->type]));
     }
 
     int64_t value = ((mky_integer_t *)right)->value;
@@ -82,10 +81,10 @@ static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) 
             break;
     }
 
-    return (mky_object_t *)errorCreate(charsliceMake("unknown operator: %s%s",
-                                                     token_str[type],
-                                                     obj_types[right->type]
-                                                     ));
+    return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s%s",
+                                                          token_str[type],
+                                                          obj_types[right->type]
+                                                          ));
 }
 
 static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
@@ -128,7 +127,7 @@ static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *l
         default:
             break;
     }
-    return (mky_object_t *)errorCreate(charsliceMake("unknown operator: %s %s %s",
+    return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s %s %s",
                                                      obj_types[left->type],
                                                      token_str[type],
                                                      obj_types[right->type]
@@ -154,18 +153,18 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
     }
 
     if (left->type != right->type) {
-        return (mky_object_t *)errorCreate(charsliceMake("type mismatch: %s %s %s",
-                                                         obj_types[left->type],
-                                                         token_str[type],
-                                                         obj_types[right->type]
-                                                         ));
+        return (mky_object_t *)errorCreate(ARStringWithFormat("type mismatch: %s %s %s",
+                                                              obj_types[left->type],
+                                                              token_str[type],
+                                                              obj_types[right->type]
+                                                              ));
     }
 
-    return (mky_object_t *)errorCreate(charsliceMake("unknown operator: %s %s %s",
-                                                     obj_types[left->type],
-                                                     token_str[type],
-                                                     obj_types[right->type]
-                                                     ));
+    return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s %s %s",
+                                                          obj_types[left->type],
+                                                          token_str[type],
+                                                          obj_types[right->type]
+                                                          ));
 }
 
 static bool isTruthy(mky_object_t *value) {
@@ -224,7 +223,7 @@ static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args)
 
 static mky_object_t *applyFunction(mky_object_t *fn, mky_object_t **args) {
     if (fn->type != FUNCTION_OBJ) {
-        return (mky_object_t *)errorCreate(charsliceMake("not a function: %s", obj_types[fn->type]));
+        return (mky_object_t *)errorCreate(ARStringWithFormat("not a function: %s", obj_types[fn->type]));
     }
     mky_function_t *function = (mky_function_t *)fn;
     environment_t *extendedEnv = extendFunctionEnv(function, args);
@@ -255,7 +254,7 @@ static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) 
         return obj;
     }
 
-    return (mky_object_t *)errorCreate(charsliceMake("identifier not found: %.*s", (int)ident->value.length, ident->value.src));
+    return (mky_object_t *)errorCreate(ARStringWithFormat("identifier not found: %.*s", (int)ident->value.length, ident->value.src));
 }
 
 mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
