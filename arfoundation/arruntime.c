@@ -219,7 +219,6 @@ ARObjectRef ARRelease(ARObjectRef obj) {
     base->refcount--;
     if (base->refcount == 0) {
         const runtime_class_info *klass = ARRuntimeClassInfo(base->classid);
-        const uint64_t allocid = base->allocid;
 
         if (klass) {
             if (klass->descriptor->destructor) {
@@ -227,9 +226,9 @@ ARObjectRef ARRelease(ARObjectRef obj) {
             }
 
 #if AR_RUNTIME_VERBOSE
-            fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) [%llu]@%p\n", klass->descriptor->classname, base->classid.classID, allocid, obj);
+            fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) [%llu]@%p\n", klass->descriptor->classname, base->classid.classID, base->allocid, obj);
         } else {
-            fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> [%llu]@%p\n", base->size - sizeof(ar_object_base), allocid, obj);
+            fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> [%llu]@%p\n", base->size - sizeof(ar_object_base), base->allocid, obj);
 #endif
         }
 

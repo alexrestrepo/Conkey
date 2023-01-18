@@ -214,7 +214,7 @@ static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args)
     if (fn->parameters && args) {
         assert(arrlen(fn->parameters) == arrlen(args));
         for (int i = 0; i < arrlen(fn->parameters); i++) {
-            objectSetEnv(env, fn->parameters[i]->value, args[i]);
+            objectSetEnv(env, ARStringCString(fn->parameters[i]->value), args[i]);
         }
     }
 
@@ -249,12 +249,12 @@ static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env
 
 static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) {
     assert(AST_TYPE(ident) == AST_IDENTIFIER);
-    mky_object_t *obj = objectEnvGet(env, ident->value);
+    mky_object_t *obj = objectGetEnv(env, ARStringCString(ident->value));
     if (obj) {
         return obj;
     }
 
-    return (mky_object_t *)errorCreate(ARStringWithFormat("identifier not found: %.*s", (int)ident->value.length, ident->value.src));
+    return (mky_object_t *)errorCreate(ARStringWithFormat("identifier not found: %s", ARStringCString(ident->value)));
 }
 
 mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
@@ -270,7 +270,7 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
                 return val;
             }
             if (val) {
-                objectSetEnv(env, let->name->value, val);
+                objectSetEnv(env, ARStringCString(let->name->value), val);
             }
         }
             break;

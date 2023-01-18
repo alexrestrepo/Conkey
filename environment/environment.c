@@ -37,29 +37,18 @@ environment_t *environmentCreate(void) {
     return env;
 }
 
-mky_object_t *objectEnvGet(environment_t *env, charslice_t name) {
-    char *key = NULL;
-    sarrprintf(key, "%.*s", (int)name.length, name.src);
-    arrput(key, '\0');
-
-    mky_object_t *obj = shget(env->store, key);
-    arrfree(key);
+mky_object_t *objectGetEnv(environment_t *env, const char *name) {
+    mky_object_t *obj = shget(env->store, name);
 
     if (!obj && env->outer) {
-        obj = objectEnvGet(env->outer, name);
+        obj = objectGetEnv(env->outer, name);
     }
 
     return obj;
 }
 
-mky_object_t *objectSetEnv(environment_t *env, charslice_t name, mky_object_t *obj) {
-    char *key = NULL;
-    sarrprintf(key, "%.*s", (int)name.length, name.src);
-    arrput(key, '\0');
-
-    shput(env->store, key, obj);
-    arrfree(key);
-
+mky_object_t *objectSetEnv(environment_t *env, const char *name, mky_object_t *obj) {
+    shput(env->store, name, obj);
     return obj;
 }
 

@@ -145,7 +145,7 @@ static aststatement_t *parserParseReturnStatement(parser_t *parser) {
         parserNextToken(parser);
     }
 
-    return &stmt->as.statement;
+    return AS_STMT(stmt);
 }
 
 static aststatement_t *parserParseExpressionStatement(parser_t *parser) {
@@ -155,7 +155,7 @@ static aststatement_t *parserParseExpressionStatement(parser_t *parser) {
     if (parserPeekTokenIs(parser, TOKEN_SEMICOLON)) { // optional
         parserNextToken(parser);
     }
-    return &stmt->as.statement;
+    return AS_STMT(stmt);
 }
 
 static astexpression_t *parserParseIdentifier(parser_t *parser) {
@@ -169,14 +169,14 @@ static astexpression_t *parserParseIntegerLiteral(parser_t *parser) {
 }
 
 static astexpression_t *parserParsePrefixExpression(parser_t *parser) {
-    astprefixexpression_t *exp = prefixExpressionCreate(parser->currentToken, parser->currentToken.literal);
+    astprefixexpression_t *exp = prefixExpressionCreate(parser->currentToken, parser->currentToken.type);
     parserNextToken(parser);
     exp->right = parserParseExpression(parser, PREC_PREFIX);
     return (astexpression_t *)exp;
 }
 
 static astexpression_t *parserParseInfixExpression(parser_t *parser, astexpression_t *left) {
-    astinfixexpression_t *exp = infixExpressionCreate(parser->currentToken, parser->currentToken.literal, left);
+    astinfixexpression_t *exp = infixExpressionCreate(parser->currentToken, parser->currentToken.type, left);
     op_precedence precedence = parserCurrentPrecedence(parser);
     parserNextToken(parser);
     exp->right = parserParseExpression(parser, precedence);

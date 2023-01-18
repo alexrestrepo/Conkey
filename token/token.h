@@ -74,6 +74,10 @@ typedef struct {
 token_type tokenLookupIdentifier(charslice_t ident);
 void tokenPrint(token_t token);
 
+AR_INLINE ARStringRef ARStringCreateWithSlice(charslice_t slice) {
+    return ARStringCreateWithFormat("%.*s", (int)slice.length, slice.src);
+}
+
 AR_INLINE ARStringRef ARStringWithSlice(charslice_t slice) {
     return ARStringWithFormat("%.*s", (int)slice.length, slice.src);
 }

@@ -45,20 +45,20 @@ struct astnode {
 typedef struct {
     union {
         astnode_t node;
-    } as;
+    } super;
 } aststatement_t;
 
 typedef struct {
     union {
         astnode_t node;
-    } as;
+    } super;
 } astexpression_t;
 
 // node < astprogram
 typedef struct {
     union {
         astnode_t node;
-    } as;
+    } super;
 	aststatement_t **statements;
 } astprogram_t;
 astprogram_t *programCreate(void);
@@ -69,10 +69,10 @@ typedef struct {
 	union {
 		astnode_t node;
 		astexpression_t expression;
-	} as; // could be anonymous instead, but is it 'simpler/easier'? ->as.xxx vs ->xxx? ¯\_(ツ)_/¯
+	} super; // could be anonymous instead, but is it 'simpler/easier'? ->super.xxx vs ->xxx? ¯\_(ツ)_/¯
 	
 	token_t token;
-	charslice_t value;
+	ARStringRef value;
 } astidentifier_t;
 astidentifier_t *identifierCreate(token_t token, charslice_t value);
 
@@ -81,7 +81,7 @@ typedef struct {
 	union {
 		astnode_t node;
 		aststatement_t statement;
-	} as;
+	} super;
 	
 	token_t token;
 	astidentifier_t *name;
@@ -94,7 +94,7 @@ typedef struct {
 	union {
 		astnode_t node;
 		aststatement_t statement;
-	} as;
+	} super;
 	
 	token_t token;
 	astexpression_t *returnValue;
@@ -106,7 +106,7 @@ typedef struct {
 	union {
 		astnode_t node;
 		aststatement_t statement;
-	} as;
+	} super;
 	
 	token_t token;
 	astexpression_t *expression;
@@ -118,7 +118,7 @@ typedef struct {
 	union {
 		astnode_t node;
 		astexpression_t expression;
-	} as;
+	} super;
 	
 	token_t token;
 	int64_t value;
@@ -129,32 +129,32 @@ typedef struct {
     union {
         astnode_t node;
         astexpression_t expression;
-    } as;
+    } super;
 
     token_t token;
-    charslice_t operator;
+    token_type operator;
     astexpression_t *right;
 } astprefixexpression_t;
-astprefixexpression_t *prefixExpressionCreate(token_t token, charslice_t operator);
+astprefixexpression_t *prefixExpressionCreate(token_t token, token_type operator);
 
 typedef struct {
     union {
         astnode_t node;
         astexpression_t expression;
-    } as;
+    } super;
 
     token_t token; // operator e.g. +
     astexpression_t *left;
-    charslice_t operator;
+    token_type operator;
     astexpression_t *right;
 } astinfixexpression_t;
-astinfixexpression_t *infixExpressionCreate(token_t token, charslice_t operator, astexpression_t *left);
+astinfixexpression_t *infixExpressionCreate(token_t token, token_type operator, astexpression_t *left);
 
 typedef struct {
     union {
         astnode_t node;
         astexpression_t expression;
-    } as;
+    } super;
 
     token_t token;
     bool value;
@@ -166,7 +166,7 @@ typedef  struct {
     union {
         astnode_t node;
         aststatement_t statement;
-    } as;
+    } super;
 
     token_t token;
     aststatement_t **statements;
@@ -177,7 +177,7 @@ typedef struct {
     union {
         astnode_t node;
         astexpression_t expression;
-    } as;
+    } super;
 
     token_t token;
     astexpression_t *condition;
@@ -190,7 +190,7 @@ typedef struct {
     union {
         astnode_t node;
         astexpression_t expression;
-    } as;
+    } super;
     token_t token;
     astidentifier_t **parameters;
     astblockstatement_t *body;
@@ -201,17 +201,17 @@ typedef struct {
     union {
         astnode_t node;
         astexpression_t expression;
-    } as;
+    } super;
     token_t token;
     astexpression_t *function; // identifier or functionliteral
     astexpression_t **arguments;
 } astcallexpression_t;
 astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *function);
 
-#define AST_TYPE(n) ((n)->as.node.type)
-#define AS_NODE(n) (&((n)->as.node))
-#define AS_STMT(n) (&((n)->as.statement))
-#define AS_EXPR(n) (&((n)->as.expression))
+#define AST_TYPE(n) ((n)->super.node.type)
+#define AS_NODE(n) (&((n)->super.node))
+#define AS_STMT(n) (&((n)->super.statement))
+#define AS_EXPR(n) (&((n)->super.expression))
 #define ASTN_STRING(n) (AS_NODE((n))->string(AS_NODE((n))))
 #define ASTN_TOKLIT(n) (AS_NODE((n))->tokenLiteral(AS_NODE((n))))
 

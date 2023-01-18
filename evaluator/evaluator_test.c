@@ -328,8 +328,8 @@ UTEST(eval, letStatements) {
 
 UTEST(eval, functionObject) {
     ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
-    const char *input = "fn(x) { x + 2; };";
-    mky_object_t *evaluated = testEval(input);
+    ARStringRef input =  ARStringWithFormat("fn(x) { x + 2; };");
+    mky_object_t *evaluated = testEval(ARStringCString(input));
 
     ASSERT_TRUE(evaluated);
     ASSERT_STREQ(obj_types[FUNCTION_OBJ], obj_types[evaluated->type]);

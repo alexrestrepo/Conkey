@@ -23,7 +23,7 @@ static ARStringRef programTokenLiteral(astnode_t *node) {
     assert(node->type == AST_PROGRAM);
     astprogram_t *self = (astprogram_t *)node;
     if (self->statements && arrlen(self->statements) > 0) {
-        return self->statements[0]->as.node.tokenLiteral(node);
+        return ASTN_TOKLIT(self->statements[0]);
     }
 
     return ARStringEmpty();
@@ -38,7 +38,7 @@ static ARStringRef programString(astnode_t *node) {
     if (self->statements) {
         for (int i = 0; i < arrlen(self->statements); i++) {
             aststatement_t *stmt = self->statements[i];
-            ARStringRef str = stmt->as.node.string(AS_NODE(stmt));
+            ARStringRef str = ASTN_STRING(stmt);
             ARStringAppendFormat(out, "%s", ARStringCString(str));
         }
     }
@@ -48,7 +48,7 @@ static ARStringRef programString(astnode_t *node) {
 
 astprogram_t *programCreate() {
     astprogram_t *program = calloc(1, sizeof(*program));
-    program->as.node = astnodeMake(AST_PROGRAM, programTokenLiteral, programString);
+    program->super.node = astnodeMake(AST_PROGRAM, programTokenLiteral, programString);
     return program;
 }
 
@@ -69,14 +69,14 @@ static ARStringRef identifierTokenLiteral(astnode_t *node) {
 static ARStringRef identifierString(astnode_t *node) {
     assert(node->type == AST_IDENTIFIER);
     astidentifier_t *self = (astidentifier_t *)node;
-    return ARStringWithSlice(self->value);
+    return self->value;
 }
 
 astidentifier_t *identifierCreate(token_t token, charslice_t value) {
     astidentifier_t *identifier = calloc(1, sizeof(*identifier));
-    identifier->as.node = astnodeMake(AST_IDENTIFIER, identifierTokenLiteral, identifierString);
+    identifier->super.node = astnodeMake(AST_IDENTIFIER, identifierTokenLiteral, identifierString);
     identifier->token = token;
-    identifier->value = value;
+    identifier->value = ARStringCreateWithSlice(value);
     return identifier;
 }
 
@@ -105,7 +105,7 @@ static ARStringRef letStatementString(astnode_t *node) {
 
 astletstatement_t *letStatementCreate(token_t token) {
     astletstatement_t *let = calloc(1, sizeof(*let));
-    let->as.node = astnodeMake(AST_LET, letStatementTokenLiteral, letStatementString);
+    let->super.node = astnodeMake(AST_LET, letStatementTokenLiteral, letStatementString);
     let->token = token;
     return let;
 }
@@ -133,7 +133,7 @@ static ARStringRef returnStatementString(astnode_t *node) {
 
 astreturnstatement_t *returnStatementCreate(token_t token) {
     astreturnstatement_t *ret = calloc(1, sizeof(*ret));
-    ret->as.node = astnodeMake(AST_RETURN, returnStatementTokenLiteral, returnStatementString);
+    ret->super.node = astnodeMake(AST_RETURN, returnStatementTokenLiteral, returnStatementString);
     ret->token = token;
     return ret;
 }
@@ -157,7 +157,7 @@ static ARStringRef expressionStatementString(astnode_t *node) {
 
 astexpressionstatement_t *expressionStatementCreate(token_t token) {
     astexpressionstatement_t *stmt = calloc(1, sizeof(*stmt));
-    stmt->as.node = astnodeMake(AST_EXPRESSIONSTMT, expressionStatementTokenLiteral, expressionStatementString);
+    stmt->super.node = astnodeMake(AST_EXPRESSIONSTMT, expressionStatementTokenLiteral, expressionStatementString);
     stmt->token = token;
     return stmt;
 }
@@ -176,7 +176,7 @@ static ARStringRef integerExpressionString(astnode_t *node) {
 
 astinteger_t *integerExpressionCreate(token_t token) {
     astinteger_t *i = calloc(1, sizeof(*i));
-    i->as.node = astnodeMake(AST_INTEGER, integerExpressionTokenLiteral, integerExpressionString);
+    i->super.node = astnodeMake(AST_INTEGER, integerExpressionTokenLiteral, integerExpressionString);
     i->token = token;
     return i;
 }
@@ -192,14 +192,14 @@ static ARStringRef prefixExpressionString(astnode_t *node) {
     astprefixexpression_t *self = (astprefixexpression_t *)node;
 
     ARStringRef rightstr = ASTN_STRING(self->right);
-    ARStringRef out = ARStringWithFormat("(%.*s%s)", (int)self->operator.length, self->operator.src,
+    ARStringRef out = ARStringWithFormat("(%s%s)", token_str[self->operator],
                                          ARStringCString(rightstr));
     return out;
 }
 
-astprefixexpression_t *prefixExpressionCreate(token_t token, charslice_t operator) {
+astprefixexpression_t *prefixExpressionCreate(token_t token, token_type operator) {
     astprefixexpression_t *exp = calloc(1, sizeof(*exp));
-    exp->as.node = astnodeMake(AST_PREFIXEXPR, prefixExpressionTokenLiteral, prefixExpressionString);
+    exp->super.node = astnodeMake(AST_PREFIXEXPR, prefixExpressionTokenLiteral, prefixExpressionString);
     exp->token = token;
     exp->operator = operator;
     return exp;
@@ -217,16 +217,16 @@ static ARStringRef infixExpressionString(astnode_t *node) {
 
     ARStringRef lefttstr = ASTN_STRING(self->left);
     ARStringRef rightstr = ASTN_STRING(self->right);
-    ARStringRef out = ARStringWithFormat("(%s %.*s %s)",
+    ARStringRef out = ARStringWithFormat("(%s %s %s)",
                                          ARStringCString(lefttstr),
-                                         (int)self->operator.length, self->operator.src,
+                                         token_str[self->operator],
                                          ARStringCString(rightstr));
     return out;
 }
 
-astinfixexpression_t *infixExpressionCreate(token_t token, charslice_t operator, astexpression_t *left) {
+astinfixexpression_t *infixExpressionCreate(token_t token, token_type operator, astexpression_t *left) {
     astinfixexpression_t *exp = calloc(1, sizeof(*exp));
-    exp->as.node = astnodeMake(AST_INFIXEXPR, infixExpressionTokenLiteral, infixExpressionString);
+    exp->super.node = astnodeMake(AST_INFIXEXPR, infixExpressionTokenLiteral, infixExpressionString);
     exp->token = token;
     exp->left = left;
     exp->operator = operator;
@@ -241,7 +241,7 @@ static ARStringRef booleanTokenLiteral(astnode_t *node) {
 
 astboolean_t *booleanCreate(token_t token, bool value) {
     astboolean_t *boo = calloc(1, sizeof(*boo));
-    boo->as.node = astnodeMake(AST_BOOL, booleanTokenLiteral, booleanTokenLiteral);
+    boo->super.node = astnodeMake(AST_BOOL, booleanTokenLiteral, booleanTokenLiteral);
     boo->token = token;
     boo->value = value;
     return boo;
@@ -275,7 +275,7 @@ static ARStringRef ifExpressionString(astnode_t *node) {
 
 astifexpression_t *ifExpressionCreate(token_t token) {
     astifexpression_t *ifexp = calloc(1, sizeof(*ifexp));
-    ifexp->as.node = astnodeMake(AST_IFEXPR, ifexprTokenLiteral, ifExpressionString);
+    ifexp->super.node = astnodeMake(AST_IFEXPR, ifexprTokenLiteral, ifExpressionString);
     ifexp->token = token;
     return ifexp;
 }
@@ -303,7 +303,7 @@ static ARStringRef blockStatementString(astnode_t *node) {
 
 astblockstatement_t *blockStatementCreate(token_t token) {
     astblockstatement_t *block = calloc(1, sizeof(*block));
-    block->as.node = astnodeMake(AST_BLOCKSTMT, blockStatementTokenLiteral, blockStatementString);
+    block->super.node = astnodeMake(AST_BLOCKSTMT, blockStatementTokenLiteral, blockStatementString);
     block->token = token;
     return block;
 }
@@ -350,7 +350,7 @@ static ARStringRef functionLiteralString(astnode_t *node) {
 
 astfunctionliteral_t *functionLiteralCreate(token_t token) {
     astfunctionliteral_t *lit = calloc(1, sizeof(*lit));
-    lit->as.node = astnodeMake(AST_FNLIT, functionLiteralTokenLiteral, functionLiteralString);
+    lit->super.node = astnodeMake(AST_FNLIT, functionLiteralTokenLiteral, functionLiteralString);
     lit->token = token;
     return lit;
 }
@@ -391,7 +391,7 @@ static ARStringRef callExpressionString(astnode_t *node) {
 
 astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *function) {
     astcallexpression_t *call = calloc(1, sizeof(*call));
-    call->as.node = astnodeMake(AST_CALL, callExpressionTokenLiteral, callExpressionString);
+    call->super.node = astnodeMake(AST_CALL, callExpressionTokenLiteral, callExpressionString);
     call->token = token;
     call->function = function;
     return call;

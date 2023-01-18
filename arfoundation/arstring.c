@@ -11,7 +11,7 @@
 #include "stb_ds_x.h"
 
 struct ARString {
-    char *cstr;
+    char *cstr; // add a small [4-8] internal storage and an immutable flag for small strings?
 };
 
 static ar_class_id ARStringClassID = { 0 };
