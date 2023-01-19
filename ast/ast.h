@@ -28,6 +28,8 @@ typedef enum {
     AST_FNLIT,
     AST_CALL,
     AST_STRING,
+    AST_ARRAY,
+    AST_INDEXEXP,
 
 } astnode_type;
 
@@ -219,6 +221,29 @@ typedef struct {
     ARStringRef value;
 } aststringliteral_t;
 aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value);
+
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } super;
+
+    token_t token;
+    astexpression_t **elements;
+} astarrayliteral_t;
+astarrayliteral_t *arrayLiteralCreate(token_t token);
+
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } super;
+
+    token_t token;
+    astexpression_t *left;
+    astexpression_t *index;
+} astindexexpression_t;
+astindexexpression_t *indexExpressionCreate(token_t token, astexpression_t *left);
 
 #define AST_TYPE(n) ((n)->super.node.type)
 #define AS_NODE(n) (&((n)->super.node))

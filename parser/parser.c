@@ -18,6 +18,7 @@ typedef enum {
     PREC_PRODUCT, // *
     PREC_PREFIX, // -x or !x
     PREC_CALL, // funct()
+    PREC_INDEX,
 } op_precedence;
 
 static op_precedence precedences[TOKEN_TYPE_COUNT] = {
@@ -30,6 +31,7 @@ static op_precedence precedences[TOKEN_TYPE_COUNT] = {
     [TOKEN_SLASH] = PREC_PRODUCT,
     [TOKEN_ASTERISK] = PREC_PRODUCT,
     [TOKEN_LPAREN] = PREC_CALL,
+    [TOKEN_LBRACKET] = PREC_INDEX,
 };
 
 void parserRelease(parser_t **parser) {
@@ -183,31 +185,44 @@ static astexpression_t *parserParseInfixExpression(parser_t *parser, astexpressi
     return (astexpression_t *)exp;
 }
 
-static astexpression_t **parserParseCallArguments(parser_t *parser) {
-    astexpression_t **arguments = NULL;
-    if (parserPeekTokenIs(parser, TOKEN_RPAREN)) {
+static astexpression_t **parserParseExpressionList(parser_t *parser, token_type end) {
+    astexpression_t **list = NULL;
+
+    if (parserPeekTokenIs(parser, end)) {
         parserNextToken(parser);
-        return arguments;
+        return list;
     }
-    parserNextToken(parser); // (
-    arrput(arguments, parserParseExpression(parser, PREC_LOWEST));
+
+    parserNextToken(parser); // (,[
+    arrput(list, parserParseExpression(parser, PREC_LOWEST));
+
     while (parserPeekTokenIs(parser, TOKEN_COMMA)) {
         parserNextToken(parser);
         parserNextToken(parser);
-        arrput(arguments, parserParseExpression(parser, PREC_LOWEST));
+        arrput(list, parserParseExpression(parser, PREC_LOWEST));
     }
 
-    if (!parserExpectPeek(parser, TOKEN_RPAREN)) {
+    if (!parserExpectPeek(parser, end)) {
         return NULL;
     }
 
-    return arguments;
+    return list;
 }
 
 static astexpression_t *parserParseCallExpression(parser_t *parser, astexpression_t *function) {
     astcallexpression_t *call = callExpressionCreate(parser->currentToken, function);
-    call->arguments = parserParseCallArguments(parser);
+    call->arguments = parserParseExpressionList(parser, TOKEN_RPAREN);
     return (astexpression_t *)call;
+}
+
+static astexpression_t *parserParseIndexExpression(parser_t *parser, astexpression_t *left) {
+    astindexexpression_t *idx = indexExpressionCreate(parser->currentToken, left);
+    parserNextToken(parser); //[
+    idx->index = parserParseExpression(parser, PREC_LOWEST);
+    if (!parserExpectPeek(parser, TOKEN_RBRACKET)) {
+        return NULL;
+    }
+    return (astexpression_t *)idx;
 }
 
 static aststatement_t *parserParseStatement(parser_t *parser) {
@@ -331,6 +346,12 @@ static astexpression_t *parserParseStringLiteral(parser_t *parser) {
     return (astexpression_t *)str;
 }
 
+static astexpression_t *parserParseArrayLiteral(parser_t *parser) {
+    astarrayliteral_t *array = arrayLiteralCreate(parser->currentToken);
+    array->elements = parserParseExpressionList(parser, TOKEN_RBRACKET);
+    return (astexpression_t *)array;
+}
+
 astprogram_t *parserParseProgram(parser_t *parser) {
     astprogram_t *program = programCreate();
     
@@ -370,6 +391,7 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterPrefix(parser, TOKEN_IF, parserParseIfExpression);
     parserRegisterPrefix(parser, TOKEN_FUNCTION, parserParseFunctionLiteral);
     parserRegisterPrefix(parser, TOKEN_STRING, parserParseStringLiteral);
+    parserRegisterPrefix(parser, TOKEN_LBRACKET, parserParseArrayLiteral);
     
     parserRegisterInfix(parser, TOKEN_PLUS, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_MINUS, parserParseInfixExpression);
@@ -380,5 +402,6 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterInfix(parser, TOKEN_LT, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_GT, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_LPAREN, parserParseCallExpression);
+    parserRegisterInfix(parser, TOKEN_LBRACKET, parserParseIndexExpression);
     return parser;
 }

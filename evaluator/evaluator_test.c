@@ -419,6 +419,8 @@ UTEST(eval, builtinFunctions) {
         {MONKEY(len("hello world")), 0, .value = 11},
         {MONKEY(len(1)), 1, .string = "argument to 'len' not supported, got INTEGER"},
         {MONKEY(len("one", "two")), 1, .string = "wrong number of arguments. got=2, want=1"},
+        {MONKEY(len([1, 2, 3])), 0, .value = 3},
+        {MONKEY(len([])), 0, .value = 0},
     };
 
     ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
@@ -443,6 +445,80 @@ UTEST(eval, builtinFunctions) {
         }
     }
     ARRelease(pool);
+}
+
+UTEST(eval, arrayLiteral) {
+    const char *input = "[1, 2 * 2, 3 + 3]";
+    mky_object_t *evaluated = testEval(input);
+
+    ASSERT_STREQ(obj_types[ARRAY_OBJ], obj_types[evaluated->type]);
+
+    mky_array_t *array = (mky_array_t *)evaluated;
+    ASSERT_EQ(3, arrlen(array->elements));
+
+    ASSERT_TRUE(testIntegerObject(array->elements[0], 1));
+    ASSERT_TRUE(testIntegerObject(array->elements[1], 4));
+    ASSERT_TRUE(testIntegerObject(array->elements[2], 6));
+}
+
+UTEST(eval, arrayIndexExpressions) {
+    struct test {
+        const char *input;
+        int64_t expected; // using 0 as null
+    } tests[] = {
+        {
+            "[1, 2, 3][0]",
+            1,
+        },
+        {
+            "[1, 2, 3][1]",
+            2,
+        },
+        {
+            "[1, 2, 3][2]",
+            3,
+        },
+        {
+            "let i = 0; [1][i];",
+            1,
+        },
+        {
+            "[1, 2, 3][1 + 1];",
+            3,
+        },
+        {
+            "let myArray = [1, 2, 3]; myArray[2];",
+            3,
+        },
+        {
+            "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+            6,
+        },
+        {
+            "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+            2,
+        },
+        {
+            "[1, 2, 3][3]",
+            0,
+        },
+        {
+            "[1, 2, 3][-1]",
+            0,
+        },
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+
+        mky_object_t *evaluated = testEval(test.input);
+        if (test.expected > 0) {
+            ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
+
+        } else {
+            ASSERT_TRUE(testNullObject(evaluated));
+        }
+    }
 }
 
 UTEST_MAIN();

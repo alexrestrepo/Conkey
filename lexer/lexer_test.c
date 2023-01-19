@@ -33,6 +33,7 @@ UTEST(lexer, nextToken) {
 		10 != 9;
         "foobar"
         "foo bar"
+        [1,2];
 	);
 	
 	test_t tests[] = {
@@ -118,6 +119,13 @@ UTEST(lexer, nextToken) {
 
         {TOKEN_STRING, "foobar"},
         {TOKEN_STRING, "foo bar"},
+
+        {TOKEN_LBRACKET, "["},
+        {TOKEN_INT, "1"},
+        {TOKEN_COMMA, ","},
+        {TOKEN_INT, "2"},
+        {TOKEN_RBRACKET, "]"},
+        {TOKEN_SEMICOLON, ";"},
 
 		{TOKEN_EOF, ""},
 	};

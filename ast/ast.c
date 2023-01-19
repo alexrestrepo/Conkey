@@ -409,3 +409,60 @@ aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value) {
     string->value = ARStringCreateWithSlice(value);
     return string;
 }
+
+static ARStringRef arrayLiteralTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_ARRAY);
+    astarrayliteral_t *self = (astarrayliteral_t *)node;
+    return ARStringWithSlice(self->token.literal);
+}
+
+static ARStringRef arrayLiteralString(astnode_t *node) {
+    assert(node->type == AST_ARRAY);
+    astarrayliteral_t *self = (astarrayliteral_t *)node;
+
+    ARStringRef elements = NULL;
+    if (self->elements) {
+        elements = ARStringEmpty();
+
+        for (int i = 0; i < arrlen(self->elements); i++) {
+            ARStringRef str = ASTN_STRING(self->elements[i]);
+            ARStringAppend(elements, str);
+            if (i < arrlen(self->elements) - 1) {
+                ARStringAppendFormat(elements, ", ");
+            }
+        }
+    }
+
+    ARStringRef out = ARStringWithFormat("[%s]", elements ? ARStringCString(elements) : "");
+    return out;
+}
+
+astarrayliteral_t *arrayLiteralCreate(token_t token) {
+    astarrayliteral_t *array = calloc(1, sizeof(*array));
+    array->super.node = astnodeMake(AST_ARRAY, arrayLiteralTokenLiteral, arrayLiteralString);
+    array->token = token;
+    return array;
+}
+
+static ARStringRef indexExpressionTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_INDEXEXP);
+    astindexexpression_t *self = (astindexexpression_t *)node;
+    return ARStringWithSlice(self->token.literal);
+}
+
+static ARStringRef indexExpressionString(astnode_t *node) {
+    assert(node->type == AST_INDEXEXP);
+    astindexexpression_t *self = (astindexexpression_t *)node;
+    ARStringRef out = ARStringWithFormat("(%s[%s])",
+                                         ARStringCString(ASTN_STRING(self->left)),
+                                         ARStringCString(ASTN_STRING(self->index)));
+    return out;
+}
+
+astindexexpression_t *indexExpressionCreate(token_t token, astexpression_t *left) {
+    astindexexpression_t *idx = calloc(1, sizeof(*idx));
+    idx->super.node = astnodeMake(AST_INDEXEXP, indexExpressionTokenLiteral, indexExpressionString);
+    idx->token = token;
+    idx->left = left;
+    return idx;
+}

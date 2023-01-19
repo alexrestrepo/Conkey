@@ -180,6 +180,14 @@ token_t lexerNextToken(lexer_t *lexer) {
 			token.type = TOKEN_EOF;
 			break;
 
+        case '[':
+            token.type = TOKEN_LBRACKET;
+            break;
+
+        case ']':
+            token.type = TOKEN_RBRACKET;
+            break;
+
         case '"':
             token.type = TOKEN_STRING;
             token.literal = lexerReadString(lexer);

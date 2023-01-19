@@ -530,6 +530,14 @@ UTEST(parser, operatorPrecedenceParsing) {
             "add(a + b + c * d / f + g)",
             "add((((a + b) + ((c * d) / f)) + g))",
         },
+        {
+            "a * [1, 2, 3, 4][b * c] * d",
+            "((a * ([1, 2, 3, 4][(b * c)])) * d)",
+        },
+        {
+            "add(a * b[2], b[1], 2 * [1, 2][1])",
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
+        },
     };
     
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
@@ -807,6 +815,58 @@ UTEST(parser, stringLiteralExpressions) {
     aststringliteral_t *str = (aststringliteral_t *)stmt->expression;
 
     ASSERT_STREQ("Hello World", ARStringCString(str->value));
+}
+
+UTEST(parser, arrayLiterals) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    const char *input = "[1, 2 * 2, 3+3]";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_ARRAY, AST_TYPE(stmt->expression));
+    astarrayliteral_t *array = (astarrayliteral_t *)stmt->expression;
+
+    ASSERT_EQ(3, arrlen(array->elements));
+    ASSERT_TRUE(testIntegerLiteral(array->elements[0], 1));
+    ASSERT_TRUE(testInfixExpression(array->elements[1], INT(2), TOKEN_ASTERISK, INT(2)));
+    ASSERT_TRUE(testInfixExpression(array->elements[2], INT(3), TOKEN_PLUS, INT(3)));
+    ARRelease(autoreleasepool);
+}
+
+UTEST(parser, parseIndexExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    const char *input = "myArray[1+1]";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_INDEXEXP, AST_TYPE(stmt->expression));
+    astindexexpression_t *idx = (astindexexpression_t *)stmt->expression;
+
+    ASSERT_TRUE(testIdentifier(idx->left, (charslice_t){"myArray", 7}));
+    ASSERT_TRUE(testInfixExpression(idx->index, INT(1), TOKEN_PLUS, INT(1)));
+    ARRelease(autoreleasepool);
 }
 
 UTEST_MAIN();

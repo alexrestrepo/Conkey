@@ -21,7 +21,8 @@ OBJ(RETURN_VALUE) \
 OBJ(ERROR) \
 OBJ(FUNCTION) \
 OBJ(STRING) \
-OBJ(BUILTIN)
+OBJ(BUILTIN) \
+OBJ(ARRAY)
 
 #define OBJ(type) type##_OBJ,
 typedef enum {
@@ -93,5 +94,11 @@ typedef struct {
     builtin_fn *fn;
 } mky_builtin_t;
 mky_builtin_t *builtInCreate(builtin_fn *builtin);
+
+typedef struct {
+    mky_object_t super;
+    mky_object_t **elements;
+} mky_array_t;
+mky_array_t *objArrayCreate(mky_object_t **elements);
 
 #endif /* _object_h_ */

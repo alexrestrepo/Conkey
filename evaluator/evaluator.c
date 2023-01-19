@@ -187,6 +187,30 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
                                                           ));
 }
 
+static mky_object_t *evalArrayIndexExpression(mky_object_t *left, mky_object_t *index) {
+    assert(left->type == ARRAY_OBJ);
+    assert(index->type == INTEGER_OBJ);
+
+    mky_array_t *array = (mky_array_t *)left;
+    int64_t idx = ((mky_integer_t *)index)->value;
+
+    size_t max = arrlen(array->elements) - 1;
+    if (idx < 0 || idx > max) {
+        return objNull();
+    }
+    
+    return array->elements[idx];
+}
+
+static mky_object_t *evalIndexExpression(mky_object_t *left, mky_object_t *index) {
+    if (left->type == ARRAY_OBJ && index->type == INTEGER_OBJ) {
+        return evalArrayIndexExpression(left, index);
+    }
+
+    return (mky_object_t *)errorCreate(ARStringWithFormat("index operator not supported: %s",
+                                                          obj_types[left->type]));
+}
+
 static bool isTruthy(mky_object_t *value) {
     mky_object_t *TRUE_OBJ = (mky_object_t *)objBoolean(true);
     mky_object_t *FALSE_OBJ = (mky_object_t *)objBoolean(false);
@@ -266,7 +290,7 @@ static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env
                 arrput(result, evaluated);
                 return result;
             }
-            arrput(result, evaluated);
+            arrput(result, ARRetain(evaluated)); // FIXME: cuz.
         }
     }
     return result;
@@ -390,6 +414,30 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             return (mky_object_t *)objStringCreate(str->value);
         }
             break;
+
+        case AST_ARRAY: {
+            astarrayliteral_t *array = (astarrayliteral_t *)node;
+            mky_object_t **elements = evalExpressions(array->elements, env);
+            if (elements && arrlen(elements) == 1 && elements[0]->type == ERROR_OBJ) {
+                return elements[0];
+            }
+            return (mky_object_t *)objArrayCreate(elements);
+        } break;
+
+        case AST_INDEXEXP: {
+            astindexexpression_t *exp = (astindexexpression_t *)node;
+            mky_object_t *left = mkyeval(AS_NODE(exp->left), env);
+            if (left->type == ERROR_OBJ) {
+                return left;
+            }
+            mky_object_t *idx = mkyeval(AS_NODE(exp->index), env);
+            if (idx->type == ERROR_OBJ) {
+                return idx;
+            }
+            return (mky_object_t *)evalIndexExpression(left, idx);
+
+        } break;
+
     }
     return NULL;
 }

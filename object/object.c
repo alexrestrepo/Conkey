@@ -133,3 +133,31 @@ mky_builtin_t *builtInCreate(builtin_fn *builtin) {
     built->fn = builtin;
     return ARAutorelease(built);
 }
+
+static ARStringRef arrayInspect(mky_object_t *obj) {
+    assert(obj->type == ARRAY_OBJ);
+    mky_array_t *self = (mky_array_t *)obj;
+
+    ARStringRef elements = NULL;
+    if (self->elements) {
+        elements = ARStringEmpty();
+
+        for (int i = 0; i < arrlen(self->elements); i++) {
+            ARStringRef str = self->elements[i]->inspect(self->elements[i]);
+            ARStringAppend(elements, str);
+            if (i < arrlen(self->elements) - 1) {
+                ARStringAppendFormat(elements, ", ");
+            }
+        }
+    }
+
+    ARStringRef out = ARStringWithFormat("[%s]", elements ? ARStringCString(elements) : "");
+    return out;
+}
+
+mky_array_t *objArrayCreate(mky_object_t **elements) {
+    mky_array_t *array = ARAllocRC(sizeof(*array));
+    array->super = (mky_object_t){ARRAY_OBJ, arrayInspect};
+    array->elements = elements;
+    return ARAutorelease(array);
+}
