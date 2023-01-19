@@ -77,6 +77,15 @@ static charslice_t lexerReadNumber(lexer_t *lexer) {
 	return (charslice_t){start, lexer->position - position};
 }
 
+static charslice_t lexerReadString(lexer_t *lexer) {
+    size_t position = lexer->position + 1;
+    char *start = &(lexer->input[position]);
+    do {
+        lexerReadChar(lexer);
+    } while (!(lexer->ch == '"' || lexer->ch == 0));
+    return (charslice_t){start, lexer->position - position};
+}
+
 static void lexerSkipWhitespace(lexer_t *lexer) {
 	while (lexer->ch == ' ' || lexer->ch == '\t' || lexer->ch == '\n' || lexer->ch == '\r') {
 		lexerReadChar(lexer);
@@ -170,6 +179,13 @@ token_t lexerNextToken(lexer_t *lexer) {
 		case '\0':
 			token.type = TOKEN_EOF;
 			break;
+
+        case '"':
+            token.type = TOKEN_STRING;
+            token.literal = lexerReadString(lexer);
+            lexerReadChar(lexer);
+            return token;
+            break;
 		
 		default:
 			if (isLetter(ch)) {

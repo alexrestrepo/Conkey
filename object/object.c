@@ -108,3 +108,16 @@ mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t 
     fn->env = env;
     return ARAutorelease(fn);
 }
+
+static ARStringRef stringInspect(mky_object_t *obj) {
+    assert(obj->type == STRING_OBJ);
+    mky_string_t *string = (mky_string_t *)obj;
+    return string->value;
+}
+
+mky_string_t *objStringCreate(ARStringRef value) {
+    mky_string_t *str = ARAllocRC(sizeof(*str));
+    str->super = (mky_object_t){STRING_OBJ, stringInspect};
+    str->value = value; // + 1 here...
+    return ARAutorelease(str);
+}

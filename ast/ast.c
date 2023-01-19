@@ -396,3 +396,16 @@ astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *functi
     call->function = function;
     return call;
 }
+
+static ARStringRef stringLiteralTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_STRING);
+    astcallexpression_t *self = (astcallexpression_t *)node;
+    return ARStringWithSlice(self->token.literal);
+}
+
+aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value) {
+    aststringliteral_t *string = calloc(1, sizeof(*string));
+    string->super.node = astnodeMake(AST_STRING, stringLiteralTokenLiteral, stringLiteralTokenLiteral);
+    string->value = ARStringCreateWithSlice(value);
+    return string;
+}

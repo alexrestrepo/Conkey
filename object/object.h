@@ -19,7 +19,8 @@ OBJ(BOOLEAN) \
 OBJ(NULL) \
 OBJ(RETURN_VALUE) \
 OBJ(ERROR) \
-OBJ(FUNCTION)
+OBJ(FUNCTION) \
+OBJ(STRING)
 
 #define OBJ(type) type##_OBJ,
 typedef enum {
@@ -78,5 +79,11 @@ typedef struct {
     environment_t *env;
 } mky_function_t;
 mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, environment_t *env);
+
+typedef struct {
+    mky_object_t super;
+    ARStringRef value;
+} mky_string_t;
+mky_string_t *objStringCreate(ARStringRef value);
 
 #endif /* _object_h_ */

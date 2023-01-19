@@ -31,6 +31,8 @@ UTEST(lexer, nextToken) {
 		
 		10 == 10;
 		10 != 9;
+        "foobar"
+        "foo bar"
 	);
 	
 	test_t tests[] = {
@@ -113,7 +115,10 @@ UTEST(lexer, nextToken) {
 		{TOKEN_NOT_EQ, "!="},
 		{TOKEN_INT, "9"},
 		{TOKEN_SEMICOLON, ";"},
-		
+
+        {TOKEN_STRING, "foobar"},
+        {TOKEN_STRING, "foo bar"},
+
 		{TOKEN_EOF, ""},
 	};
 	

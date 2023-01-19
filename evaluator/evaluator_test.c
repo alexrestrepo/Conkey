@@ -291,6 +291,10 @@ UTEST(eval, errorHandling) {
             "foobar",
             "identifier not found: foobar",
         },
+        {
+            MONKEY("Hello" - "World"),
+            "unknown operator: STRING - STRING",
+        },
     };
 
     autoreleasepool(
@@ -377,6 +381,28 @@ UTEST(eval, testClosures) {
                                );
     mky_object_t *evaluated = testEval(input);
     ASSERT_TRUE(testIntegerObject(evaluated, 4));
+}
+
+UTEST(eval, stringLiteral) {
+    const char *input = "\"Hello World\"";
+    mky_object_t *evaluated = testEval(input);
+    
+    ASSERT_STREQ(obj_types[STRING_OBJ], obj_types[evaluated->type]);
+
+    mky_string_t *str = (mky_string_t *)evaluated;
+    ASSERT_STREQ("Hello World", ARStringCString(str->value));
+}
+
+UTEST(eval, stringConcatenation) {
+    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
+    const char *input = MONKEY("Hello" + " " + "World!");
+    mky_object_t *evaluated = testEval(input);
+
+    ASSERT_STREQ(obj_types[STRING_OBJ], obj_types[evaluated->type]);
+
+    mky_string_t *str = (mky_string_t *)evaluated;
+    ASSERT_STREQ("Hello World!", ARStringCString(str->value));
+    ARRelease(pool);
 }
 
 UTEST_MAIN();

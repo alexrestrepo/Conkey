@@ -87,6 +87,20 @@ static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) 
                                                           ));
 }
 
+static mky_object_t *evalStringInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
+    if (type != TOKEN_PLUS) {
+        return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s %s %s",
+                                                              obj_types[left->type],
+                                                              token_str[type],
+                                                              obj_types[right->type]
+                                                              ));
+    }
+
+    ARStringRef leftVal = ((mky_string_t *)left)->value;
+    ARStringRef rightVal = ((mky_string_t *)right)->value;
+    return (mky_object_t *)objStringCreate(ARStringWithFormat("%s%s", ARStringCString(leftVal), ARStringCString(rightVal)));
+}
+
 static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
     int64_t leftVal = ((mky_integer_t *)left)->value;
     int64_t rightVal = ((mky_integer_t *)right)->value;
@@ -137,6 +151,10 @@ static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *l
 static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
     if (left->type == INTEGER_OBJ && right->type == INTEGER_OBJ) {
         return evalIntegerInfixExpression(type, left, right);
+    }
+
+    if (left->type == STRING_OBJ && right->type == STRING_OBJ) {
+        return evalStringInfixExpression(type, left, right);
     }
 
     switch (type) {
@@ -352,6 +370,12 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             }
 
             return applyFunction(function, args);
+        }
+            break;
+
+        case AST_STRING: {
+            aststringliteral_t *str = (aststringliteral_t *)node;
+            return (mky_object_t *)objStringCreate(str->value);
         }
             break;
     }

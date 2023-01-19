@@ -326,6 +326,11 @@ static astexpression_t *parserParseFunctionLiteral(parser_t *parser) {
     return (astexpression_t *)lit;
 }
 
+static astexpression_t *parserParseStringLiteral(parser_t *parser) {
+    aststringliteral_t *str = stringLiteralCreate(parser->currentToken, parser->currentToken.literal);
+    return (astexpression_t *)str;
+}
+
 astprogram_t *parserParseProgram(parser_t *parser) {
     astprogram_t *program = programCreate();
     
@@ -364,6 +369,7 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterPrefix(parser, TOKEN_LPAREN, parserParseGroupedExpression);
     parserRegisterPrefix(parser, TOKEN_IF, parserParseIfExpression);
     parserRegisterPrefix(parser, TOKEN_FUNCTION, parserParseFunctionLiteral);
+    parserRegisterPrefix(parser, TOKEN_STRING, parserParseStringLiteral);
     
     parserRegisterInfix(parser, TOKEN_PLUS, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_MINUS, parserParseInfixExpression);

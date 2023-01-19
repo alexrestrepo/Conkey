@@ -27,6 +27,7 @@ typedef enum {
     AST_IFEXPR,
     AST_FNLIT,
     AST_CALL,
+    AST_STRING,
 
 } astnode_type;
 
@@ -207,6 +208,17 @@ typedef struct {
     astexpression_t **arguments;
 } astcallexpression_t;
 astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *function);
+
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } super;
+
+    token_t token;
+    ARStringRef value;
+} aststringliteral_t;
+aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value);
 
 #define AST_TYPE(n) ((n)->super.node.type)
 #define AS_NODE(n) (&((n)->super.node))

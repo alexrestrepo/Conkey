@@ -37,7 +37,8 @@
 	TOK(FALSE,    "false") \
 	TOK(IF,       "if") \
 	TOK(ELSE,     "else") \
-	TOK(RETURN,   "return")
+	TOK(RETURN,   "return") \
+    TOK(STRING,   "String")
 
 	
 #define TOK(token, ...) TOKEN_##token,

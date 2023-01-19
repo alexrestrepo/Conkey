@@ -787,4 +787,26 @@ UTEST(parser, callExpressionParsing) {
     ARRelease(autoreleasepool);
 }
 
+UTEST(parser, stringLiteralExpressions) {
+    const char *input = "\"Hello World\"";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_STRING, AST_TYPE(stmt->expression));
+    aststringliteral_t *str = (aststringliteral_t *)stmt->expression;
+
+    ASSERT_STREQ("Hello World", ARStringCString(str->value));
+}
+
 UTEST_MAIN();

@@ -7,10 +7,12 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "stb_ds_x.h"
 
 struct ARAutoreleasePool {
+    uint64_t threadID;
     // maybe instead of an array use a dict, with the id being "alloc id" so you can't add an entry twice...?
     ARObjectRef *objects;
 };
@@ -18,12 +20,21 @@ struct ARAutoreleasePool {
 static ar_class_id ARAutoreleasePoolClassID = { 0 };
 static ARAutoreleasePoolRef *active_pools = NULL;
 
+static uint64_t currentThreadID() {
+    return pthread_mach_thread_np(pthread_self());
+}
+
 static ARObjectRef ARAutoreleasePoolConstructor(ARObjectRef obj) {
     assert(obj);
 
+    ARAutoreleasePoolRef pool = obj;
+    pool->threadID = currentThreadID();
+
+    // TODO: check if current thread has a pool stack, if not add 'obj' and set it 
+
     // add to stack
-    arrput(active_pools, obj);
-    return obj;
+    arrput(active_pools, pool);
+    return pool;
 }
 
 static void ARAutoreleasePoolDestructor(ARObjectRef obj) {
@@ -62,6 +73,8 @@ ARAutoreleasePoolRef ARAutoreleasePoolCreate(void) {
 void ARAutoreleasePoolAddObject(ARAutoreleasePoolRef pool, ARObjectRef obj) {
     assert(pool);
     assert(obj);
+
+    // check if poolid and threadid match
     
     arrput(pool->objects, obj);
 }

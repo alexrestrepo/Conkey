@@ -8,11 +8,13 @@
 #include "../arfoundation/arfoundation.h"
 #include "../object/object.h"
 
+typedef struct {
+    char *key;
+    mky_object_t *value;
+} env_storage;
+
 struct environment {
-    struct {
-        char *key;
-        mky_object_t *value;
-    } *store;
+    env_storage *store;
     environment_t *outer;
 };
 
@@ -49,7 +51,15 @@ mky_object_t *objectGetEnv(environment_t *env, const char *name) {
 
 mky_object_t *objectSetEnv(environment_t *env, const char *name, mky_object_t *obj) {
     ARRetain(obj);
-    shput(env->store, name, obj);
+
+    env_storage *old = shgetp_null(env->store, name);
+    if (old) {
+        ARRelease(old->value);
+        old->value = obj;
+
+    } else {
+        shput(env->store, name, obj);
+    }
     return obj;
 }
 
