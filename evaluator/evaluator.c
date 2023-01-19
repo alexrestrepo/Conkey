@@ -10,6 +10,8 @@
 #include <assert.h>
 
 #include "../arfoundation/arfoundation.h"
+#include "builtins.h"
+
 
 static mky_object_t *evalProgram(astprogram_t *program, environment_t *env) {
     mky_object_t *result = NULL;
@@ -240,13 +242,18 @@ static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args)
 }
 
 static mky_object_t *applyFunction(mky_object_t *fn, mky_object_t **args) {
-    if (fn->type != FUNCTION_OBJ) {
-        return (mky_object_t *)errorCreate(ARStringWithFormat("not a function: %s", obj_types[fn->type]));
+    if (fn->type == FUNCTION_OBJ) {
+        mky_function_t *function = (mky_function_t *)fn;
+        environment_t *extendedEnv = extendFunctionEnv(function, args);
+        mky_object_t *evaluated = mkyeval(AS_NODE(function->body), extendedEnv);
+        return unwrapReturnValue(evaluated);
+
+    } else if (fn->type == BUILTIN_OBJ) {
+        mky_builtin_t *builtin = (mky_builtin_t *)fn;
+        return builtin->fn(args);
     }
-    mky_function_t *function = (mky_function_t *)fn;
-    environment_t *extendedEnv = extendFunctionEnv(function, args);
-    mky_object_t *evaluated = mkyeval(AS_NODE(function->body), extendedEnv);
-    return unwrapReturnValue(evaluated);
+
+    return (mky_object_t *)errorCreate(ARStringWithFormat("not a function: %s", obj_types[fn->type]));
 }
 
 static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env) {
@@ -270,6 +277,11 @@ static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) 
     mky_object_t *obj = objectGetEnv(env, ARStringCString(ident->value));
     if (obj) {
         return obj;
+    }
+
+    mky_builtin_t *builtin = builtins(ident->value);
+    if (builtin) {
+        return (mky_object_t *)builtin;
     }
 
     return (mky_object_t *)errorCreate(ARStringWithFormat("identifier not found: %s", ARStringCString(ident->value)));

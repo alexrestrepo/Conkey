@@ -405,4 +405,44 @@ UTEST(eval, stringConcatenation) {
     ARRelease(pool);
 }
 
+UTEST(eval, builtinFunctions) {
+    struct test {
+        const char *input;
+        int expectedType;
+        union {
+            const char *string;
+            int64_t value;
+        };
+    } tests[] = {
+        {MONKEY(len("")), 0, .value = 0},
+        {MONKEY(len("four")), 0, .value = 4},
+        {MONKEY(len("hello world")), 0, .value = 11},
+        {MONKEY(len(1)), 1, .string = "argument to 'len' not supported, got INTEGER"},
+        {MONKEY(len("one", "two")), 1, .string = "wrong number of arguments. got=2, want=1"},
+    };
+
+    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+        mky_object_t *evaluated = testEval(test.input);
+
+        switch (test.expectedType) {
+            case 0:
+                EXPECT_TRUE(testIntegerObject(evaluated, test.value));
+                break;
+
+            case 1: {
+                EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
+
+                if (evaluated->type == ERROR_OBJ) {
+                    mky_error_t *err = (mky_error_t *)evaluated;
+                    EXPECT_STREQ(test.string, ARStringCString(err->message));
+                }
+            }
+                break;
+        }
+    }
+    ARRelease(pool);
+}
+
 UTEST_MAIN();

@@ -20,7 +20,8 @@ OBJ(NULL) \
 OBJ(RETURN_VALUE) \
 OBJ(ERROR) \
 OBJ(FUNCTION) \
-OBJ(STRING)
+OBJ(STRING) \
+OBJ(BUILTIN)
 
 #define OBJ(type) type##_OBJ,
 typedef enum {
@@ -85,5 +86,12 @@ typedef struct {
     ARStringRef value;
 } mky_string_t;
 mky_string_t *objStringCreate(ARStringRef value);
+
+typedef mky_object_t *builtin_fn(mky_object_t **args);
+typedef struct {
+    mky_object_t super;
+    builtin_fn *fn;
+} mky_builtin_t;
+mky_builtin_t *builtInCreate(builtin_fn *builtin);
 
 #endif /* _object_h_ */

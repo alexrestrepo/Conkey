@@ -121,3 +121,15 @@ mky_string_t *objStringCreate(ARStringRef value) {
     str->value = value; // + 1 here...
     return ARAutorelease(str);
 }
+
+static ARStringRef builtinInspect(mky_object_t *obj) {
+    assert(obj->type == BUILTIN_OBJ);
+    return ARStringWithFormat("builtin function");
+}
+
+mky_builtin_t *builtInCreate(builtin_fn *builtin) {
+    mky_builtin_t *built = ARAllocRC(sizeof(*built));
+    built->super = (mky_object_t){BUILTIN_OBJ, builtinInspect};
+    built->fn = builtin;
+    return ARAutorelease(built);
+}
