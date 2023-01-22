@@ -352,6 +352,34 @@ static astexpression_t *parserParseArrayLiteral(parser_t *parser) {
     return (astexpression_t *)array;
 }
 
+static astexpression_t *parserParseHashLiteral(parser_t *parser) {
+    asthashliteral_t *hash = hashLiteralCreate(parser->currentToken);
+
+    while (!parserPeekTokenIs(parser, TOKEN_RBRACE)) {
+        parserNextToken(parser);
+        astexpression_t *key = parserParseExpression(parser, PREC_LOWEST);
+
+        if (!parserExpectPeek(parser, TOKEN_COLON)) {
+            return NULL;
+        }
+
+        parserNextToken(parser);
+        astexpression_t *value = parserParseExpression(parser, PREC_LOWEST);
+
+        if (!parserPeekTokenIs(parser, TOKEN_RBRACE) && !parserExpectPeek(parser, TOKEN_COMMA)) {
+            return NULL;
+        }
+
+        hmput(hash->pairs, key, value);
+    }
+
+    if (!parserExpectPeek(parser, TOKEN_RBRACE)) {
+        return NULL;
+    }
+
+    return (astexpression_t *)hash;
+}
+
 astprogram_t *parserParseProgram(parser_t *parser) {
     astprogram_t *program = programCreate();
     
@@ -392,6 +420,7 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterPrefix(parser, TOKEN_FUNCTION, parserParseFunctionLiteral);
     parserRegisterPrefix(parser, TOKEN_STRING, parserParseStringLiteral);
     parserRegisterPrefix(parser, TOKEN_LBRACKET, parserParseArrayLiteral);
+    parserRegisterPrefix(parser, TOKEN_LBRACE, parserParseHashLiteral);
     
     parserRegisterInfix(parser, TOKEN_PLUS, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_MINUS, parserParseInfixExpression);

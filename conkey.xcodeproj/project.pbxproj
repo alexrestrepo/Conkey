@@ -151,6 +151,7 @@
 		FA3BEF972978EBE2009E79A2 /* builtins.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = builtins.h; sourceTree = "<group>"; };
 		FA3BEF982978EBE2009E79A2 /* builtins.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = builtins.c; sourceTree = "<group>"; };
 		FA894341296A8CD400D52466 /* stb_ds_x.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_ds_x.h; sourceTree = "<group>"; };
+		FABA1A92297B0B2D0074864F /* object_test.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = object_test.c; sourceTree = "<group>"; };
 		FAC215F22970953200F12219 /* environment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = environment.h; sourceTree = "<group>"; };
 		FAC215F32970953200F12219 /* environment.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = environment.c; sourceTree = "<group>"; };
 		FAC7B54E296F597100578C21 /* object.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = object.h; sourceTree = "<group>"; };
@@ -322,6 +323,7 @@
 			children = (
 				FAC7B54E296F597100578C21 /* object.h */,
 				FAC7B54F296F597100578C21 /* object.c */,
+				FABA1A92297B0B2D0074864F /* object_test.c */,
 			);
 			path = object;
 			sourceTree = "<group>";
@@ -329,11 +331,11 @@
 		FAC7B55A296F701100578C21 /* evaluator */ = {
 			isa = PBXGroup;
 			children = (
+				FA3BEF982978EBE2009E79A2 /* builtins.c */,
+				FA3BEF972978EBE2009E79A2 /* builtins.h */,
+				FAC7B55B296F701100578C21 /* evaluator_test.c */,
 				FAC7B561296F752700578C21 /* evaluator.c */,
 				FAC7B560296F752700578C21 /* evaluator.h */,
-				FAC7B55B296F701100578C21 /* evaluator_test.c */,
-				FA3BEF972978EBE2009E79A2 /* builtins.h */,
-				FA3BEF982978EBE2009E79A2 /* builtins.c */,
 			);
 			path = evaluator;
 			sourceTree = "<group>";

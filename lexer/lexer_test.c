@@ -12,28 +12,29 @@ typedef struct {
 
 UTEST(lexer, nextToken) {
 	const char *input = MONKEY(
-		let five = 5;
-		let ten = 10;
-		
-		let add = fn(x,y) {
-			x + y;
-		};
-		
-		let result = add(five, ten);
-		!-/ * 5;
-		5 < 10 > 5;
-		
-		if (5 < 10) {
-			return true;
-		} else {
-			return false;
-		}
-		
-		10 == 10;
-		10 != 9;
-        "foobar"
-        "foo bar"
-        [1,2];
+                               let five = 5;
+                               let ten = 10;
+
+                               let add = fn(x,y) {
+                                   x + y;
+                               };
+
+                               let result = add(five, ten);
+                               !-/ * 5;
+                               5 < 10 > 5;
+
+                               if (5 < 10) {
+                                   return true;
+                               } else {
+                                   return false;
+                               }
+
+                               10 == 10;
+                               10 != 9;
+                               "foobar"
+                               "foo bar"
+                               [1,2];
+                               {"foo":"bar"}
 	);
 	
 	test_t tests[] = {
@@ -126,6 +127,12 @@ UTEST(lexer, nextToken) {
         {TOKEN_INT, "2"},
         {TOKEN_RBRACKET, "]"},
         {TOKEN_SEMICOLON, ";"},
+
+        {TOKEN_LBRACE, "{"},
+        {TOKEN_STRING, "foo"},
+        {TOKEN_COLON, ":"},
+        {TOKEN_STRING, "bar"},
+        {TOKEN_RBRACE, "}"},
 
 		{TOKEN_EOF, ""},
 	};

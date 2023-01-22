@@ -9,7 +9,7 @@
 
 #include <assert.h>
 
-#include "stb_ds_x.h"
+#include "../arfoundation/stb_ds_x.h"
 
 typedef struct {
     char *key;
@@ -111,6 +111,20 @@ static mky_object_t *pushFn(mky_object_t **args) {
     return objNull();
 }
 
+static mky_object_t *putsFn(mky_object_t **args) {
+    if (!args) {
+        return objNull();
+    }
+
+    for (int i = 0; i < arrlen(args); i++) {
+        mky_object_t *obj = args[i];
+        ARStringRef inspect = obj->inspect(obj);
+        printf("%s\n", ARStringCString(inspect));
+    }
+
+    return objNull();
+}
+
 mky_builtin_t *builtins(ARStringRef name) {
     static builtins_storage *_builtins = NULL;
 
@@ -120,6 +134,7 @@ mky_builtin_t *builtins(ARStringRef name) {
         shput(_builtins, "last", ARRetain(builtInCreate(lastFn)));
         shput(_builtins, "rest", ARRetain(builtInCreate(restFn)));
         shput(_builtins, "push", ARRetain(builtInCreate(pushFn)));
+        shput(_builtins, "puts", ARRetain(builtInCreate(putsFn)));
     }
 
     const char *key = ARStringCString(name);

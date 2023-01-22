@@ -202,13 +202,60 @@ static mky_object_t *evalArrayIndexExpression(mky_object_t *left, mky_object_t *
     return array->elements[idx];
 }
 
+static mky_object_t *evalHashIndexExpression(mky_object_t *left, mky_object_t *index) {
+    assert(left->type == HASH_OBJ);
+    mky_hash_t *hash = (mky_hash_t *)left;
+
+    if (!index->hashkey) {
+        return (mky_object_t *)errorCreate(ARStringWithFormat("unusable as hash key: %s",
+                                                              obj_types[index->type]));
+    }
+
+    objmap_t *data = hmgetp_null(hash->pairs, index->hashkey(index));
+    if (!data) {
+        return objNull();
+    }
+    return data->value.value;
+}
+
 static mky_object_t *evalIndexExpression(mky_object_t *left, mky_object_t *index) {
     if (left->type == ARRAY_OBJ && index->type == INTEGER_OBJ) {
         return evalArrayIndexExpression(left, index);
     }
 
+    if (left->type == HASH_OBJ) {
+        return evalHashIndexExpression(left, index);
+    }
+
     return (mky_object_t *)errorCreate(ARStringWithFormat("index operator not supported: %s",
                                                           obj_types[left->type]));
+}
+
+static mky_object_t *evalHashLiteral(asthashliteral_t *node, environment_t *env) {
+    objmap_t *pairs = NULL;
+    for (int i = 0; i < hmlen(node->pairs); i++) {
+        pairs_t pair = node->pairs[i];
+        mky_object_t *key = mkyeval(AS_NODE(pair.key), env);
+        if (key->type == ERROR_OBJ) {
+            return key;
+        }
+
+        if (!key->hashkey) {
+            return (mky_object_t *)errorCreate(ARStringWithFormat("unusable as hash key: %s",
+                                                                  obj_types[key->type]));
+        }
+
+        mky_object_t *value = mkyeval(AS_NODE(pair.value), env);
+        if (value->type == ERROR_OBJ) {
+            return value;
+        }
+
+        hashkey_t hashKey = key->hashkey(key);
+        hashpair_t hashValue = HASHPAIR(ARRetain(key), ARRetain(value));
+        hmput(pairs, hashKey, hashValue);
+    }
+    
+    return (mky_object_t *)objHashCreate(pairs);
 }
 
 static bool isTruthy(mky_object_t *value) {
@@ -437,6 +484,10 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             return (mky_object_t *)evalIndexExpression(left, idx);
 
         } break;
+
+        case AST_HASH:
+            return evalHashLiteral((asthashliteral_t *)node, env);
+            break;
 
     }
     return NULL;

@@ -295,6 +295,14 @@ UTEST(eval, errorHandling) {
             MONKEY("Hello" - "World"),
             "unknown operator: STRING - STRING",
         },
+        {
+            MONKEY({"name": "Monkey"}[fn(x) { x }];),
+            "unusable as hash key: FUNCTION",
+        },
+        {
+            MONKEY(999[1]),
+            "index operator not supported: INTEGER",
+        },
     };
 
     autoreleasepool(
@@ -506,6 +514,103 @@ UTEST(eval, arrayIndexExpressions) {
             "[1, 2, 3][-1]",
             0,
         },
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
+        struct test test = tests[i];
+
+        mky_object_t *evaluated = testEval(test.input);
+        if (test.expected > 0) {
+            ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
+
+        } else {
+            ASSERT_TRUE(testNullObject(evaluated));
+        }
+    }
+}
+
+UTEST(eval, hashLiterals) {
+    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
+    const char *input =
+    MONKEY(
+           let two = "two";
+           {
+               "one": 10 - 9,
+                two: 1 + 1,
+               "thr" + "ee": 6 / 2,
+               4: 4,
+               true: 5,
+               false: 6
+           }
+           );
+
+    mky_object_t *evaluated = testEval(input);
+    ASSERT_TRUE(evaluated);
+
+    ASSERT_STREQ(obj_types[HASH_OBJ], obj_types[evaluated->type]);
+    mky_hash_t *hash = (mky_hash_t *)evaluated;
+
+    struct kv {
+        hashkey_t key;
+        int64_t value;
+    };
+    struct kv *expected = NULL;
+
+    hmput(expected, OBJ_HASHKEY(objStringCreate(ARStringWithFormat("one"))), 1);
+    hmput(expected, OBJ_HASHKEY(objStringCreate(ARStringWithFormat("two"))), 2);
+    hmput(expected, OBJ_HASHKEY(objStringCreate(ARStringWithFormat("three"))), 3);
+    hmput(expected, OBJ_HASHKEY(objIntegerCreate(4)), 4);
+    hmput(expected, OBJ_HASHKEY(objBoolean(true)), 5);
+    hmput(expected, OBJ_HASHKEY(objBoolean(false)), 6);
+
+    ASSERT_EQ(hmlen(hash->pairs), hmlen(expected));
+
+    for (int i = 0; i < hmlen(expected); i++) {
+        struct kv expvalue = expected[i];
+
+        objmap_t *value = hmgetp_null(hash->pairs, expvalue.key);
+        ASSERT_TRUE(hashkeyEquals(hash->pairs[i].key, expvalue.key));
+        ASSERT_TRUE(value);
+
+        ASSERT_TRUE(testIntegerObject(value->value.value, expvalue.value));
+    }
+
+    ARRelease(pool);
+}
+
+UTEST(eval, hashIndexedExpression) {
+    struct test {
+        const char *input;
+        int64_t expected; // using 0 as null
+    } tests[] = {
+        {
+                    MONKEY({"foo": 5}["foo"]),
+                    5,
+                },
+                {
+                    MONKEY({"foo": 5}["bar"]),
+                    0,
+                },
+                {
+                    MONKEY(let key = "foo"; {"foo": 5}[key]),
+                    5,
+                },
+                {
+                    MONKEY({}["foo"]),
+                    0,
+                },
+                {
+                    MONKEY({5: 5}[5]),
+                    5,
+                },
+                {
+                    MONKEY({true: 5}[true]),
+                    5,
+                },
+                {
+                    MONKEY({false: 5}[false]),
+                    5,
+                },
     };
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {

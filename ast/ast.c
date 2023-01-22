@@ -399,13 +399,14 @@ astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *functi
 
 static ARStringRef stringLiteralTokenLiteral(astnode_t *node) {
     assert(node->type == AST_STRING);
-    astcallexpression_t *self = (astcallexpression_t *)node;
+    aststringliteral_t *self = (aststringliteral_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
 aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value) {
     aststringliteral_t *string = calloc(1, sizeof(*string));
     string->super.node = astnodeMake(AST_STRING, stringLiteralTokenLiteral, stringLiteralTokenLiteral);
+    string->token = token;
     string->value = ARStringCreateWithSlice(value);
     return string;
 }
@@ -465,4 +466,38 @@ astindexexpression_t *indexExpressionCreate(token_t token, astexpression_t *left
     idx->token = token;
     idx->left = left;
     return idx;
+}
+
+static ARStringRef hashLiteralTokenLiteral(astnode_t *node) {
+    assert(node->type == AST_HASH);
+    asthashliteral_t *self = (asthashliteral_t *)node;
+    return ARStringWithSlice(self->token.literal);
+}
+
+static ARStringRef hashLiteralString(astnode_t *node) {
+    assert(node->type == AST_HASH);
+    asthashliteral_t *self = (asthashliteral_t *)node;
+
+    ARStringRef pairs = NULL;
+    if (self->pairs) {
+        pairs = ARStringEmpty();
+
+        for (int i = 0; i < arrlen(self->pairs); i++) {
+            pairs_t pair = self->pairs[i];
+            ARStringAppendFormat(pairs, "%s:%s", ARStringCString(ASTN_STRING(pair.key)), ARStringCString(ASTN_STRING(pair.value)));
+            if (i < arrlen(self->pairs) - 1) {
+                ARStringAppendFormat(pairs, ", ");
+            }
+        }
+    }
+
+    ARStringRef out = ARStringWithFormat("{%s}", pairs ? ARStringCString(pairs) : "");
+    return out;
+}
+
+asthashliteral_t *hashLiteralCreate(token_t token) {
+    asthashliteral_t *dict = calloc(1, sizeof(*dict));
+    dict->super.node = astnodeMake(AST_HASH, hashLiteralTokenLiteral, hashLiteralString);
+    dict->token = token;
+    return dict;
 }

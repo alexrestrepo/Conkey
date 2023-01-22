@@ -22,10 +22,11 @@ OBJ(ERROR) \
 OBJ(FUNCTION) \
 OBJ(STRING) \
 OBJ(BUILTIN) \
-OBJ(ARRAY)
+OBJ(ARRAY) \
+OBJ(HASH)
 
 #define OBJ(type) type##_OBJ,
-typedef enum {
+typedef enum : uint8_t {
     OBJ_TYPES
 
     // count
@@ -39,12 +40,24 @@ static const char *obj_types[] = {
 };
 #undef OBJ
 
+typedef struct {
+    uint64_t value;
+    object_type type;
+} __attribute__((packed))  hashkey_t;
+
+#define OBJ_HASHKEY(obj) ((obj)->super.hashkey ? (obj)->super.hashkey(&(obj)->super) : (hashkey_t){0,0})
+AR_INLINE bool hashkeyEquals(hashkey_t a, hashkey_t b) {
+    return a.type == b.type && a.value == b.value;
+}
+
 typedef struct object_t mky_object_t;
 typedef ARStringRef inspect_fn(mky_object_t *obj);
+typedef hashkey_t hashkey_fn(mky_object_t *obj);
 
 struct object_t{
     object_type type;
     inspect_fn *inspect;
+    hashkey_fn *hashkey;
 };
 
 typedef struct {
@@ -100,5 +113,22 @@ typedef struct {
     mky_object_t **elements;
 } mky_array_t;
 mky_array_t *objArrayCreate(mky_object_t **elements);
+
+typedef struct {
+    mky_object_t *key;
+    mky_object_t *value;
+} hashpair_t;
+#define HASHPAIR(k,v) ((hashpair_t){(k),(v)})
+
+typedef struct {
+    hashkey_t key;
+    hashpair_t value;
+} objmap_t;
+
+typedef struct {
+    mky_object_t super;
+    objmap_t *pairs;
+} mky_hash_t;
+mky_hash_t *objHashCreate(objmap_t *pairs);
 
 #endif /* _object_h_ */

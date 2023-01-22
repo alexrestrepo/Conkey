@@ -40,7 +40,8 @@
 	TOK(RETURN,   "return") \
     TOK(STRING,   "String") \
     TOK(LBRACKET, "[") \
-    TOK(RBRACKET, "]")
+    TOK(RBRACKET, "]") \
+    TOK(COLON,    ":")
 
 	
 #define TOK(token, ...) TOKEN_##token,

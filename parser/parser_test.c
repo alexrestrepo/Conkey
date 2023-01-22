@@ -869,4 +869,126 @@ UTEST(parser, parseIndexExpressions) {
     ARRelease(autoreleasepool);
 }
 
+UTEST(parser, hashLiteralStringKeys) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
+    const char *input = MONKEY({"one":1, "two":2, "three":3});
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_HASH, AST_TYPE(stmt->expression));
+    asthashliteral_t *hash = (asthashliteral_t *)stmt->expression;
+
+    ASSERT_EQ(3, hmlen(hash->pairs));
+
+    struct expected {
+        char *key;
+        int64_t value;
+    };
+    struct expected *expected = NULL;
+    shput(expected, "one", 1);
+    shput(expected, "two", 2);
+    shput(expected, "three", 3);
+
+    for (int i = 0; i < hmlen(hash->pairs); i++) {
+        pairs_t pair = hash->pairs[i];
+        ASSERT_EQ(AST_STRING, AST_TYPE(pair.key));
+
+        ARStringRef key = ASTN_STRING(pair.key);
+        int64_t expectedValue = shget(expected, ARStringCString(key));
+        ASSERT_TRUE(testIntegerLiteral(pair.value, expectedValue));
+    }
+
+    hmfree(expected);
+    ARRelease(autoreleasepool);
+}
+
+UTEST(parser, emptyHashLiteral) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    const char *input = "{}";
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_HASH, AST_TYPE(stmt->expression));
+    asthashliteral_t *hash = (asthashliteral_t *)stmt->expression;
+
+    ASSERT_EQ(0, hmlen(hash->pairs));
+    ARRelease(autoreleasepool);
+}
+
+UTEST(parser, hashLiteralsWithExpressions) {
+    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+
+    const char *input = MONKEY({"one" : 0 + 1, "two" : 10 - 8, "three":15 / 5});
+
+    lexer_t *lexer = lexerCreate(input);
+    parser_t *parser = parserCreate(lexer);
+    astprogram_t *program = parserParseProgram(parser);
+
+    bool errors = checkParserErrors(parser);
+    ASSERT_FALSE(errors);
+
+    ASSERT_TRUE(program->statements);
+    ASSERT_EQ(1, arrlen(program->statements));
+
+    ASSERT_EQ(AST_EXPRESSIONSTMT, AST_TYPE(program->statements[0]));
+    astexpressionstatement_t *stmt = (astexpressionstatement_t *)program->statements[0];
+
+    ASSERT_EQ(AST_HASH, AST_TYPE(stmt->expression));
+    asthashliteral_t *hash = (asthashliteral_t *)stmt->expression;
+
+    ASSERT_EQ(3, hmlen(hash->pairs));
+
+    typedef struct {
+        int64_t left;
+        token_type token;
+        int64_t right;
+    } val;
+    struct expected {
+        char *key;
+        val value;
+    };
+    struct expected *expected = NULL;
+    val one = (val){0, TOKEN_PLUS, 1};
+    val two = (val){10, TOKEN_MINUS, 8};
+    val three = (val){15, TOKEN_SLASH, 5};
+    shput(expected, "one", one);
+    shput(expected, "two", two);
+    shput(expected, "three", three);
+
+    for (int i = 0; i < hmlen(hash->pairs); i++) {
+        pairs_t pair = hash->pairs[i];
+        ASSERT_EQ(AST_STRING, AST_TYPE(pair.key));
+
+        ARStringRef key = ASTN_STRING(pair.key);
+        val expectedValue = shget(expected, ARStringCString(key));
+        ASSERT_TRUE(testInfixExpression(pair.value, INT(expectedValue.left), expectedValue.token, INT(expectedValue.right)));
+    }
+
+    hmfree(expected);
+    ARRelease(autoreleasepool);
+}
+
 UTEST_MAIN();

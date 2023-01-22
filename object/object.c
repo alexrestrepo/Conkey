@@ -16,9 +16,15 @@ static ARStringRef intInspect(mky_object_t *obj) {
     return ARStringWithFormat("%lld", self->value);
 }
 
+static hashkey_t intHashkey(mky_object_t *obj) {
+    assert(obj->type == INTEGER_OBJ);
+    mky_integer_t *self = (mky_integer_t *)obj;
+    return (hashkey_t){.type = obj->type, .value = self->value};
+}
+
 mky_integer_t *objIntegerCreate(int64_t value) {
     mky_integer_t *i = ARAllocRC(sizeof(*i));
-    i->super = (mky_object_t){INTEGER_OBJ, intInspect};
+    i->super = (mky_object_t){INTEGER_OBJ, intInspect, intHashkey};
     i->value = value;
     return ARAutorelease(i);
 }
@@ -29,9 +35,15 @@ static ARStringRef boolInspect(mky_object_t *obj) {
     return ARStringWithFormat("%s", self->value ? "true" : "false");
 }
 
+static hashkey_t boolHashkey(mky_object_t *obj) {
+    assert(obj->type == BOOLEAN_OBJ);
+    mky_boolean_t *self = (mky_boolean_t *)obj;
+    return (hashkey_t){.type = obj->type, .value = self->value ? 1 : 0};
+}
+
 mky_boolean_t *objBoolean(bool value) {
-    static mky_boolean_t boolTrue = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, true};
-    static mky_boolean_t boolFalse = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, false};
+    static mky_boolean_t boolTrue = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, boolHashkey, true};
+    static mky_boolean_t boolFalse = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, boolHashkey, false};
 
     if (value) {
         return &boolTrue;
@@ -115,9 +127,20 @@ static ARStringRef stringInspect(mky_object_t *obj) {
     return string->value;
 }
 
+static hashkey_t stringHashkey(mky_object_t *obj) {
+    // FIXME: we can cache the hash value...
+    assert(obj->type == STRING_OBJ);
+    mky_string_t *self = (mky_string_t *)obj;
+
+    char *cstr= (char *)ARStringCString(self->value);
+    uint64_t hash = stbds_hash_string(cstr, 0x5f3759df); // quake's fast inv sqroot constant :shrug:
+
+    return (hashkey_t){.type = obj->type, .value = hash};
+}
+
 mky_string_t *objStringCreate(ARStringRef value) {
     mky_string_t *str = ARAllocRC(sizeof(*str));
-    str->super = (mky_object_t){STRING_OBJ, stringInspect};
+    str->super = (mky_object_t){STRING_OBJ, stringInspect, stringHashkey};
     str->value = value; // + 1 here...
     return ARAutorelease(str);
 }
@@ -160,4 +183,36 @@ mky_array_t *objArrayCreate(mky_object_t **elements) {
     array->super = (mky_object_t){ARRAY_OBJ, arrayInspect};
     array->elements = elements;
     return ARAutorelease(array);
+}
+
+static ARStringRef hashInspect(mky_object_t *obj) {
+    assert(obj->type == HASH_OBJ);
+    mky_hash_t *self = (mky_hash_t *)obj;
+
+    ARStringRef pairs = NULL;
+    if (self->pairs) {
+        pairs = ARStringEmpty();
+
+        for (int i = 0; i < hmlen(self->pairs); i++) {
+            objmap_t pair = self->pairs[i];
+            
+            ARStringRef key = pair.value.key->inspect(pair.value.key);
+            ARStringRef value = pair.value.value->inspect(pair.value.value);
+            ARStringAppendFormat(pairs, "%s: %s", ARStringCString(key), ARStringCString(value));
+
+            if (i < hmlen(self->pairs) - 1) {
+                ARStringAppendFormat(pairs, ", ");
+            }
+        }
+    }
+
+    ARStringRef out = ARStringWithFormat("{%s}", pairs ? ARStringCString(pairs) : "");
+    return out;
+}
+
+mky_hash_t *objHashCreate(objmap_t *pairs) {
+    mky_hash_t *hash = ARAllocRC(sizeof(*hash));
+    hash->super = (mky_object_t){HASH_OBJ, hashInspect};
+    hash->pairs = pairs;
+    return ARAutorelease(hash);
 }

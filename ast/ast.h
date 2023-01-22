@@ -30,6 +30,7 @@ typedef enum {
     AST_STRING,
     AST_ARRAY,
     AST_INDEXEXP,
+    AST_HASH,
 
 } astnode_type;
 
@@ -244,6 +245,21 @@ typedef struct {
     astexpression_t *index;
 } astindexexpression_t;
 astindexexpression_t *indexExpressionCreate(token_t token, astexpression_t *left);
+
+typedef struct {
+    astexpression_t *key;
+    astexpression_t *value;
+} pairs_t;
+typedef struct {
+    union {
+        astnode_t node;
+        astexpression_t expression;
+    } super;
+
+    token_t token;
+    pairs_t *pairs;
+} asthashliteral_t;
+asthashliteral_t *hashLiteralCreate(token_t token);
 
 #define AST_TYPE(n) ((n)->super.node.type)
 #define AS_NODE(n) (&((n)->super.node))
