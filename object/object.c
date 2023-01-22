@@ -42,14 +42,26 @@ static hashkey_t boolHashkey(mky_object_t *obj) {
 }
 
 mky_boolean_t *objBoolean(bool value) {
-    static mky_boolean_t boolTrue = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, boolHashkey, true};
-    static mky_boolean_t boolFalse = (mky_boolean_t){BOOLEAN_OBJ, boolInspect, boolHashkey, false};
+    static mky_boolean_t *boolTrue = NULL;
+    static mky_boolean_t *boolFalse = NULL;
+
+    if (!boolTrue || !boolFalse) {
+        boolTrue = ARAllocRC(sizeof(*boolTrue));
+        boolTrue->super = (mky_object_t){BOOLEAN_OBJ, boolInspect, boolHashkey};
+        boolTrue->value = true;
+        ARRuntimeMakeConstant(boolTrue);
+
+        boolFalse = ARAllocRC(sizeof(*boolFalse));
+        boolFalse->super = (mky_object_t){BOOLEAN_OBJ, boolInspect, boolHashkey};
+        boolFalse->value = false;
+        ARRuntimeMakeConstant(boolFalse);
+    }
 
     if (value) {
-        return &boolTrue;
+        return boolTrue;
         
     } else {
-        return &boolFalse;
+        return boolFalse;
     }
 }
 
@@ -59,8 +71,13 @@ static ARStringRef nullInspect(mky_object_t *obj) {
 }
 
 mky_object_t *objNull() {
-    static mky_object_t nullObj = (mky_object_t){NULL_OBJ, nullInspect};
-    return &nullObj;
+    static mky_object_t *nullObj = NULL;
+    if (!nullObj) {
+        nullObj = ARAllocRC(sizeof(*nullObj));
+        nullObj = &(mky_object_t){NULL_OBJ, nullInspect};
+        ARRuntimeMakeConstant(nullObj);
+    }
+    return nullObj;
 }
 
 static ARStringRef returnInspect(mky_object_t *obj) {
