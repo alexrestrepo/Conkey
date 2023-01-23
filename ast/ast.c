@@ -19,27 +19,27 @@ static inline astnode_t astnodeMake(astnode_type type, literal_fn literal, strin
     };
 };
 
-static ARStringRef programTokenLiteral(astnode_t *node) {
+static StringRef programTokenLiteral(astnode_t *node) {
     assert(node->type == AST_PROGRAM);
     astprogram_t *self = (astprogram_t *)node;
     if (self->statements && arrlen(self->statements) > 0) {
         return ASTN_TOKLIT(self->statements[0]);
     }
 
-    return ARStringEmpty();
+    return String();
 }
 
-static ARStringRef programString(astnode_t *node) {
+static StringRef programString(astnode_t *node) {
     assert(node->type == AST_PROGRAM);
     astprogram_t *self = (astprogram_t *)node;
 
-    ARStringRef out = ARStringEmpty();
+    StringRef out = String();
 
     if (self->statements) {
         for (int i = 0; i < arrlen(self->statements); i++) {
             aststatement_t *stmt = self->statements[i];
-            ARStringRef str = ASTN_STRING(stmt);
-            ARStringAppendFormat(out, "%s", ARStringCString(str));
+            StringRef str = ASTN_STRING(stmt);
+            StringAppendFormat(out, "%s", CString(str));
         }
     }
 
@@ -60,13 +60,13 @@ void programRelease(astprogram_t **program) {
     }
 }
 
-static ARStringRef identifierTokenLiteral(astnode_t *node) {
+static StringRef identifierTokenLiteral(astnode_t *node) {
     assert(node->type == AST_IDENTIFIER);
     astidentifier_t *self = (astidentifier_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef identifierString(astnode_t *node) {
+static StringRef identifierString(astnode_t *node) {
     assert(node->type == AST_IDENTIFIER);
     astidentifier_t *self = (astidentifier_t *)node;
     return self->value;
@@ -80,25 +80,25 @@ astidentifier_t *identifierCreate(token_t token, charslice_t value) {
     return identifier;
 }
 
-static ARStringRef letStatementTokenLiteral(astnode_t *node) {
+static StringRef letStatementTokenLiteral(astnode_t *node) {
     assert(node->type == AST_LET);
     astletstatement_t *self = (astletstatement_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef letStatementString(astnode_t *node) {
+static StringRef letStatementString(astnode_t *node) {
     assert(node->type == AST_LET);
     astletstatement_t *self = (astletstatement_t *)node;
 
-    ARStringRef lit = ASTN_TOKLIT(self);
-    ARStringRef str = ASTN_STRING(self->name);
-    ARStringRef out = ARStringWithFormat("%s %s = ", ARStringCString(lit), ARStringCString(str));
+    StringRef lit = ASTN_TOKLIT(self);
+    StringRef str = ASTN_STRING(self->name);
+    StringRef out = StringWithFormat("%s %s = ", CString(lit), CString(str));
 
     if (self->value) {
         str = ASTN_STRING(self->value);
-        ARStringAppend(out, str);
+        StringAppendString(out, str);
     }
-    ARStringAppendFormat(out, ";");
+    StringAppendFormat(out, ";");
 
     return out;
 }
@@ -110,24 +110,24 @@ astletstatement_t *letStatementCreate(token_t token) {
     return let;
 }
 
-static ARStringRef returnStatementTokenLiteral(astnode_t *node) {
+static StringRef returnStatementTokenLiteral(astnode_t *node) {
     assert(node->type == AST_RETURN);
     astreturnstatement_t *self = (astreturnstatement_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef returnStatementString(astnode_t *node) {
+static StringRef returnStatementString(astnode_t *node) {
     assert(node->type == AST_RETURN);
     astreturnstatement_t *self = (astreturnstatement_t *)node;
 
-    ARStringRef str = ASTN_TOKLIT(self);
-    ARStringRef out = ARStringWithFormat("%s", ARStringCString(str));
+    StringRef str = ASTN_TOKLIT(self);
+    StringRef out = StringWithFormat("%s", CString(str));
 
     if (self->returnValue) {
         str = ASTN_STRING(self->returnValue);
-        ARStringAppend(out, str);
+        StringAppendString(out, str);
     }
-    ARStringAppendFormat(out, ";");
+    StringAppendFormat(out, ";");
     return out;
 }
 
@@ -138,13 +138,13 @@ astreturnstatement_t *returnStatementCreate(token_t token) {
     return ret;
 }
 
-static ARStringRef expressionStatementTokenLiteral(astnode_t *node) {
+static StringRef expressionStatementTokenLiteral(astnode_t *node) {
     assert(node->type == AST_EXPRESSIONSTMT);
     astexpressionstatement_t *self = (astexpressionstatement_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef expressionStatementString(astnode_t *node) {
+static StringRef expressionStatementString(astnode_t *node) {
     assert(node->type == AST_EXPRESSIONSTMT);
     astexpressionstatement_t *self = (astexpressionstatement_t *)node;
 
@@ -152,7 +152,7 @@ static ARStringRef expressionStatementString(astnode_t *node) {
         return ASTN_STRING(self->expression);
     }
 
-    return ARStringEmpty();
+    return String();
 }
 
 astexpressionstatement_t *expressionStatementCreate(token_t token) {
@@ -162,13 +162,13 @@ astexpressionstatement_t *expressionStatementCreate(token_t token) {
     return stmt;
 }
 
-static ARStringRef integerExpressionTokenLiteral(astnode_t *node) {
+static StringRef integerExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_INTEGER);
     astinteger_t *self = (astinteger_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef integerExpressionString(astnode_t *node) {
+static StringRef integerExpressionString(astnode_t *node) {
     assert(node->type == AST_INTEGER);
     astinteger_t *self = (astinteger_t *)node;
     return ARStringWithSlice(self->token.literal);
@@ -181,19 +181,19 @@ astinteger_t *integerExpressionCreate(token_t token) {
     return i;
 }
 
-static ARStringRef prefixExpressionTokenLiteral(astnode_t *node) {
+static StringRef prefixExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_PREFIXEXPR);
     astprefixexpression_t *self = (astprefixexpression_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef prefixExpressionString(astnode_t *node) {
+static StringRef prefixExpressionString(astnode_t *node) {
     assert(node->type == AST_PREFIXEXPR);
     astprefixexpression_t *self = (astprefixexpression_t *)node;
 
-    ARStringRef rightstr = ASTN_STRING(self->right);
-    ARStringRef out = ARStringWithFormat("(%s%s)", token_str[self->operator],
-                                         ARStringCString(rightstr));
+    StringRef rightstr = ASTN_STRING(self->right);
+    StringRef out = StringWithFormat("(%s%s)", token_str[self->operator],
+                                         CString(rightstr));
     return out;
 }
 
@@ -205,22 +205,22 @@ astprefixexpression_t *prefixExpressionCreate(token_t token, token_type operator
     return exp;
 }
 
-static ARStringRef infixExpressionTokenLiteral(astnode_t *node) {
+static StringRef infixExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_INFIXEXPR);
     astinfixexpression_t *self = (astinfixexpression_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef infixExpressionString(astnode_t *node) {
+static StringRef infixExpressionString(astnode_t *node) {
     assert(node->type == AST_INFIXEXPR);
     astinfixexpression_t *self = (astinfixexpression_t *)node;
 
-    ARStringRef lefttstr = ASTN_STRING(self->left);
-    ARStringRef rightstr = ASTN_STRING(self->right);
-    ARStringRef out = ARStringWithFormat("(%s %s %s)",
-                                         ARStringCString(lefttstr),
+    StringRef lefttstr = ASTN_STRING(self->left);
+    StringRef rightstr = ASTN_STRING(self->right);
+    StringRef out = StringWithFormat("(%s %s %s)",
+                                         CString(lefttstr),
                                          token_str[self->operator],
-                                         ARStringCString(rightstr));
+                                         CString(rightstr));
     return out;
 }
 
@@ -233,7 +233,7 @@ astinfixexpression_t *infixExpressionCreate(token_t token, token_type operator, 
     return exp;
 }
 
-static ARStringRef booleanTokenLiteral(astnode_t *node) {
+static StringRef booleanTokenLiteral(astnode_t *node) {
     assert(node->type == AST_BOOL);
     astinfixexpression_t *self = (astinfixexpression_t *)node;
     return ARStringWithSlice(self->token.literal);
@@ -247,27 +247,27 @@ astboolean_t *booleanCreate(token_t token, bool value) {
     return boo;
 }
 
-static ARStringRef ifexprTokenLiteral(astnode_t *node) {
+static StringRef ifexprTokenLiteral(astnode_t *node) {
     assert(node->type == AST_IFEXPR);
     astifexpression_t *self = (astifexpression_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef ifExpressionString(astnode_t *node) {
+static StringRef ifExpressionString(astnode_t *node) {
     assert(node->type == AST_IFEXPR);
     astifexpression_t *self = (astifexpression_t *)node;
 
-    ARStringRef out = ARStringWithFormat("if ");
+    StringRef out = StringWithFormat("if ");
 
-    ARStringRef tmp = ASTN_STRING(self->condition);
-    ARStringAppendFormat(out, "%s ", ARStringCString(tmp));
+    StringRef tmp = ASTN_STRING(self->condition);
+    StringAppendFormat(out, "%s ", CString(tmp));
 
     tmp = ASTN_STRING(self->consequence);
-    ARStringAppendFormat(out, "-> %s ", ARStringCString(tmp));
+    StringAppendFormat(out, "-> %s ", CString(tmp));
 
     if (self->alternative) {
         tmp = ASTN_STRING(self->alternative);
-        ARStringAppendFormat(out, "else %s ", ARStringCString(tmp));
+        StringAppendFormat(out, "else %s ", CString(tmp));
     }
 
     return out;
@@ -280,21 +280,21 @@ astifexpression_t *ifExpressionCreate(token_t token) {
     return ifexp;
 }
 
-static ARStringRef blockStatementTokenLiteral(astnode_t *node) {
+static StringRef blockStatementTokenLiteral(astnode_t *node) {
     assert(node->type == AST_BLOCKSTMT);
     astblockstatement_t *self = (astblockstatement_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef blockStatementString(astnode_t *node) {
+static StringRef blockStatementString(astnode_t *node) {
     assert(node->type == AST_BLOCKSTMT);
     astblockstatement_t *self = (astblockstatement_t *)node;
 
-    ARStringRef out = ARStringEmpty();
+    StringRef out = String();
     if (self->statements) {
         for (int i = 0; i < arrlen(self->statements); i++) {
-            ARStringRef str = ASTN_STRING(self->statements[i]);
-            ARStringAppend(out, str);
+            StringRef str = ASTN_STRING(self->statements[i]);
+            StringAppendString(out, str);
         }
     }
     
@@ -308,41 +308,41 @@ astblockstatement_t *blockStatementCreate(token_t token) {
     return block;
 }
 
-static ARStringRef functionLiteralTokenLiteral(astnode_t *node) {
+static StringRef functionLiteralTokenLiteral(astnode_t *node) {
     assert(node->type == AST_FNLIT);
     astfunctionliteral_t *self = (astfunctionliteral_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef functionLiteralString(astnode_t *node) {
+static StringRef functionLiteralString(astnode_t *node) {
     assert(node->type == AST_FNLIT);
     astfunctionliteral_t *self = (astfunctionliteral_t *)node;
 
-    ARStringRef params = NULL;
+    StringRef params = NULL;
     if (self->parameters) {
-        params = ARStringEmpty();
+        params = String();
 
         for (int i = 0; i < arrlen(self->parameters); i++) {
-            ARStringRef str = ASTN_STRING(self->parameters[i]);
-            ARStringAppend(params, str);
+            StringRef str = ASTN_STRING(self->parameters[i]);
+            StringAppendString(params, str);
             if (i < arrlen(self->parameters) - 1) {
-                ARStringAppendFormat(params, ", ");
+                StringAppendFormat(params, ", ");
             }
         }
     }
 
-    ARStringRef tmp = ASTN_TOKLIT(self);
-    ARStringRef out = ARStringEmpty();
-    if (params && ARStringLength(params) > 1) {
-        ARStringAppendFormat(out, "%s(%s) ", ARStringCString(tmp), ARStringCString(params));
+    StringRef tmp = ASTN_TOKLIT(self);
+    StringRef out = String();
+    if (params && StringLength(params) > 1) {
+        StringAppendFormat(out, "%s(%s) ", CString(tmp), CString(params));
 
     } else {
-        ARStringAppendFormat(out, "%s() ", ARStringCString(tmp));
+        StringAppendFormat(out, "%s() ", CString(tmp));
     }
 
     if (self->body) {
         tmp = ASTN_STRING(self->body);
-        ARStringAppend(out, tmp);
+        StringAppendString(out, tmp);
     }
 
     return out;
@@ -355,35 +355,35 @@ astfunctionliteral_t *functionLiteralCreate(token_t token) {
     return lit;
 }
 
-static ARStringRef callExpressionTokenLiteral(astnode_t *node) {
+static StringRef callExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_CALL);
     astcallexpression_t *self = (astcallexpression_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef callExpressionString(astnode_t *node) {
+static StringRef callExpressionString(astnode_t *node) {
     assert(node->type == AST_CALL);
     astcallexpression_t *self = (astcallexpression_t *)node;
 
-    ARStringRef args = NULL;
+    StringRef args = NULL;
     if (self->arguments) {
-        args = ARStringEmpty();
+        args = String();
 
         for (int i = 0; i < arrlen(self->arguments); i++) {
-            ARStringRef str = ASTN_STRING(self->arguments[i]);
-            ARStringAppend(args, str);
+            StringRef str = ASTN_STRING(self->arguments[i]);
+            StringAppendString(args, str);
             if (i < arrlen(self->arguments) - 1) {
-                ARStringAppendFormat(args, ", ");
+                StringAppendFormat(args, ", ");
             }
         }
     }
 
-    ARStringRef out = ARStringEmpty();
-    ARStringRef tmp = ASTN_TOKLIT(self->function);
-    if (args && ARStringLength(args) > 1) {
-        ARStringAppendFormat(out, "%s(%s)", ARStringCString(tmp), ARStringCString(args));
+    StringRef out = String();
+    StringRef tmp = ASTN_TOKLIT(self->function);
+    if (args && StringLength(args) > 1) {
+        StringAppendFormat(out, "%s(%s)", CString(tmp), CString(args));
     } else {
-        ARStringAppendFormat(out, "%s()", ARStringCString(tmp));
+        StringAppendFormat(out, "%s()", CString(tmp));
     }
 
     return out;
@@ -397,7 +397,7 @@ astcallexpression_t *callExpressionCreate(token_t token, astexpression_t *functi
     return call;
 }
 
-static ARStringRef stringLiteralTokenLiteral(astnode_t *node) {
+static StringRef stringLiteralTokenLiteral(astnode_t *node) {
     assert(node->type == AST_STRING);
     aststringliteral_t *self = (aststringliteral_t *)node;
     return ARStringWithSlice(self->token.literal);
@@ -411,30 +411,30 @@ aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value) {
     return string;
 }
 
-static ARStringRef arrayLiteralTokenLiteral(astnode_t *node) {
+static StringRef arrayLiteralTokenLiteral(astnode_t *node) {
     assert(node->type == AST_ARRAY);
     astarrayliteral_t *self = (astarrayliteral_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef arrayLiteralString(astnode_t *node) {
+static StringRef arrayLiteralString(astnode_t *node) {
     assert(node->type == AST_ARRAY);
     astarrayliteral_t *self = (astarrayliteral_t *)node;
 
-    ARStringRef elements = NULL;
+    StringRef elements = NULL;
     if (self->elements) {
-        elements = ARStringEmpty();
+        elements = String();
 
         for (int i = 0; i < arrlen(self->elements); i++) {
-            ARStringRef str = ASTN_STRING(self->elements[i]);
-            ARStringAppend(elements, str);
+            StringRef str = ASTN_STRING(self->elements[i]);
+            StringAppendString(elements, str);
             if (i < arrlen(self->elements) - 1) {
-                ARStringAppendFormat(elements, ", ");
+                StringAppendFormat(elements, ", ");
             }
         }
     }
 
-    ARStringRef out = ARStringWithFormat("[%s]", elements ? ARStringCString(elements) : "");
+    StringRef out = StringWithFormat("[%s]", elements ? CString(elements) : "");
     return out;
 }
 
@@ -445,18 +445,18 @@ astarrayliteral_t *arrayLiteralCreate(token_t token) {
     return array;
 }
 
-static ARStringRef indexExpressionTokenLiteral(astnode_t *node) {
+static StringRef indexExpressionTokenLiteral(astnode_t *node) {
     assert(node->type == AST_INDEXEXP);
     astindexexpression_t *self = (astindexexpression_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef indexExpressionString(astnode_t *node) {
+static StringRef indexExpressionString(astnode_t *node) {
     assert(node->type == AST_INDEXEXP);
     astindexexpression_t *self = (astindexexpression_t *)node;
-    ARStringRef out = ARStringWithFormat("(%s[%s])",
-                                         ARStringCString(ASTN_STRING(self->left)),
-                                         ARStringCString(ASTN_STRING(self->index)));
+    StringRef out = StringWithFormat("(%s[%s])",
+                                         CString(ASTN_STRING(self->left)),
+                                         CString(ASTN_STRING(self->index)));
     return out;
 }
 
@@ -468,30 +468,30 @@ astindexexpression_t *indexExpressionCreate(token_t token, astexpression_t *left
     return idx;
 }
 
-static ARStringRef hashLiteralTokenLiteral(astnode_t *node) {
+static StringRef hashLiteralTokenLiteral(astnode_t *node) {
     assert(node->type == AST_HASH);
     asthashliteral_t *self = (asthashliteral_t *)node;
     return ARStringWithSlice(self->token.literal);
 }
 
-static ARStringRef hashLiteralString(astnode_t *node) {
+static StringRef hashLiteralString(astnode_t *node) {
     assert(node->type == AST_HASH);
     asthashliteral_t *self = (asthashliteral_t *)node;
 
-    ARStringRef pairs = NULL;
+    StringRef pairs = NULL;
     if (self->pairs) {
-        pairs = ARStringEmpty();
+        pairs = String();
 
         for (int i = 0; i < arrlen(self->pairs); i++) {
             pairs_t pair = self->pairs[i];
-            ARStringAppendFormat(pairs, "%s:%s", ARStringCString(ASTN_STRING(pair.key)), ARStringCString(ASTN_STRING(pair.value)));
+            StringAppendFormat(pairs, "%s:%s", CString(ASTN_STRING(pair.key)), CString(ASTN_STRING(pair.value)));
             if (i < arrlen(self->pairs) - 1) {
-                ARStringAppendFormat(pairs, ", ");
+                StringAppendFormat(pairs, ", ");
             }
         }
     }
 
-    ARStringRef out = ARStringWithFormat("{%s}", pairs ? ARStringCString(pairs) : "");
+    StringRef out = StringWithFormat("{%s}", pairs ? CString(pairs) : "");
     return out;
 }
 

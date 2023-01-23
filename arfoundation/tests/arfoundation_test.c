@@ -6,105 +6,105 @@
 
 
 UTEST(arfoundation, ARString) {
-    ARAutoreleasePoolRef ap = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef ap = AutoreleasePoolCreate();
     
-    ARStringRef string = ARStringCreateWithFormat("Hello %s", "world!");
-    ARStringRef desc = ARRuntimeDescription(string); // auto
-    ARRetain(desc); // +1
+    StringRef string = StringCreateWithFormat("Hello %s", "world!");
+    StringRef desc = RuntimeDescription(string); // auto
+    RCRetain(desc); // +1
     
-    fprintf(stderr, "'%s' -> [%s]\n", ARStringCString(string), ARStringCString(desc));
+    fprintf(stderr, "'%s' -> [%s]\n", CString(string), CString(desc));
     
-    ASSERT_EQ(1, ARRuntimeRefCount(string));
-    ASSERT_EQ(2, ARRuntimeRefCount(desc));
+    ASSERT_EQ(1, RuntimeRefCount(string));
+    ASSERT_EQ(2, RuntimeRefCount(desc));
     
-    ARRetain(string);
-    ARRetain(desc);
+    RCRetain(string);
+    RCRetain(desc);
     
-    ASSERT_EQ(2, ARRuntimeRefCount(string));
-    ASSERT_EQ(3, ARRuntimeRefCount(desc));
+    ASSERT_EQ(2, RuntimeRefCount(string));
+    ASSERT_EQ(3, RuntimeRefCount(desc));
     
-    string = ARRelease(string);
-    desc = ARRelease(desc);
+    string = RCRelease(string);
+    desc = RCRelease(desc);
     
-    ASSERT_EQ(1, ARRuntimeRefCount(string));
-    ASSERT_EQ(2, ARRuntimeRefCount(desc));
+    ASSERT_EQ(1, RuntimeRefCount(string));
+    ASSERT_EQ(2, RuntimeRefCount(desc));
     
-    string = ARRelease(string);
-    desc = ARRelease(desc);
-    ASSERT_EQ(1, ARRuntimeRefCount(desc));
+    string = RCRelease(string);
+    desc = RCRelease(desc);
+    ASSERT_EQ(1, RuntimeRefCount(desc));
     
     ASSERT_EQ(NULL, string);
     //	ASSERT_EQ(NULL, desc);
-    ARRelease(ap);
+    RCRelease(ap);
     
     // desc is dangling here...
 } 
 
 UTEST(arfoundation, nonClassRefCount) {
     const char *base = "Hello there, this is fine.";
-    ARStringRef someString = ARStringCreateWithFormat("%s", base);
+    StringRef someString = StringCreateWithFormat("%s", base);
     
-    ASSERT_EQ(strlen(base), ARStringLength(someString));
-    ASSERT_STREQ(base, ARStringCString(someString));
+    ASSERT_EQ(strlen(base), StringLength(someString));
+    ASSERT_STREQ(base, CString(someString));
     
-    char *refcounted = ARRuntimeAllocRefCounted(sizeof(char) * ARStringLength(someString) + 1, (ar_class_id){0});
-    sprintf(refcounted, "%s", ARStringCString(someString));
+    char *refcounted = RuntimeRCAlloc(sizeof(char) * StringLength(someString) + 1, (RuntimeClassID){0});
+    sprintf(refcounted, "%s", CString(someString));
     
-    ASSERT_EQ(strlen(refcounted), ARStringLength(someString));
-    ASSERT_STREQ(refcounted, ARStringCString(someString));
+    ASSERT_EQ(strlen(refcounted), StringLength(someString));
+    ASSERT_STREQ(refcounted, CString(someString));
     
-    refcounted = ARRelease(refcounted);
+    refcounted = RCRelease(refcounted);
     ASSERT_EQ(NULL, refcounted);
     
-    someString = ARRelease(someString);
+    someString = RCRelease(someString);
     ASSERT_EQ(NULL, someString);
 
-    ARAutoreleasePoolRef ap = ARAutoreleasePoolCreate();
-    someString = ARStringWithFormat("HELLO");
-    ASSERT_EQ(5, ARStringLength(someString));
-    ASSERT_STREQ("HELLO", ARStringCString(someString));
+    AutoreleasePoolRef ap = AutoreleasePoolCreate();
+    someString = StringWithFormat("HELLO");
+    ASSERT_EQ(5, StringLength(someString));
+    ASSERT_STREQ("HELLO", CString(someString));
 
-    refcounted = ARRuntimeAllocRefCounted(sizeof(char) * ARStringLength(someString) + 1, (ar_class_id){0});
-    sprintf(refcounted, "%s", ARStringCString(someString));
-    ASSERT_EQ(strlen(refcounted), ARStringLength(someString));
-    ASSERT_STREQ(refcounted, ARStringCString(someString));
-    ASSERT_EQ(1, ARRuntimeRefCount(refcounted));
+    refcounted = RuntimeRCAlloc(sizeof(char) * StringLength(someString) + 1, (RuntimeClassID){0});
+    sprintf(refcounted, "%s", CString(someString));
+    ASSERT_EQ(strlen(refcounted), StringLength(someString));
+    ASSERT_STREQ(refcounted, CString(someString));
+    ASSERT_EQ(1, RuntimeRefCount(refcounted));
 
-    fprintf(stderr, "%s -> %s\n", refcounted, ARStringCString(ARRuntimeDescription(refcounted)));
-    fprintf(stderr, "%s\n", ARStringCString(ARRuntimeDescription(someString)));
+    fprintf(stderr, "%s -> %s\n", refcounted, CString(RuntimeDescription(refcounted)));
+    fprintf(stderr, "%s\n", CString(RuntimeDescription(someString)));
 
-    ARAutorelease(refcounted);
-    ARRelease(ap);
+    RCAutorelease(refcounted);
+    RCRelease(ap);
 }
 
 UTEST(arfoundation, autoreleasePool) {
-    ARAutoreleasePoolRef ap = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef ap = AutoreleasePoolCreate();
     
     for (int j = 1; j < 5; j++) {
-        ARAutoreleasePoolRef inner = ARAutoreleasePoolCreate();
-        ASSERT_EQ(inner, ARAutoreleasePoolGetCurrent());
+        AutoreleasePoolRef inner = AutoreleasePoolCreate();
+        ASSERT_EQ(inner, CurrentAutoreleasePool());
         
         for (int i = 0; i < 5; i++) {
-            ARStringRef str = ARStringWithFormat("hello there");
-            ASSERT_EQ(1, ARRuntimeRefCount(str));
+            StringRef str = StringWithFormat("hello there");
+            ASSERT_EQ(1, RuntimeRefCount(str));
         }
-        inner = ARRelease(inner);
+        inner = RCRelease(inner);
         ASSERT_EQ(NULL, inner);
     }
     
-    ARStringRef str = ARStringWithFormat("hello there");
-    ASSERT_EQ(1, ARRuntimeRefCount(str));
+    StringRef str = StringWithFormat("hello there");
+    ASSERT_EQ(1, RuntimeRefCount(str));
     
-    str = ARRuntimeMakeConstant(str);
-    ASSERT_EQ(AR_RUNTIME_UNRELEASABLE, ARRuntimeRefCount(str));
+    str = RuntimeMakeConstant(str);
+    ASSERT_EQ(AR_RUNTIME_REFCOUNT_UNRELEASABLE, RuntimeRefCount(str));
     
-    fprintf(stderr, "str = [%s] %s\n", ARStringCString(ARRuntimeDescription(str)), ARStringCString(str));
-    fprintf(stderr, "ap = [%s]\n", ARStringCString(ARRuntimeDescription(ap)));
+    fprintf(stderr, "str = [%s] %s\n", CString(RuntimeDescription(str)), CString(str));
+    fprintf(stderr, "ap = [%s]\n", CString(RuntimeDescription(ap)));
     
-    ap = ARRelease(ap);
+    ap = RCRelease(ap);
     ASSERT_EQ(NULL, ap);
     
-    str = ARRelease(str);
+    str = RCRelease(str);
     ASSERT_TRUE(str);
 }
 

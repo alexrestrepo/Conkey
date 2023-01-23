@@ -3,11 +3,11 @@
 //  Created by Alex Restrepo on 1/14/23.
 //
 
-#include "arruntime.h"
+#include "runtime.h"
 
-#include "arcommon.h"
-#include "arstring.h"
-#include "arautoreleasepool.h"
+#include "common.h"
+#include "string.h"
+#include "autoreleasepool.h"
 
 #ifndef STB_DS_IMPLEMENTATION
 #define STB_DS_IMPLEMENTATION
@@ -23,14 +23,14 @@ typedef enum {
 } ar_runtime_status;
 
 const uint64_t AR_RUNTIME_NOT_OBJECT = 0;      // special/any
-const int64_t AR_RUNTIME_UNRELEASABLE = -1;
+const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE = -1;
 static _Atomic ar_runtime_status runtime_status;
 static _Atomic uint64_t ar_runtime_class_count;
-static runtime_class_info *ar_runtime_classes;      // TODO: not thread safe?
+static RuntimeRegisteredClassInfo *ar_runtime_classes;      // TODO: not thread safe?
 
-#define ar_object_header(obj)  ((ar_object_base *) (obj) - 1)
+#define ar_object_header(obj)  ((RuntimeObjectBase *) (obj) - 1)
 
-void ARRuntimeInitialize(void) {
+void RuntimeInitialize(void) {
     if (runtime_status != AR_RUNTIME_NOT_INITIALIZED) {
         return;
     }
@@ -39,17 +39,17 @@ void ARRuntimeInitialize(void) {
 
     arrclear(ar_runtime_classes);
     ar_runtime_class_count = arrlen(ar_runtime_classes);
-    runtime_class_info info = {0};
+    RuntimeRegisteredClassInfo info = {0};
     arrput(ar_runtime_classes, info);
 
     runtime_status = AR_RUNTIME_READY;
 
     // register base classes
-    ARAutoreleasePoolInitialize();
-    ARStringInitialize();
+    AutoreleasePoolInitialize();
+    StringInitialize();
 }
 
-ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass) {
+RuntimeClassID RuntimeRegisterClass(const RuntimeClassDescriptor *klass) {
     if (runtime_status != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
@@ -59,13 +59,13 @@ ar_class_id ARRuntimeRegisterClass(const ar_class_descriptor *klass) {
     }
 
     ar_runtime_class_count = arrlen(ar_runtime_classes);
-    runtime_class_info info = { klass };
+    RuntimeRegisteredClassInfo info = { klass };
     arrput(ar_runtime_classes, info);
 
-    return (ar_class_id){ ar_runtime_class_count };
+    return (RuntimeClassID){ ar_runtime_class_count };
 }
 
-ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
+RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
     // maybe pass in an arena? https://www.rfleury.com/p/untangling-lifetimes-the-arena-allocator
     // or flooh style typed arrays and return a {type} struct with the idx/offset?
 
@@ -74,15 +74,15 @@ ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
 
     static _Atomic uint64_t allocid = 0;
 
-    size_t allocSize = sizeof(ar_object_base) + size;
-    ar_object_base *object = ar_calloc(1, allocSize);
+    size_t allocSize = sizeof(RuntimeObjectBase) + size;
+    RuntimeObjectBase *object = ar_calloc(1, allocSize);
 
     object->refcount = 1;
     object->size = allocSize;
     object->classid = classid;
     object->allocid = ++allocid;
 
-    ARObjectRef obj = (char *)object + sizeof(ar_object_base);
+    RCTypeRef obj = (char *)object + sizeof(RuntimeObjectBase);
 
 #if AR_RUNTIME_VERBOSE
     fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes [%llu]@%p\n", classid.classID, size, object->allocid, obj);
@@ -91,23 +91,23 @@ ARObjectRef ARRuntimeAllocRefCounted(size_t size, ar_class_id classid) {
     return obj;
 }
 
-ARObjectRef ARRuntimeCreateInstance(ar_class_id classid) {
+RCTypeRef RuntimeCreateInstance(RuntimeClassID classid) {
     if (runtime_status != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
 
-    if (!ARRuntimeIsRegisteredClass(classid)) {
+    if (!RuntimeIsRegisteredClass(classid)) {
         return NULL;
     }
 
-    const ar_class_descriptor *klass = ARRuntimeClassInfo(classid)->descriptor;
+    const RuntimeClassDescriptor *klass = RuntimeClassInfo(classid)->descriptor;
     assert(klass);
 
     if (!klass->size) {
         ar_fatal("Can't create 0 sized instance");
     }
 
-    ARObjectRef *object = ARRuntimeAllocRefCounted(klass->size, classid);
+    RCTypeRef *object = RuntimeRCAlloc(klass->size, classid);
     if (klass->constructor) {
         object = klass->constructor(object);
     }
@@ -115,28 +115,28 @@ ARObjectRef ARRuntimeCreateInstance(ar_class_id classid) {
     return object;
 }
 
-const char *ARRuntimeClassName(ar_class_id classid) {
-    const runtime_class_info *klass = ARRuntimeClassInfo(classid);
+const char *RuntimeClassName(RuntimeClassID classid) {
+    const RuntimeRegisteredClassInfo *klass = RuntimeClassInfo(classid);
     if (!klass) {
         return "<unknown>";
     }
     return klass->descriptor->classname;
 }
 
-const runtime_class_info *ARRuntimeClassInfo(ar_class_id classid) {
+const RuntimeRegisteredClassInfo *RuntimeClassInfo(RuntimeClassID classid) {
     if (runtime_status != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
 
-    if (!(ARRuntimeIsRegisteredClass(classid))) {
+    if (!(RuntimeIsRegisteredClass(classid))) {
         return NULL;
     }
 
-    const runtime_class_info *info = (const runtime_class_info *)&ar_runtime_classes[classid.classID];
+    const RuntimeRegisteredClassInfo *info = (const RuntimeRegisteredClassInfo *)&ar_runtime_classes[classid.classID];
     return info;
 }
 
-bool ARRuntimeIsRegisteredClass(ar_class_id classid) {
+bool RuntimeIsRegisteredClass(RuntimeClassID classid) {
     if (runtime_status != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
@@ -148,51 +148,51 @@ bool ARRuntimeIsRegisteredClass(ar_class_id classid) {
     return classid.classID <= arrlen(ar_runtime_classes);
 }
 
-ARStringRef ARRuntimeDescription(ARObjectRef obj) {
+StringRef RuntimeDescription(RCTypeRef obj) {
     if (!obj) {
-        return ARStringWithFormat("(null)");
+        return StringWithFormat("(null)");
     }
 
-    ar_object_base *base = ar_object_header(obj);
+    RuntimeObjectBase *base = ar_object_header(obj);
     assert(base);
 
-    ar_class_id classid = base->classid;
-    const runtime_class_info *klass = ARRuntimeClassInfo(classid);
+    RuntimeClassID classid = base->classid;
+    const RuntimeRegisteredClassInfo *klass = RuntimeClassInfo(classid);
 
-    if (!ARRuntimeIsRegisteredClass(classid) || !klass || !klass->descriptor->classname) {
-        return ARStringWithFormat("<%p:%zu bytes>", obj, base->size - sizeof(ar_object_base));
+    if (!RuntimeIsRegisteredClass(classid) || !klass || !klass->descriptor->classname) {
+        return StringWithFormat("<%p:%zu bytes>", obj, base->size - sizeof(RuntimeObjectBase));
     }
 
-    ARStringRef description = NULL;
+    StringRef description = NULL;
     if (klass->descriptor->description) {
         description = klass->descriptor->description(obj);
     }
 
-    if (description && ARStringLength(description) > 0) {
-        return ARStringWithFormat("<%s %p> %s", klass->descriptor->classname, obj, ARStringCString(description));
+    if (description && StringLength(description) > 0) {
+        return StringWithFormat("<%s %p> %s", klass->descriptor->classname, obj, CString(description));
     }
 
-    return ARStringWithFormat("<%s %p>", klass->descriptor->classname, obj);
+    return StringWithFormat("<%s %p>", klass->descriptor->classname, obj);
 }
 
 #pragma mark - Lifetime management
 
-int64_t ARRuntimeRefCount(ARObjectRef obj) {
+int64_t RuntimeRefCount(RCTypeRef obj) {
     if (!obj) {
         return 0;
     }
 
-    ar_object_base *base = ar_object_header(obj);
+    RuntimeObjectBase *base = ar_object_header(obj);
     assert(base);
     return base->refcount;
 }
 
-ARObjectRef ARRetain(ARObjectRef obj) {
+RCTypeRef RCRetain(RCTypeRef obj) {
     if (!obj) {
         return NULL;
     }
 
-    ar_object_base *base = ar_object_header(obj);
+    RuntimeObjectBase *base = ar_object_header(obj);
     assert(base);
 
     if (base->refcount < 0) {
@@ -203,12 +203,12 @@ ARObjectRef ARRetain(ARObjectRef obj) {
     return obj;
 }
 
-ARObjectRef ARRelease(ARObjectRef obj) {
+RCTypeRef RCRelease(RCTypeRef obj) {
     if (!obj) {
         return NULL;
     }
 
-    ar_object_base *base = ar_object_header(obj);
+    RuntimeObjectBase *base = ar_object_header(obj);
     assert(base);
 
     if (base->refcount < 0) {
@@ -218,7 +218,7 @@ ARObjectRef ARRelease(ARObjectRef obj) {
     assert(base->refcount > 0);
     base->refcount--;
     if (base->refcount == 0) {
-        const runtime_class_info *klass = ARRuntimeClassInfo(base->classid);
+        const RuntimeRegisteredClassInfo *klass = RuntimeClassInfo(base->classid);
 
         if (klass) {
             if (klass->descriptor->destructor) {
@@ -238,21 +238,21 @@ ARObjectRef ARRelease(ARObjectRef obj) {
 
     return obj;
 }
-ARObjectRef ARAutorelease(ARObjectRef obj) {
+RCTypeRef RCAutorelease(RCTypeRef obj) {
     if (!obj) {
         return NULL;
     }
-    ARAutoreleasePoolRef pool = ARAutoreleasePoolGetCurrent();
+    AutoreleasePoolRef pool = CurrentAutoreleasePool();
     if (pool) {
-        ARAutoreleasePoolAddObject(pool, obj);
+        AutoreleasePoolAddObject(pool, obj);
 
     } else {
-        ar_object_base *base = ar_object_header(obj);
+        RuntimeObjectBase *base = ar_object_header(obj);
         assert(base);
 
-        ar_class_id classid = base->classid;
-        if (ARRuntimeIsRegisteredClass(classid)) {
-            const runtime_class_info *klass = ARRuntimeClassInfo(classid);
+        RuntimeClassID classid = base->classid;
+        if (RuntimeIsRegisteredClass(classid)) {
+            const RuntimeRegisteredClassInfo *klass = RuntimeClassInfo(classid);
             assert(klass);
 
             fprintf(stderr, "\033[31mAutoreleasing object '%s' with no pool in place. Leaking %zu bytes.\n", klass->descriptor->classname, base->size);
@@ -262,12 +262,12 @@ ARObjectRef ARAutorelease(ARObjectRef obj) {
     return obj;
 }
 
-ARObjectRef ARRuntimeMakeConstant(ARObjectRef obj) {
+RCTypeRef RuntimeMakeConstant(RCTypeRef obj) {
     if (obj) {
-        ar_object_base *base = ar_object_header(obj);
+        RuntimeObjectBase *base = ar_object_header(obj);
         assert(base);
 
-        base->refcount = AR_RUNTIME_UNRELEASABLE;
+        base->refcount = AR_RUNTIME_REFCOUNT_UNRELEASABLE;
     }
     return obj;
 }

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "../arfoundation/arstring.h"
+#include "../arfoundation/string.h"
 
 #define TOKEN_DEFS \
 	TOK(EOF,     "EOF") \
@@ -78,16 +78,16 @@ typedef struct {
 token_type tokenLookupIdentifier(charslice_t ident);
 void tokenPrint(token_t token);
 
-AR_INLINE ARStringRef ARStringCreateWithSlice(charslice_t slice) {
-    return ARStringCreateWithFormat("%.*s", (int)slice.length, slice.src);
+AR_INLINE StringRef ARStringCreateWithSlice(charslice_t slice) {
+    return StringCreateWithFormat("%.*s", (int)slice.length, slice.src);
 }
 
-AR_INLINE ARStringRef ARStringWithSlice(charslice_t slice) {
-    return ARStringWithFormat("%.*s", (int)slice.length, slice.src);
+AR_INLINE StringRef ARStringWithSlice(charslice_t slice) {
+    return StringWithFormat("%.*s", (int)slice.length, slice.src);
 }
 
-AR_INLINE void ARStringAppendSlice(ARStringRef str, charslice_t slice) {
-    ARStringAppendFormat(str, "%.*s", (int)slice.length, slice.src);
+AR_INLINE void ARStringAppendSlice(StringRef str, charslice_t slice) {
+    StringAppendFormat(str, "%.*s", (int)slice.length, slice.src);
 }
 
 #endif

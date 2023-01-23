@@ -18,8 +18,8 @@ UTEST(ast, testString) {
 
      arrput(program->statements, (aststatement_t *)let);
 
-     ARStringRef str = ASTN_STRING(program);
-     ASSERT_STREQ("let myVar = anotherVar;", ARStringCString(str));
+     StringRef str = ASTN_STRING(program);
+     ASSERT_STREQ("let myVar = anotherVar;", CString(str));
     );
 }
 

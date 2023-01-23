@@ -8,15 +8,15 @@
 
 #include <stdint.h>
 
+#include "../arfoundation/arfoundation.h"
 #include "../ast/ast.h"
 #include "../environment/environment.h"
 #include "../token/token.h"
-#include "../arfoundation/arfoundation.h"
 
 #define OBJ_TYPES \
+OBJ(NULL) \
 OBJ(INTEGER) \
 OBJ(BOOLEAN) \
-OBJ(NULL) \
 OBJ(RETURN_VALUE) \
 OBJ(ERROR) \
 OBJ(FUNCTION) \
@@ -51,7 +51,7 @@ AR_INLINE bool hashkeyEquals(hashkey_t a, hashkey_t b) {
 }
 
 typedef struct object_t mky_object_t;
-typedef ARStringRef inspect_fn(mky_object_t *obj);
+typedef StringRef inspect_fn(mky_object_t *obj);
 typedef hashkey_t hashkey_fn(mky_object_t *obj);
 
 struct object_t{
@@ -83,9 +83,9 @@ mky_returnvalue_t *returnValueCreate(mky_object_t *value);
 
 typedef struct {
     mky_object_t super;
-    ARStringRef message;
+    StringRef message;
 } mky_error_t;
-mky_error_t *errorCreate(ARStringRef message);
+mky_error_t *errorCreate(StringRef message);
 
 typedef struct {
     mky_object_t super;
@@ -97,9 +97,9 @@ mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t 
 
 typedef struct {
     mky_object_t super;
-    ARStringRef value;
+    StringRef value;
 } mky_string_t;
-mky_string_t *objStringCreate(ARStringRef value);
+mky_string_t *objStringCreate(StringRef value);
 
 typedef mky_object_t *builtin_fn(mky_object_t **args);
 typedef struct {

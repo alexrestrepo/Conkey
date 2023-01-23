@@ -1,15 +1,15 @@
 //
-// arcommon.h
+// common.h
 // Created by Alex Restrepo on 1/14/23.
 
-#ifndef _arcommon_h_
-#define _arcommon_h_
+#ifndef _common_h_
+#define _common_h_
 
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "armacros.h"
+#include "macros.h"
 
 void ar_fatal(const char *fmt, ...)	__printflike(1, 2);
 

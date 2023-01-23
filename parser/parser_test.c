@@ -31,9 +31,9 @@ typedef struct {
 #define STR(src) (Value){.type = TYPE_STR, .strValue = (charslice_t){(src), strlen((src))}}
 
 static bool testLetStatement(aststatement_t *statement, const char *name) {
-    ARStringRef literal = ASTN_TOKLIT(statement);
-    if (ARStringLength(literal) != 3 || strcmp("let", ARStringCString(literal))) {
-        fprintf(stderr, "s.tokenLiteral not 'let'. got='%s'\n", ARStringCString(literal));
+    StringRef literal = ASTN_TOKLIT(statement);
+    if (StringLength(literal) != 3 || strcmp("let", CString(literal))) {
+        fprintf(stderr, "s.tokenLiteral not 'let'. got='%s'\n", CString(literal));
         return false;
     }
 
@@ -43,17 +43,17 @@ static bool testLetStatement(aststatement_t *statement, const char *name) {
     }
 
     astletstatement_t *letStatement = (astletstatement_t *)statement;
-    if (strlen(name) != ARStringLength(letStatement->name->value)
-        || strcmp(name, ARStringCString(letStatement->name->value))) {
+    if (strlen(name) != StringLength(letStatement->name->value)
+        || strcmp(name, CString(letStatement->name->value))) {
         fprintf(stderr, "letStatement.name.value not '%s'. got='%s'\n", name,
-                ARStringCString(letStatement->name->value));
+                CString(letStatement->name->value));
         return false;
     }
 
     literal = ASTN_TOKLIT(letStatement->name);
-    if (strlen(name) != ARStringLength(literal)
-        || strcmp(name, ARStringCString(literal))) {
-        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got='%s'\n", name, ARStringCString(literal));
+    if (strlen(name) != StringLength(literal)
+        || strcmp(name, CString(literal))) {
+        fprintf(stderr, "letStatement.name.tokenLiteral() not '%s'. got='%s'\n", name, CString(literal));
         return false;
     }
 
@@ -67,7 +67,7 @@ static bool checkParserErrors(parser_t *parser) {
 
     fprintf(stderr, "\nparser has %ld errors\n", arrlen(parser->errors));
     for (size_t i = 0; i < arrlen(parser->errors); i++) {
-        fprintf(stderr, "parser error: %s\n", ARStringCString(parser->errors[i]));
+        fprintf(stderr, "parser error: %s\n", CString(parser->errors[i]));
     }
     return true;
 }
@@ -84,10 +84,10 @@ static bool testIntegerLiteral(astexpression_t *il, int64_t value) {
         return false;
     }
 
-    ARStringRef toklit = ASTN_TOKLIT(integ);
-    ARStringRef val = ARStringWithFormat("%lld", value);
-    if (ARStringLength(toklit) != ARStringLength(val) || strcmp(ARStringCString(toklit), ARStringCString(val))) {
-        fprintf(stderr, "integ.tokenLiteral not %lld. got='%s'\n", value, ARStringCString(toklit));
+    StringRef toklit = ASTN_TOKLIT(integ);
+    StringRef val = StringWithFormat("%lld", value);
+    if (StringLength(toklit) != StringLength(val) || strcmp(CString(toklit), CString(val))) {
+        fprintf(stderr, "integ.tokenLiteral not %lld. got='%s'\n", value, CString(toklit));
         return false;
     }
 
@@ -101,21 +101,21 @@ static bool testIdentifier(astexpression_t *exp, charslice_t value) {
     }
 
     astidentifier_t *identifier = (astidentifier_t *)exp;
-    if (value.length != ARStringLength(identifier->value)
-        || strcmp(value.src, ARStringCString(identifier->value))) {
+    if (value.length != StringLength(identifier->value)
+        || strcmp(value.src, CString(identifier->value))) {
         fprintf(stderr, "identifier.value not %.*s. got='%s'\n",
                 (int)value.length, value.src,
-                ARStringCString(identifier->value)
+                CString(identifier->value)
                 );
         return false;
     }
 
-    ARStringRef literal = ASTN_TOKLIT(exp);
-    if (ARStringLength(literal) != value.length
-        || strncmp(ARStringCString(literal), value.src, value.length)) {
+    StringRef literal = ASTN_TOKLIT(exp);
+    if (StringLength(literal) != value.length
+        || strncmp(CString(literal), value.src, value.length)) {
         fprintf(stderr, "identifier.tokenLiteral not %.*s. got='%s'\n",
                 (int)value.length, value.src,
-                ARStringCString(literal));
+                CString(literal));
         return false;
     }
 
@@ -136,12 +136,12 @@ static bool testBooleanLiteral(astexpression_t *exp, bool value) {
         return false;
     }
 
-    ARStringRef toklit = ASTN_TOKLIT(boo);
-    ARStringRef val = ARStringWithFormat("%s", value ? "true" : "false");
-    if (ARStringLength(toklit) != ARStringLength(val)
-        || strcmp(ARStringCString(toklit), ARStringCString(val))) {
+    StringRef toklit = ASTN_TOKLIT(boo);
+    StringRef val = StringWithFormat("%s", value ? "true" : "false");
+    if (StringLength(toklit) != StringLength(val)
+        || strcmp(CString(toklit), CString(val))) {
         fprintf(stderr, "boo.tokenLiteral not %s. got='%s'\n",
-                value ? "true":"false", ARStringCString(toklit));
+                value ? "true":"false", CString(toklit));
         return false;
     }
 
@@ -192,7 +192,7 @@ static bool testInfixExpression(astexpression_t *exp, Value left, token_type ope
 }
 
 UTEST(parser, letStatements) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -227,11 +227,11 @@ UTEST(parser, letStatements) {
         ASSERT_TRUE(testLiteralExpression(value, test.expectedValue));
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, returnStatements) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -261,17 +261,17 @@ UTEST(parser, returnStatements) {
         ASSERT_EQ(AST_RETURN, AST_TYPE(stmt));
 
         astreturnstatement_t *ret = (astreturnstatement_t *)stmt;
-        ARStringRef lit = ASTN_TOKLIT(ret);
-        ASSERT_STREQ("return", ARStringCString(lit));
+        StringRef lit = ASTN_TOKLIT(ret);
+        ASSERT_STREQ("return", CString(lit));
 
         ASSERT_TRUE(testLiteralExpression(ret->returnValue, test.expectedValue));
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, identifierExpression) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = "foobar;";
 
@@ -291,16 +291,16 @@ UTEST(parser, identifierExpression) {
     ASSERT_EQ(AST_IDENTIFIER, AST_TYPE(stmt->expression));
     astidentifier_t *ident = (astidentifier_t *)stmt->expression;
 
-    ASSERT_STREQ("foobar", ARStringCString(ident->value));
+    ASSERT_STREQ("foobar", CString(ident->value));
 
-    ARStringRef lit = ASTN_TOKLIT(ident);
-    ASSERT_STREQ("foobar", ARStringCString(lit));
+    StringRef lit = ASTN_TOKLIT(ident);
+    ASSERT_STREQ("foobar", CString(lit));
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, integerLiteralExpression) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = "5;";
 
@@ -322,14 +322,14 @@ UTEST(parser, integerLiteralExpression) {
 
     ASSERT_EQ(5, literal->value);
 
-    ARStringRef lit = ASTN_TOKLIT(literal);
-    ASSERT_STREQ("5", ARStringCString(lit));
+    StringRef lit = ASTN_TOKLIT(literal);
+    ASSERT_STREQ("5", CString(lit));
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, parsingPrefixExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -367,11 +367,11 @@ UTEST(parser, parsingPrefixExpressions) {
         ASSERT_TRUE(testIntegerLiteral(prefix->right, test.integerValue));
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, parsingInfixExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -424,11 +424,11 @@ UTEST(parser, parsingInfixExpressions) {
         ASSERT_TRUE(testInfixExpression(exp, test.leftValue, test.operator, test.rightValue));
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, operatorPrecedenceParsing) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -555,15 +555,15 @@ UTEST(parser, operatorPrecedenceParsing) {
 
         ASSERT_TRUE(program->statements);
 
-        ARStringRef actual = ASTN_STRING(program);
-        ASSERT_STREQ(test.expected, ARStringCString(actual));
+        StringRef actual = ASTN_STRING(program);
+        ASSERT_STREQ(test.expected, CString(actual));
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, booleanExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -599,11 +599,11 @@ UTEST(parser, booleanExpressions) {
         ASSERT_EQ(boo->value, test.expected);
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, ifExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = "if (x < y) { x }";
 
@@ -635,11 +635,11 @@ UTEST(parser, ifExpressions) {
 
     ASSERT_FALSE(exp->alternative);
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, ifElseExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = "if (x < y) { x } else { y }";
 
@@ -677,11 +677,11 @@ UTEST(parser, ifElseExpressions) {
 
     ASSERT_TRUE(testIdentifier(alternative->expression, (charslice_t){"y", 1}));
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, functionLiteralParsing) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = "fn(x, y) { x + y; }";
 
@@ -718,11 +718,11 @@ UTEST(parser, functionLiteralParsing) {
     //    charslice_t str = program->statements[0]->node.string(&program->statements[0]->node);
     //    fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, functionParameterParsing) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     struct test {
         const char *input;
@@ -759,11 +759,11 @@ UTEST(parser, functionParameterParsing) {
         //        fprintf(stderr, "---\n%.*s\n---", (int)str.length, str.src);
     }
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, callExpressionParsing) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = "add(1, 2 * 3, 4 + 5);";
 
@@ -792,7 +792,7 @@ UTEST(parser, callExpressionParsing) {
     ASSERT_TRUE(testInfixExpression((astexpression_t *)call->arguments[1], INT(2), TOKEN_ASTERISK, INT(3)));
     ASSERT_TRUE(testInfixExpression((astexpression_t *)call->arguments[2], INT(4), TOKEN_PLUS, INT(5)));
 
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, stringLiteralExpressions) {
@@ -814,11 +814,11 @@ UTEST(parser, stringLiteralExpressions) {
     ASSERT_EQ(AST_STRING, AST_TYPE(stmt->expression));
     aststringliteral_t *str = (aststringliteral_t *)stmt->expression;
 
-    ASSERT_STREQ("Hello World", ARStringCString(str->value));
+    ASSERT_STREQ("Hello World", CString(str->value));
 }
 
 UTEST(parser, arrayLiterals) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "[1, 2 * 2, 3+3]";
 
     lexer_t *lexer = lexerCreate(input);
@@ -841,11 +841,11 @@ UTEST(parser, arrayLiterals) {
     ASSERT_TRUE(testIntegerLiteral(array->elements[0], 1));
     ASSERT_TRUE(testInfixExpression(array->elements[1], INT(2), TOKEN_ASTERISK, INT(2)));
     ASSERT_TRUE(testInfixExpression(array->elements[2], INT(3), TOKEN_PLUS, INT(3)));
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, parseIndexExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "myArray[1+1]";
 
     lexer_t *lexer = lexerCreate(input);
@@ -866,11 +866,11 @@ UTEST(parser, parseIndexExpressions) {
 
     ASSERT_TRUE(testIdentifier(idx->left, (charslice_t){"myArray", 7}));
     ASSERT_TRUE(testInfixExpression(idx->index, INT(1), TOKEN_PLUS, INT(1)));
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, hashLiteralStringKeys) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = MONKEY({"one":1, "two":2, "three":3});
 
@@ -905,17 +905,17 @@ UTEST(parser, hashLiteralStringKeys) {
         pairs_t pair = hash->pairs[i];
         ASSERT_EQ(AST_STRING, AST_TYPE(pair.key));
 
-        ARStringRef key = ASTN_STRING(pair.key);
-        int64_t expectedValue = shget(expected, ARStringCString(key));
+        StringRef key = ASTN_STRING(pair.key);
+        int64_t expectedValue = shget(expected, CString(key));
         ASSERT_TRUE(testIntegerLiteral(pair.value, expectedValue));
     }
 
     hmfree(expected);
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, emptyHashLiteral) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "{}";
 
     lexer_t *lexer = lexerCreate(input);
@@ -935,11 +935,11 @@ UTEST(parser, emptyHashLiteral) {
     asthashliteral_t *hash = (asthashliteral_t *)stmt->expression;
 
     ASSERT_EQ(0, hmlen(hash->pairs));
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, hashLiteralsWithExpressions) {
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
 
     const char *input = MONKEY({"one" : 0 + 1, "two" : 10 - 8, "three":15 / 5});
 
@@ -982,13 +982,13 @@ UTEST(parser, hashLiteralsWithExpressions) {
         pairs_t pair = hash->pairs[i];
         ASSERT_EQ(AST_STRING, AST_TYPE(pair.key));
 
-        ARStringRef key = ASTN_STRING(pair.key);
-        val expectedValue = shget(expected, ARStringCString(key));
+        StringRef key = ASTN_STRING(pair.key);
+        val expectedValue = shget(expected, CString(key));
         ASSERT_TRUE(testInfixExpression(pair.value, INT(expectedValue.left), expectedValue.token, INT(expectedValue.right)));
     }
 
     hmfree(expected);
-    ARRelease(autoreleasepool);
+    RCRelease(autoreleasepool);
 }
 
 UTEST_MAIN();

@@ -8,9 +8,9 @@
 #ifndef builtins_h
 #define builtins_h
 
-#include "../arfoundation/arstring.h"
+#include "../arfoundation/string.h"
 #include "../object/object.h"
 
-mky_builtin_t *builtins(ARStringRef name);
+mky_builtin_t *builtins(StringRef name);
 
 #endif /* builtins_h */

@@ -37,8 +37,8 @@ typedef enum {
 // TODO: a tree structure dump?
 
 typedef struct astnode astnode_t;
-typedef ARStringRef literal_fn(astnode_t *node);
-typedef ARStringRef string_fn(astnode_t *node);
+typedef StringRef literal_fn(astnode_t *node);
+typedef StringRef string_fn(astnode_t *node);
 
 struct astnode {
 	astnode_type type;
@@ -76,7 +76,7 @@ typedef struct {
 	} super; // could be anonymous instead, but is it 'simpler/easier'? ->super.xxx vs ->xxx? ¯\_(ツ)_/¯
 	
 	token_t token;
-	ARStringRef value;
+	StringRef value;
 } astidentifier_t;
 astidentifier_t *identifierCreate(token_t token, charslice_t value);
 
@@ -219,7 +219,7 @@ typedef struct {
     } super;
 
     token_t token;
-    ARStringRef value;
+    StringRef value;
 } aststringliteral_t;
 aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value);
 

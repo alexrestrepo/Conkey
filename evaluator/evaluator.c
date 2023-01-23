@@ -61,7 +61,7 @@ static mky_object_t *evalBangOperatorExpression(mky_object_t *value) {
 
 static mky_object_t *evalMinusPrefixOperatorExpression(mky_object_t *right) {
     if (right->type != INTEGER_OBJ) {
-        return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: -%s",
+        return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: -%s",
                                                               obj_types[right->type]));
     }
 
@@ -83,7 +83,7 @@ static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) 
             break;
     }
 
-    return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s%s",
+    return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s%s",
                                                           token_str[type],
                                                           obj_types[right->type]
                                                           ));
@@ -91,16 +91,16 @@ static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) 
 
 static mky_object_t *evalStringInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
     if (type != TOKEN_PLUS) {
-        return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s %s %s",
+        return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
                                                               obj_types[left->type],
                                                               token_str[type],
                                                               obj_types[right->type]
                                                               ));
     }
 
-    ARStringRef leftVal = ((mky_string_t *)left)->value;
-    ARStringRef rightVal = ((mky_string_t *)right)->value;
-    return (mky_object_t *)objStringCreate(ARStringWithFormat("%s%s", ARStringCString(leftVal), ARStringCString(rightVal)));
+    StringRef leftVal = ((mky_string_t *)left)->value;
+    StringRef rightVal = ((mky_string_t *)right)->value;
+    return (mky_object_t *)objStringCreate(StringWithFormat("%s%s", CString(leftVal), CString(rightVal)));
 }
 
 static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
@@ -143,7 +143,7 @@ static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *l
         default:
             break;
     }
-    return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s %s %s",
+    return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
                                                      obj_types[left->type],
                                                      token_str[type],
                                                      obj_types[right->type]
@@ -173,14 +173,14 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
     }
 
     if (left->type != right->type) {
-        return (mky_object_t *)errorCreate(ARStringWithFormat("type mismatch: %s %s %s",
+        return (mky_object_t *)errorCreate(StringWithFormat("type mismatch: %s %s %s",
                                                               obj_types[left->type],
                                                               token_str[type],
                                                               obj_types[right->type]
                                                               ));
     }
 
-    return (mky_object_t *)errorCreate(ARStringWithFormat("unknown operator: %s %s %s",
+    return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
                                                           obj_types[left->type],
                                                           token_str[type],
                                                           obj_types[right->type]
@@ -207,7 +207,7 @@ static mky_object_t *evalHashIndexExpression(mky_object_t *left, mky_object_t *i
     mky_hash_t *hash = (mky_hash_t *)left;
 
     if (!index->hashkey) {
-        return (mky_object_t *)errorCreate(ARStringWithFormat("unusable as hash key: %s",
+        return (mky_object_t *)errorCreate(StringWithFormat("unusable as hash key: %s",
                                                               obj_types[index->type]));
     }
 
@@ -227,7 +227,7 @@ static mky_object_t *evalIndexExpression(mky_object_t *left, mky_object_t *index
         return evalHashIndexExpression(left, index);
     }
 
-    return (mky_object_t *)errorCreate(ARStringWithFormat("index operator not supported: %s",
+    return (mky_object_t *)errorCreate(StringWithFormat("index operator not supported: %s",
                                                           obj_types[left->type]));
 }
 
@@ -241,7 +241,7 @@ static mky_object_t *evalHashLiteral(asthashliteral_t *node, environment_t *env)
         }
 
         if (!key->hashkey) {
-            return (mky_object_t *)errorCreate(ARStringWithFormat("unusable as hash key: %s",
+            return (mky_object_t *)errorCreate(StringWithFormat("unusable as hash key: %s",
                                                                   obj_types[key->type]));
         }
 
@@ -251,7 +251,7 @@ static mky_object_t *evalHashLiteral(asthashliteral_t *node, environment_t *env)
         }
 
         hashkey_t hashKey = key->hashkey(key);
-        hashpair_t hashValue = HASHPAIR(ARRetain(key), ARRetain(value));
+        hashpair_t hashValue = HASHPAIR(RCRetain(key), RCRetain(value));
         hmput(pairs, hashKey, hashValue);
     }
     
@@ -305,7 +305,7 @@ static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args)
     if (fn->parameters && args) {
         assert(arrlen(fn->parameters) == arrlen(args));
         for (int i = 0; i < arrlen(fn->parameters); i++) {
-            objectSetEnv(env, ARStringCString(fn->parameters[i]->value), args[i]);
+            objectSetEnv(env, CString(fn->parameters[i]->value), args[i]);
         }
     }
 
@@ -324,7 +324,7 @@ static mky_object_t *applyFunction(mky_object_t *fn, mky_object_t **args) {
         return builtin->fn(args);
     }
 
-    return (mky_object_t *)errorCreate(ARStringWithFormat("not a function: %s", obj_types[fn->type]));
+    return (mky_object_t *)errorCreate(StringWithFormat("not a function: %s", obj_types[fn->type]));
 }
 
 static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env) {
@@ -337,7 +337,7 @@ static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env
                 arrput(result, evaluated);
                 return result;
             }
-            arrput(result, ARRetain(evaluated)); // FIXME: cuz.
+            arrput(result, RCRetain(evaluated)); // FIXME: cuz.
         }
     }
     return result;
@@ -345,7 +345,7 @@ static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env
 
 static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) {
     assert(AST_TYPE(ident) == AST_IDENTIFIER);
-    mky_object_t *obj = objectGetEnv(env, ARStringCString(ident->value));
+    mky_object_t *obj = objectGetEnv(env, CString(ident->value));
     if (obj) {
         return obj;
     }
@@ -355,7 +355,7 @@ static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) 
         return (mky_object_t *)builtin;
     }
 
-    return (mky_object_t *)errorCreate(ARStringWithFormat("identifier not found: %s", ARStringCString(ident->value)));
+    return (mky_object_t *)errorCreate(StringWithFormat("identifier not found: %s", CString(ident->value)));
 }
 
 mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
@@ -371,7 +371,7 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
                 return val;
             }
             if (val) {
-                objectSetEnv(env, ARStringCString(let->name->value), val);
+                objectSetEnv(env, CString(let->name->value), val);
             }
         }
             break;

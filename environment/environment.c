@@ -50,11 +50,11 @@ mky_object_t *objectGetEnv(environment_t *env, const char *name) {
 }
 
 mky_object_t *objectSetEnv(environment_t *env, const char *name, mky_object_t *obj) {
-    ARRetain(obj);
+    RCRetain(obj);
 
     env_storage *old = shgetp_null(env->store, name);
     if (old) {
-        ARRelease(old->value);
+        RCRelease(old->value);
         old->value = obj;
 
     } else {

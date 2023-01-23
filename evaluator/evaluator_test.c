@@ -311,7 +311,7 @@ UTEST(eval, errorHandling) {
          mky_object_t *evaluated = testEval(test.input);
          if (ERROR_OBJ == evaluated->type) {
              mky_error_t *error = (mky_error_t *)evaluated;
-             EXPECT_STRNEQ(test.expected, ARStringCString(error->message), strlen(test.expected));
+             EXPECT_STRNEQ(test.expected, CString(error->message), strlen(test.expected));
 
          } else {
              EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
@@ -339,9 +339,9 @@ UTEST(eval, letStatements) {
 }
 
 UTEST(eval, functionObject) {
-    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
-    ARStringRef input =  ARStringWithFormat("fn(x) { x + 2; };");
-    mky_object_t *evaluated = testEval(ARStringCString(input));
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
+    StringRef input =  StringWithFormat("fn(x) { x + 2; };");
+    mky_object_t *evaluated = testEval(CString(input));
 
     ASSERT_TRUE(evaluated);
     ASSERT_STREQ(obj_types[FUNCTION_OBJ], obj_types[evaluated->type]);
@@ -350,13 +350,13 @@ UTEST(eval, functionObject) {
     ASSERT_TRUE(fn->parameters);
     ASSERT_EQ(1, arrlen(fn->parameters));
 
-    ARStringRef str = ASTN_STRING(fn->parameters[0]);
-    ASSERT_STRNEQ("x", ARStringCString(str), 1);
+    StringRef str = ASTN_STRING(fn->parameters[0]);
+    ASSERT_STRNEQ("x", CString(str), 1);
 
     const char *expectedBody = "(x + 2)";
     str = ASTN_STRING(fn->body);
-    ASSERT_STRNEQ(expectedBody, ARStringCString(str), strlen(expectedBody));
-    ARRelease(pool);
+    ASSERT_STRNEQ(expectedBody, CString(str), strlen(expectedBody));
+    RCRelease(pool);
 }
 
 UTEST(eval, functionApplication) {
@@ -398,19 +398,19 @@ UTEST(eval, stringLiteral) {
     ASSERT_STREQ(obj_types[STRING_OBJ], obj_types[evaluated->type]);
 
     mky_string_t *str = (mky_string_t *)evaluated;
-    ASSERT_STREQ("Hello World", ARStringCString(str->value));
+    ASSERT_STREQ("Hello World", CString(str->value));
 }
 
 UTEST(eval, stringConcatenation) {
-    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input = MONKEY("Hello" + " " + "World!");
     mky_object_t *evaluated = testEval(input);
 
     ASSERT_STREQ(obj_types[STRING_OBJ], obj_types[evaluated->type]);
 
     mky_string_t *str = (mky_string_t *)evaluated;
-    ASSERT_STREQ("Hello World!", ARStringCString(str->value));
-    ARRelease(pool);
+    ASSERT_STREQ("Hello World!", CString(str->value));
+    RCRelease(pool);
 }
 
 UTEST(eval, builtinFunctions) {
@@ -431,7 +431,7 @@ UTEST(eval, builtinFunctions) {
         {MONKEY(len([])), 0, .value = 0},
     };
 
-    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
         mky_object_t *evaluated = testEval(test.input);
@@ -446,13 +446,13 @@ UTEST(eval, builtinFunctions) {
 
                 if (evaluated->type == ERROR_OBJ) {
                     mky_error_t *err = (mky_error_t *)evaluated;
-                    EXPECT_STREQ(test.string, ARStringCString(err->message));
+                    EXPECT_STREQ(test.string, CString(err->message));
                 }
             }
                 break;
         }
     }
-    ARRelease(pool);
+    RCRelease(pool);
 }
 
 UTEST(eval, arrayLiteral) {
@@ -530,7 +530,7 @@ UTEST(eval, arrayIndexExpressions) {
 }
 
 UTEST(eval, hashLiterals) {
-    ARAutoreleasePoolRef pool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input =
     MONKEY(
            let two = "two";
@@ -556,9 +556,9 @@ UTEST(eval, hashLiterals) {
     };
     struct kv *expected = NULL;
 
-    hmput(expected, OBJ_HASHKEY(objStringCreate(ARStringWithFormat("one"))), 1);
-    hmput(expected, OBJ_HASHKEY(objStringCreate(ARStringWithFormat("two"))), 2);
-    hmput(expected, OBJ_HASHKEY(objStringCreate(ARStringWithFormat("three"))), 3);
+    hmput(expected, OBJ_HASHKEY(objStringCreate(StringWithFormat("one"))), 1);
+    hmput(expected, OBJ_HASHKEY(objStringCreate(StringWithFormat("two"))), 2);
+    hmput(expected, OBJ_HASHKEY(objStringCreate(StringWithFormat("three"))), 3);
     hmput(expected, OBJ_HASHKEY(objIntegerCreate(4)), 4);
     hmput(expected, OBJ_HASHKEY(objBoolean(true)), 5);
     hmput(expected, OBJ_HASHKEY(objBoolean(false)), 6);
@@ -575,7 +575,7 @@ UTEST(eval, hashLiterals) {
         ASSERT_TRUE(testIntegerObject(value->value.value, expvalue.value));
     }
 
-    ARRelease(pool);
+    RCRelease(pool);
 }
 
 UTEST(eval, hashIndexedExpression) {

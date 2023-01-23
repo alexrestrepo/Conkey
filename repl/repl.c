@@ -26,12 +26,12 @@ static const char *monkey_face =
 "         '._ '-=-' _.'\n"
 "            '-----'\n";
 
-void printParserErrors(ARStringRef *errors) {
+void printParserErrors(StringRef *errors) {
     printf("%s", monkey_face);
     printf("Woops! We ran into some monkey business here!\n");
     printf(" Parser errors:\n");
     for (int i = 0; i < arrlen(errors); i++) {
-        printf("\t%s\n", ARStringCString(errors[i]));
+        printf("\t%s\n", CString(errors[i]));
     }
 }
 
@@ -39,7 +39,7 @@ void replStart() {
 	char line[1024];
     environment_t *env = environmentCreate();
 
-    ARAutoreleasePoolRef autoreleasepool = ARAutoreleasePoolCreate();
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     while (true) {
 
 		// printf("\033[32m>> \033[0m");
@@ -60,13 +60,13 @@ void replStart() {
 
         mky_object_t *evaluated = mkyeval(AS_NODE(program), env);
         if (evaluated) {            
-            printf("%s\n", ARStringCString(evaluated->inspect(evaluated)));
+            printf("%s\n", CString(evaluated->inspect(evaluated)));
         }
 
 //        parserRelease(&parser);
 //		  lexerRelease(&lexer);
 
-        ARAutoreleasePoolDrain(autoreleasepool);
+        AutoreleasePoolDrain(autoreleasepool);
 	}
-    autoreleasepool = ARRelease(autoreleasepool);
+    autoreleasepool = RCRelease(autoreleasepool);
 }

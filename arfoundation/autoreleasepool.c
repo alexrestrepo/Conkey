@@ -3,7 +3,7 @@
 //  Created by Alex Restrepo on 1/16/23.
 //
 
-#include "arautoreleasepool.h"
+#include "autoreleasepool.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -11,23 +11,23 @@
 
 #include "stb_ds_x.h"
 
-struct ARAutoreleasePool {
+struct AutoreleasePool {
     uint64_t threadID;
     // maybe instead of an array use a dict, with the id being "alloc id" so you can't add an entry twice...?
-    ARObjectRef *objects;
+    RCTypeRef *objects;
 };
 
-static ar_class_id ARAutoreleasePoolClassID = { 0 };
-static ARAutoreleasePoolRef *active_pools = NULL;
+static RuntimeClassID ARAutoreleasePoolClassID = { 0 };
+static AutoreleasePoolRef *active_pools = NULL;
 
 static uint64_t currentThreadID() {
     return pthread_mach_thread_np(pthread_self());
 }
 
-static ARObjectRef ARAutoreleasePoolConstructor(ARObjectRef obj) {
+static RCTypeRef ARAutoreleasePoolConstructor(RCTypeRef obj) {
     assert(obj);
 
-    ARAutoreleasePoolRef pool = obj;
+    AutoreleasePoolRef pool = obj;
     pool->threadID = currentThreadID();
 
     // TODO: check if current thread has a pool stack, if not add 'obj' and set it 
@@ -37,12 +37,12 @@ static ARObjectRef ARAutoreleasePoolConstructor(ARObjectRef obj) {
     return pool;
 }
 
-static void ARAutoreleasePoolDestructor(ARObjectRef obj) {
+static void ARAutoreleasePoolDestructor(RCTypeRef obj) {
     assert(obj);
     
     // drain
-    ARAutoreleasePoolRef pool = obj;
-    ARAutoreleasePoolDrain(pool);
+    AutoreleasePoolRef pool = obj;
+    AutoreleasePoolDrain(pool);
 
     // remove from stack
     for (int i = 0; i < arrlen(active_pools); i++) {
@@ -55,22 +55,22 @@ static void ARAutoreleasePoolDestructor(ARObjectRef obj) {
     arrfree(pool->objects);
 }
 
-static ar_class_descriptor ARAutoreleasePoolClass = {
-    .classname = "ARAutoreleasePool",
-    .size = sizeof(struct ARAutoreleasePool),
+static RuntimeClassDescriptor ARAutoreleasePoolClass = {
+    .classname = "AutoreleasePool",
+    .size = sizeof(struct AutoreleasePool),
     .constructor = ARAutoreleasePoolConstructor,
     .destructor = ARAutoreleasePoolDestructor
 };
 
-void ARAutoreleasePoolInitialize(void) {
-    ARAutoreleasePoolClassID = ARRuntimeRegisterClass(&ARAutoreleasePoolClass);
+void AutoreleasePoolInitialize(void) {
+    ARAutoreleasePoolClassID = RuntimeRegisterClass(&ARAutoreleasePoolClass);
 }
 
-ARAutoreleasePoolRef ARAutoreleasePoolCreate(void) {
-    return ARRuntimeCreateInstance(ARAutoreleasePoolClassID);
+AutoreleasePoolRef AutoreleasePoolCreate(void) {
+    return RuntimeCreateInstance(ARAutoreleasePoolClassID);
 }
 
-void ARAutoreleasePoolAddObject(ARAutoreleasePoolRef pool, ARObjectRef obj) {
+void AutoreleasePoolAddObject(AutoreleasePoolRef pool, RCTypeRef obj) {
     assert(pool);
     assert(obj);
 
@@ -79,7 +79,7 @@ void ARAutoreleasePoolAddObject(ARAutoreleasePoolRef pool, ARObjectRef obj) {
     arrput(pool->objects, obj);
 }
 
-void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool) {
+void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
     assert(pool);
 
     if (!pool->objects) {
@@ -91,7 +91,7 @@ void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool) {
 #endif
 
     for (int i = 0; i < arrlen(pool->objects); i++) {
-        ARRelease(pool->objects[(arrlen(pool->objects) - 1) - i]);
+        RCRelease(pool->objects[(arrlen(pool->objects) - 1) - i]);
     }
 
 #if AR_RUNTIME_VERBOSE
@@ -101,7 +101,7 @@ void ARAutoreleasePoolDrain(ARAutoreleasePoolRef pool) {
     arrclear(pool->objects);
 }
 
-ARAutoreleasePoolRef ARAutoreleasePoolGetCurrent(void) {
+AutoreleasePoolRef CurrentAutoreleasePool(void) {
     if (active_pools && arrlen(active_pools) > 0) {
         return arrlast(active_pools);
     }
