@@ -26,12 +26,12 @@ static uint64_t currentThreadID() {
 
 static RCTypeRef ARAutoreleasePoolConstructor(RCTypeRef obj) {
     assert(obj);
-
+    
     AutoreleasePoolRef pool = obj;
     pool->threadID = currentThreadID();
-
+    
     // TODO: check if current thread has a pool stack, if not add 'obj' and set it 
-
+    
     // add to stack
     arrput(activePools, pool);
     return pool;
@@ -43,7 +43,7 @@ static void ARAutoreleasePoolDestructor(RCTypeRef obj) {
     // drain
     AutoreleasePoolRef pool = obj;
     AutoreleasePoolDrain(pool);
-
+    
     // remove from stack
     for (int i = 0; i < arrlen(activePools); i++) {
         if (activePools[i] == pool) {
@@ -51,7 +51,7 @@ static void ARAutoreleasePoolDestructor(RCTypeRef obj) {
             break;
         }
     }
-
+    
     arrfree(pool->objects);
 }
 
@@ -74,7 +74,7 @@ void AutoreleasePoolAddObject(AutoreleasePoolRef pool, RCTypeRef obj) {
     assert(pool);
     assert(obj);
     assert(pool != obj);
-
+    
     // check if poolid and threadid match
     
     arrput(pool->objects, obj);
@@ -82,19 +82,19 @@ void AutoreleasePoolAddObject(AutoreleasePoolRef pool, RCTypeRef obj) {
 
 void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
     assert(pool);
-
+    
     if (!pool->objects) {
         return;
     }
-
+    
 #if RC_RUNTIME_VERBOSE
     fprintf(stderr, "--- draining ---\n");
 #endif
-
+    
     for (int i = 0; i < arrlen(pool->objects); i++) {
         RCRelease(pool->objects[(arrlen(pool->objects) - 1) - i]);
     }
-
+    
 #if RC_RUNTIME_VERBOSE
     fprintf(stderr, "----------------\n");
 #endif
@@ -106,6 +106,6 @@ AutoreleasePoolRef CurrentAutoreleasePool(void) {
     if (activePools && arrlen(activePools) > 0) {
         return arrlast(activePools);
     }
-
+    
     return NULL;
 }

@@ -2,21 +2,21 @@
 #define _std_ds_x_
 
 /*
-    arrclear:
-     void arrclear(T* a);
-      Clears the array by setting its length to 0.
+ arrclear:
+    void arrclear(T* a);
+    Clears the array by setting its length to 0.
 
-    arrendptr:
-     T *arrendptr(T* a);
-      Returns a pointer to the end of the array.
+ arrendptr:
+    T *arrendptr(T* a);
+    Returns a pointer to the end of the array.
 
-    sarrprintf:
-     char *sarrprintf(char* a, const char *fmt, ...);
-      "Prints" formatted string to the array. Don't self reference the array as a parameter.
+ sarrprintf:
+    char *sarrprintf(char* a, const char *fmt, ...);
+    "Prints" formatted string to the array. Don't self reference the array as a parameter.
 
-    sarrvprintf:
-     char *sarrvprintf(char* a, const char *fmt, va_list args);
-      "Prints" formatted string to the array. Don't self reference the array as a parameter.
+ sarrvprintf:
+    char *sarrvprintf(char* a, const char *fmt, va_list args);
+    "Prints" formatted string to the array. Don't self reference the array as a parameter.
  */
 
 #include "vendor/stb_ds.h"

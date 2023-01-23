@@ -25,12 +25,18 @@ static StringRef ARStringDescription(RCTypeRef str) {
     return str;
 }
 
+static uint64_t ARStringHash(RCTypeRef str) {
+    StringRef self = str;
+    return stbds_hash_string((char *)CString(self), AR_RUNTIME_HASH_SEED);
+}
+
 static RuntimeClassDescriptor ARStringClass = {
     "String",
     sizeof(struct ARString),
     NULL, // const
-    ARStringDestructor, // dest
-    ARStringDescription  // desc
+    ARStringDestructor,
+    ARStringDescription,
+    ARStringHash
 };
 
 void StringInitialize(void) {
@@ -48,7 +54,7 @@ StringRef ARStringCreateWithFormatAndArgs(const char *fmt, va_list args) {
 
 StringRef StringCreateWithFormat(const char *fmt, ...) {
     StringRef instance = NULL;
-
+    
     va_list args;
     va_start(args, fmt);
     instance = ARStringCreateWithFormatAndArgs(fmt, args);
@@ -61,7 +67,7 @@ size_t StringLength(StringRef str) {
     if (!str) {
         return 0;
     }
-
+    
     return arrlen(str->cstr);
 }
 
@@ -69,18 +75,18 @@ const char *CString(StringRef str) {
     if (!str) {
         return NULL;
     }
-
+    
     return (const char *)str->cstr;
 }
 
 StringRef StringWithFormat(const char *fmt, ...) {
     StringRef instance = NULL;
-
+    
     va_list args;
     va_start(args, fmt);
     instance = ARStringCreateWithFormatAndArgs(fmt, args);
     va_end(args);
-
+    
     return RCAutorelease(instance);
 }
 

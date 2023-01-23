@@ -8,15 +8,13 @@
 
 #include "../token/token.h"
 
-typedef struct MKYEnvironment MKYEnvironment;
+typedef struct MKYEnvironment *MKYEnvironmentRef;
 
-MKYEnvironment *environmentCreate(void);
-void environmentRelease(MKYEnvironment **env);
-
-MKYEnvironment *enclosedEnvironmentCreate(MKYEnvironment *outer);
+MKYEnvironmentRef environmentCreate(void);
+MKYEnvironmentRef environmentCreateEnclosed(MKYEnvironmentRef outer);
 
 typedef struct MKYObject MKYObject;
-MKYObject *objectGetEnv(MKYEnvironment *env, const char *name);
-MKYObject *objectSetEnv(MKYEnvironment *env, const char *name, MKYObject *obj);
+MKYObject *environmentObjectForKey(MKYEnvironmentRef env, const char *key);
+MKYObject *environmentSetObjectForKey(MKYEnvironmentRef env, const char *key, MKYObject *value);
 
 #endif /* environment_h */

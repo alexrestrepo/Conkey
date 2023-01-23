@@ -91,9 +91,9 @@ typedef struct {
     MKYObject super;
     astidentifier_t **parameters;
     astblockstatement_t *body;
-    MKYEnvironment *env;
+    MKYEnvironmentRef env;
 } mky_function_t;
-mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, MKYEnvironment *env);
+mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, MKYEnvironmentRef env);
 
 typedef struct {
     MKYObject super;

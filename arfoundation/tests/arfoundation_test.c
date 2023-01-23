@@ -12,7 +12,7 @@ UTEST(arfoundation, ARString) {
     StringRef desc = RuntimeDescription(string); // auto
     RCRetain(desc); // +1
     
-//  fprintf(stderr, "'%s' -> [%s]\n", CString(string), CString(desc));
+    //  fprintf(stderr, "'%s' -> [%s]\n", CString(string), CString(desc));
     
     ASSERT_EQ(1, RuntimeRefCount(string));
     ASSERT_EQ(2, RuntimeRefCount(desc));
@@ -70,8 +70,8 @@ UTEST(arfoundation, nonClassRefCount) {
     ASSERT_STREQ(refcounted, CString(someString));
     ASSERT_EQ(1, RuntimeRefCount(refcounted));
 
-//  fprintf(stderr, "%s -> %s\n", refcounted, CString(RuntimeDescription(refcounted)));
-//  fprintf(stderr, "%s\n", CString(RuntimeDescription(someString)));
+    //  fprintf(stderr, "%s -> %s\n", refcounted, CString(RuntimeDescription(refcounted)));
+    //  fprintf(stderr, "%s\n", CString(RuntimeDescription(someString)));
 
     RCAutorelease(refcounted);
     RCRelease(ap);
@@ -98,8 +98,8 @@ UTEST(arfoundation, autoreleasePool) {
     str = RuntimeMakeConstant(str);
     ASSERT_EQ(AR_RUNTIME_REFCOUNT_UNRELEASABLE, RuntimeRefCount(str));
     
-//  fprintf(stderr, "str = [%s] %s\n", CString(RuntimeDescription(str)), CString(str));
-//  fprintf(stderr, "ap = [%s]\n", CString(RuntimeDescription(ap)));
+    //  fprintf(stderr, "str = [%s] %s\n", CString(RuntimeDescription(str)), CString(str));
+    //  fprintf(stderr, "ap = [%s]\n", CString(RuntimeDescription(ap)));
     
     ap = RCRelease(ap);
     ASSERT_EQ(NULL, ap);
@@ -162,6 +162,8 @@ UTEST(arfoundation, containers) {
     ASSERT_EQ(DictionaryObjectForKey(dict, key), toreplace);
     
     ap = AutoreleasePoolCreate();
+    ASSERT_EQ(DictionaryObjectForKey(dict, StringWithChars("hello")), toreplace);
+    
     DictionarySetObjectForKey(dict, key, StringWithChars("autoreleased too"));
     ASSERT_NE(DictionaryObjectForKey(dict, key), another);
     ap = RCRelease(ap);

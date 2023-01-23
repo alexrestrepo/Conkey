@@ -10,29 +10,34 @@
 
 #include "runtime.h"
 
+#pragma mark - array
 typedef struct ARArray *ArrayRef;
 
 void ArrayInitialize(void);
 ArrayRef Array(void);
 ArrayRef ArrayCreate(void);
-RCTypeRef *RawArray(ArrayRef array); // pointer to stb_ds backed storage.
+
 RCTypeRef ArrayObjectAt(ArrayRef array, size_t index);
-void ArrayRemoveAt(ArrayRef array, size_t index);
+size_t ArrayCount(ArrayRef array);
 void ArrayAppend(ArrayRef array, RCTypeRef obj);
 void ArrayRemoveAll(ArrayRef array);
+void ArrayRemoveAt(ArrayRef array, size_t index);
 
+#pragma mark - dictionary
 typedef struct {
     RCTypeRef *key;
     RCTypeRef *value;
-} DictType;
+} DictKeyValue;
 
 typedef struct ARDictionary *DictionaryRef;
 
 void DictionaryInitialize(void);
 DictionaryRef DictionaryCreate(void);
 DictionaryRef Dictionary(void);
-DictType *RawDictionary(DictionaryRef dict);
-void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef value);
+
 RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key);
+size_t DictionaryCount(DictionaryRef dict);
+void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef value);
+DictKeyValue DictionaryKeyValueAtIndex(DictionaryRef dict, size_t index);
 
 #endif /* containers_h */

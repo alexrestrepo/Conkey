@@ -13,7 +13,7 @@
 #include "builtins.h"
 
 
-static MKYObject *evalProgram(astprogram_t *program, MKYEnvironment *env) {
+static MKYObject *evalProgram(astprogram_t *program, MKYEnvironmentRef env) {
     MKYObject *result = NULL;
 
     for (int i = 0; i < arrlen(program->statements); i++) {
@@ -28,7 +28,7 @@ static MKYObject *evalProgram(astprogram_t *program, MKYEnvironment *env) {
     return result;
 }
 
-static MKYObject *evalBlockStatement(astblockstatement_t *block, MKYEnvironment *env) {
+static MKYObject *evalBlockStatement(astblockstatement_t *block, MKYEnvironmentRef env) {
     MKYObject *result = NULL;
 
     for (int i = 0; i < arrlen(block->statements); i++) {
@@ -231,7 +231,7 @@ static MKYObject *evalIndexExpression(MKYObject *left, MKYObject *index) {
                                                           MkyObjectTypeNames[left->type]));
 }
 
-static MKYObject *evalHashLiteral(asthashliteral_t *node, MKYEnvironment *env) {
+static MKYObject *evalHashLiteral(asthashliteral_t *node, MKYEnvironmentRef env) {
     objmap_t *pairs = NULL;
     for (int i = 0; i < hmlen(node->pairs); i++) {
         pairs_t pair = node->pairs[i];
@@ -277,7 +277,7 @@ static bool isTruthy(MKYObject *value) {
     return true;
 }
 
-static MKYObject *evalIfExpression(astifexpression_t *exp, MKYEnvironment *env) {
+static MKYObject *evalIfExpression(astifexpression_t *exp, MKYEnvironmentRef env) {
     MKYObject *condition = mkyeval(AS_NODE(exp->condition), env);
     if (condition->type == ERROR_OBJ) {
         return condition;
@@ -300,12 +300,12 @@ static MKYObject *unwrapReturnValue(MKYObject *obj) {
     return obj;
 }
 
-static MKYEnvironment *extendFunctionEnv(mky_function_t *fn, MKYObject **args) {
-    MKYEnvironment *env = enclosedEnvironmentCreate(fn->env);
+static MKYEnvironmentRef extendFunctionEnv(mky_function_t *fn, MKYObject **args) {
+    MKYEnvironmentRef env = environmentCreateEnclosed(fn->env);
     if (fn->parameters && args) {
         assert(arrlen(fn->parameters) == arrlen(args));
         for (int i = 0; i < arrlen(fn->parameters); i++) {
-            objectSetEnv(env, CString(fn->parameters[i]->value), args[i]);
+            environmentSetObjectForKey(env, CString(fn->parameters[i]->value), args[i]);
         }
     }
 
@@ -315,7 +315,7 @@ static MKYEnvironment *extendFunctionEnv(mky_function_t *fn, MKYObject **args) {
 static MKYObject *applyFunction(MKYObject *fn, MKYObject **args) {
     if (fn->type == FUNCTION_OBJ) {
         mky_function_t *function = (mky_function_t *)fn;
-        MKYEnvironment *extendedEnv = extendFunctionEnv(function, args);
+        MKYEnvironmentRef extendedEnv = extendFunctionEnv(function, args);
         MKYObject *evaluated = mkyeval(AS_NODE(function->body), extendedEnv);
         return unwrapReturnValue(evaluated);
 
@@ -327,7 +327,7 @@ static MKYObject *applyFunction(MKYObject *fn, MKYObject **args) {
     return (MKYObject *)errorCreate(StringWithFormat("not a function: %s", MkyObjectTypeNames[fn->type]));
 }
 
-static MKYObject **evalExpressions(astexpression_t **exps, MKYEnvironment *env) {
+static MKYObject **evalExpressions(astexpression_t **exps, MKYEnvironmentRef env) {
     MKYObject **result = NULL;
     if (exps) {
         for (int i = 0; i < arrlen(exps); i++) {
@@ -343,9 +343,9 @@ static MKYObject **evalExpressions(astexpression_t **exps, MKYEnvironment *env) 
     return result;
 }
 
-static MKYObject *evalIdentifier(astidentifier_t *ident, MKYEnvironment *env) {
+static MKYObject *evalIdentifier(astidentifier_t *ident, MKYEnvironmentRef env) {
     assert(AST_TYPE(ident) == AST_IDENTIFIER);
-    MKYObject *obj = objectGetEnv(env, CString(ident->value));
+    MKYObject *obj = environmentObjectForKey(env, CString(ident->value));
     if (obj) {
         return obj;
     }
@@ -358,7 +358,7 @@ static MKYObject *evalIdentifier(astidentifier_t *ident, MKYEnvironment *env) {
     return (MKYObject *)errorCreate(StringWithFormat("identifier not found: %s", CString(ident->value)));
 }
 
-MKYObject *mkyeval(astnode_t *node, MKYEnvironment *env) {
+MKYObject *mkyeval(astnode_t *node, MKYEnvironmentRef env) {
     switch (node->type) {
         case AST_PROGRAM:
             return evalProgram((astprogram_t *)node, env);
@@ -371,7 +371,7 @@ MKYObject *mkyeval(astnode_t *node, MKYEnvironment *env) {
                 return val;
             }
             if (val) {
-                objectSetEnv(env, CString(let->name->value), val);
+                environmentSetObjectForKey(env, CString(let->name->value), val);
             }
         }
             break;

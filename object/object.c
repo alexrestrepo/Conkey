@@ -130,7 +130,7 @@ static StringRef functionInspect(MKYObject *obj) {
     return out;
 }
 
-mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, MKYEnvironment *env) {
+mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, MKYEnvironmentRef env) {
     mky_function_t *fn = RCAlloc(sizeof(*fn));
     fn->super = (MKYObject){FUNCTION_OBJ, functionInspect};
     fn->parameters = parameters;
@@ -150,8 +150,8 @@ static MkyHashKey stringHashkey(MKYObject *obj) {
     assert(obj->type == STRING_OBJ);
     mky_string_t *self = (mky_string_t *)obj;
 
-    char *cstr= (char *)CString(self->value);
-    uint64_t hash = stbds_hash_string(cstr, 0x5f3759df); // quake's fast inv sqroot constant :shrug:
+    char *cstr = (char *)CString(self->value);
+    uint64_t hash = stbds_hash_string(cstr, AR_RUNTIME_HASH_SEED);
 
     return (MkyHashKey){.type = obj->type, .value = hash};
 }

@@ -20,11 +20,11 @@ static MKYObject *testEval(const char *input) {
     lexer_t *lexer = lexerCreate(input);
     parser_t *parser = parserCreate(lexer);
     astprogram_t *program = parserParseProgram(parser);
-    MKYEnvironment *env = environmentCreate();
+    MKYEnvironmentRef env = environmentCreate();
 
     obj = mkyeval(AS_NODE(program), env);
 
-    environmentRelease(&env);
+    // environmentRelease(&env);
     programRelease(&program);
     parserRelease(&parser);
     lexerRelease(&lexer);

@@ -20,24 +20,24 @@ static RuntimeClassID ARArrayClassID = { 0 };
 
 static void ARArrayDestructor(RCTypeRef array) {
     ArrayRef self = array;
-
+    
     for (size_t i = 0; i < arrlen(self->storage); i++) {
         RCRelease(self->storage[i]);
     }
-
+    
     arrfree(self->storage);
 }
 
 static StringRef ARArrayDescription(RCTypeRef array) {
     ArrayRef self = array;
-
+    
     StringRef description = StringWithString(RuntimeDescription(self));
     StringAppendChars(description, " [\n");
     for (size_t i = 0; i < arrlen(self->storage); i++) {
         StringAppendFormat(description, "\t%s", CString(RuntimeDescription(self->storage[i])));
     }
     StringAppendChars(description, "\n]\n");
-
+    
     return description;
 }
 
@@ -63,14 +63,9 @@ ArrayRef Array(void) {
     return RCAutorelease(instance);
 }
 
-RCTypeRef *RawArray(ArrayRef array) {
-    if (!array) {
-        return NULL;
-    }
-    return array->storage;
-}
-
 RCTypeRef ArrayObjectAt(ArrayRef array, size_t index) {
+    assert(array);
+    
     if (index < arrlen(array->storage)) {
         return array->storage[index];
     }
@@ -78,6 +73,8 @@ RCTypeRef ArrayObjectAt(ArrayRef array, size_t index) {
 }
 
 void ArrayRemoveAt(ArrayRef array, size_t index) {
+    assert(array);
+    
     if (index < arrlen(array->storage)) {
         RCRelease(array->storage[index]);
         arrdel(array, index);
@@ -85,18 +82,35 @@ void ArrayRemoveAt(ArrayRef array, size_t index) {
 }
 
 void ArrayAppend(ArrayRef array, RCTypeRef obj) {
+    assert(array);
+    assert(obj);
+    
     RCRetain(obj);
     arrput(array->storage, obj);
 }
 
 void ArrayRemoveAll(ArrayRef array) {
+    assert(array);
+    
     for (size_t i = 0; i < arrlen(array->storage); i++) {
         RCRelease(array->storage[i]);
     }
     arrclear(array->storage);
 }
 
+size_t ArrayCount(ArrayRef array) {
+    if (array) {
+        return arrlen(array->storage);
+    }
+    return 0;
+}
+
 #pragma mark - dictionary
+
+typedef struct {
+    RuntimeHashValue key;
+    DictKeyValue value;
+} DictType;
 
 struct ARDictionary {
     DictType *storage;
@@ -106,29 +120,29 @@ static RuntimeClassID ARDictClassID = { 0 };
 
 static void ARDictDestructor(RCTypeRef dict) {
     DictionaryRef self = dict;
-
+    
     for (size_t i = 0; i < hmlen(self->storage); i++) {
         DictType obj = self->storage[i];
-        RCRelease(obj.key);
-        RCRelease(obj.value);
+        RCRelease(obj.value.key);
+        RCRelease(obj.value.value);
     }
-
+    
     hmfree(self->storage);
 }
 
 static StringRef ARDictDescription(RCTypeRef dict) {
     DictionaryRef self = dict;
-
+    
     StringRef description = StringWithString(RuntimeDescription(self));
     StringAppendChars(description, " {\n");
     for (size_t i = 0; i < hmlen(self->storage); i++) {
         DictType obj = self->storage[i];
         StringAppendFormat(description, "\t%s : %s,\n",
-                           CString(RuntimeDescription(obj.key)),
-                           CString(RuntimeDescription(obj.value)));
+                           CString(RuntimeDescription(obj.value.key)),
+                           CString(RuntimeDescription(obj.value.value)));
     }
     StringAppendChars(description, "\n}\n");
-
+    
     return description;
 }
 
@@ -154,41 +168,53 @@ DictionaryRef Dictionary(void) {
     return RCAutorelease(instance);
 }
 
-DictType *RawDictionary(DictionaryRef dict) {
-    if (!dict) {
-        return NULL;
-    }
-    return dict->storage;
-}
-
 void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef value) {
     assert(key);
     assert(value);
+    
     if (!dict) {
         return;
     }
-
+    
     RCRetain(key);
     RCRetain(value);
-
-    DictType *previous = hmgetp_null(dict->storage, key);
+    
+    RuntimeHashValue hashKey = RuntimeHash(key);
+    DictType *previous = hmgetp_null(dict->storage, hashKey);
     if (previous) {
-        RCRelease(previous->key);
-        RCRelease(previous->value);
-        previous->value = value;
-
+        RCRelease(previous->value.key);
+        RCRelease(previous->value.value);
+        previous->value = (DictKeyValue){key, value};
+        
     } else {
-        hmput(dict->storage, key, value);
+        DictKeyValue kv = {key, value};
+        hmput(dict->storage, hashKey, kv);
     }
 }
 
 RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key) {
-    if (dict && key) {
-        DictType *value = hmgetp_null(dict->storage, key);
+    assert(dict);
+    if (key) {
+        RuntimeHashValue hashKey = RuntimeHash(key);
+        DictType *value = hmgetp_null(dict->storage, hashKey);
         if (value) {
-            return value->value;
+            return value->value.value;
         }
     }
     return NULL;
 }
 
+DictKeyValue DictionaryKeyValueAtIndex(DictionaryRef dict,size_t index) {
+    assert(dict);
+    if (index < hmlen(dict->storage)) {
+        return dict->storage[index].value;
+    }
+    return (DictKeyValue){0};
+}
+
+size_t DictionaryCount(DictionaryRef dict) {
+    if (dict) {
+        return hmlen(dict->storage);
+    }
+    return 0;
+}
