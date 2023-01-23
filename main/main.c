@@ -14,6 +14,8 @@ const char *getUserName(void) {
 }
 
 int main(int argc, char *argv[]) {
+    // if argc load file and run that, otherwise repl
+
 	printf("Hello %s! This is the Monkey programming language!\n", getUserName());
 	printf("Feel free to type in commands\n");
 	replStart();

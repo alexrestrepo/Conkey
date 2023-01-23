@@ -37,7 +37,7 @@ void printParserErrors(StringRef *errors) {
 
 void replStart() {
 	char line[1024];
-    environment_t *env = environmentCreate();
+    MKYEnvironment *env = environmentCreate();
 
     AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     while (true) {
@@ -58,7 +58,7 @@ void replStart() {
             continue;
         }
 
-        mky_object_t *evaluated = mkyeval(AS_NODE(program), env);
+        MKYObject *evaluated = mkyeval(AS_NODE(program), env);
         if (evaluated) {            
             printf("%s\n", CString(evaluated->inspect(evaluated)));
         }

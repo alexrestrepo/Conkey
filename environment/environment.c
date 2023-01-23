@@ -10,15 +10,15 @@
 
 typedef struct {
     char *key;
-    mky_object_t *value;
+    MKYObject *value;
 } env_storage;
 
-struct environment {
+struct MKYEnvironment {
     env_storage *store;
-    environment_t *outer;
+    MKYEnvironment *outer;
 };
 
-void environmentRelease(environment_t **env) {
+void environmentRelease(MKYEnvironment **env) {
     if (env && *env) {
         shfree((*env)->store);
         free(*env);
@@ -28,8 +28,8 @@ void environmentRelease(environment_t **env) {
     }
 }
 
-environment_t *environmentCreate(void) {
-    environment_t *env = ar_calloc(1, sizeof(*env));
+MKYEnvironment *environmentCreate(void) {
+    MKYEnvironment *env = ar_calloc(1, sizeof(*env));
 
     env->store = NULL;
     sh_new_strdup(env->store); // or arena?
@@ -39,8 +39,8 @@ environment_t *environmentCreate(void) {
     return env;
 }
 
-mky_object_t *objectGetEnv(environment_t *env, const char *name) {
-    mky_object_t *obj = shget(env->store, name);
+MKYObject *objectGetEnv(MKYEnvironment *env, const char *name) {
+    MKYObject *obj = shget(env->store, name);
 
     if (!obj && env->outer) {
         obj = objectGetEnv(env->outer, name);
@@ -49,7 +49,7 @@ mky_object_t *objectGetEnv(environment_t *env, const char *name) {
     return obj;
 }
 
-mky_object_t *objectSetEnv(environment_t *env, const char *name, mky_object_t *obj) {
+MKYObject *objectSetEnv(MKYEnvironment *env, const char *name, MKYObject *obj) {
     RCRetain(obj);
 
     env_storage *old = shgetp_null(env->store, name);
@@ -63,8 +63,8 @@ mky_object_t *objectSetEnv(environment_t *env, const char *name, mky_object_t *o
     return obj;
 }
 
-environment_t *enclosedEnvironmentCreate(environment_t *outer) {
-    environment_t *env = environmentCreate();
+MKYEnvironment *enclosedEnvironmentCreate(MKYEnvironment *outer) {
+    MKYEnvironment *env = environmentCreate();
     env->outer = outer;
     return env;
 }

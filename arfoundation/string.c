@@ -112,3 +112,7 @@ StringRef StringWithString(StringRef str) {
 void StringAppendChars(StringRef str, const char *chars) {
     return StringAppendFormat(str, "%s", chars);
 }
+
+StringRef StringCreateWithChars(const char *chars) {
+    return StringCreateWithFormat("%s", chars);
+}

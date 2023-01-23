@@ -14,13 +14,13 @@
 #include "../arfoundation/vendor/utest.h"
 
 
-static mky_object_t *testEval(const char *input) {
-    mky_object_t *obj = objNull();
+static MKYObject *testEval(const char *input) {
+    MKYObject *obj = objNull();
 
     lexer_t *lexer = lexerCreate(input);
     parser_t *parser = parserCreate(lexer);
     astprogram_t *program = parserParseProgram(parser);
-    environment_t *env = environmentCreate();
+    MKYEnvironment *env = environmentCreate();
 
     obj = mkyeval(AS_NODE(program), env);
 
@@ -32,9 +32,9 @@ static mky_object_t *testEval(const char *input) {
     return obj;
 }
 
-static bool testIntegerObject(mky_object_t *obj, int64_t expected) {
+static bool testIntegerObject(MKYObject *obj, int64_t expected) {
     if (!obj || obj->type != INTEGER_OBJ) {
-        fprintf(stderr, "object is not integer. got=%s\n", obj ? obj_types[obj->type] : "<nil>");
+        fprintf(stderr, "object is not integer. got=%s\n", obj ? MkyObjectTypeNames[obj->type] : "<nil>");
         return false;
     }
 
@@ -47,9 +47,9 @@ static bool testIntegerObject(mky_object_t *obj, int64_t expected) {
     return true;
 }
 
-static bool testbooleanObject(mky_object_t *obj, bool expected) {
+static bool testbooleanObject(MKYObject *obj, bool expected) {
     if (!obj || obj->type != BOOLEAN_OBJ) {
-        fprintf(stderr, "object is not boolean. got=%s\n", obj ? obj_types[obj->type] : "<nil>");
+        fprintf(stderr, "object is not boolean. got=%s\n", obj ? MkyObjectTypeNames[obj->type] : "<nil>");
         return false;
     }
 
@@ -62,9 +62,9 @@ static bool testbooleanObject(mky_object_t *obj, bool expected) {
     return true;
 }
 
-static bool testNullObject(mky_object_t *obj) {
+static bool testNullObject(MKYObject *obj) {
     if (obj && obj != objNull()) {
-        fprintf(stderr, "object is not null. got=%s\n", obj ? obj_types[obj->type] : "<nil>");
+        fprintf(stderr, "object is not null. got=%s\n", obj ? MkyObjectTypeNames[obj->type] : "<nil>");
         return false;
     }
     return true;
@@ -94,7 +94,7 @@ UTEST(eval, integerExpression) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
 }
@@ -127,7 +127,7 @@ UTEST(eval, booleanExpression) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testbooleanObject(evaluated, test.expected));
     }
 }
@@ -147,7 +147,7 @@ UTEST(eval, bangOperator) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testbooleanObject(evaluated, test.expected));
     }
 }
@@ -186,7 +186,7 @@ UTEST(eval, ifElseExpressions) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         if (test.expected.type == INT) {
             ASSERT_TRUE(testIntegerObject(evaluated, test.expected.intVal));
 
@@ -237,7 +237,7 @@ UTEST(eval, returnStatements) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
 }
@@ -308,13 +308,13 @@ UTEST(eval, errorHandling) {
     autoreleasepool(
      for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
          struct test test = tests[i];
-         mky_object_t *evaluated = testEval(test.input);
+         MKYObject *evaluated = testEval(test.input);
          if (ERROR_OBJ == evaluated->type) {
              mky_error_t *error = (mky_error_t *)evaluated;
              EXPECT_STRNEQ(test.expected, CString(error->message), strlen(test.expected));
 
          } else {
-             EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
+             EXPECT_STREQ(MkyObjectTypeNames[ERROR_OBJ], MkyObjectTypeNames[evaluated->type]);
          }
      }
      );
@@ -333,7 +333,7 @@ UTEST(eval, letStatements) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
 }
@@ -341,10 +341,10 @@ UTEST(eval, letStatements) {
 UTEST(eval, functionObject) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
     StringRef input =  StringWithFormat("fn(x) { x + 2; };");
-    mky_object_t *evaluated = testEval(CString(input));
+    MKYObject *evaluated = testEval(CString(input));
 
     ASSERT_TRUE(evaluated);
-    ASSERT_STREQ(obj_types[FUNCTION_OBJ], obj_types[evaluated->type]);
+    ASSERT_STREQ(MkyObjectTypeNames[FUNCTION_OBJ], MkyObjectTypeNames[evaluated->type]);
 
     mky_function_t *fn = (mky_function_t *)evaluated;
     ASSERT_TRUE(fn->parameters);
@@ -374,7 +374,7 @@ UTEST(eval, functionApplication) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
 }
@@ -387,15 +387,15 @@ UTEST(eval, testClosures) {
                                let addTwo = newAdder(2);
                                addTwo(2);
                                );
-    mky_object_t *evaluated = testEval(input);
+    MKYObject *evaluated = testEval(input);
     ASSERT_TRUE(testIntegerObject(evaluated, 4));
 }
 
 UTEST(eval, stringLiteral) {
     const char *input = "\"Hello World\"";
-    mky_object_t *evaluated = testEval(input);
+    MKYObject *evaluated = testEval(input);
     
-    ASSERT_STREQ(obj_types[STRING_OBJ], obj_types[evaluated->type]);
+    ASSERT_STREQ(MkyObjectTypeNames[STRING_OBJ], MkyObjectTypeNames[evaluated->type]);
 
     mky_string_t *str = (mky_string_t *)evaluated;
     ASSERT_STREQ("Hello World", CString(str->value));
@@ -404,9 +404,9 @@ UTEST(eval, stringLiteral) {
 UTEST(eval, stringConcatenation) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input = MONKEY("Hello" + " " + "World!");
-    mky_object_t *evaluated = testEval(input);
+    MKYObject *evaluated = testEval(input);
 
-    ASSERT_STREQ(obj_types[STRING_OBJ], obj_types[evaluated->type]);
+    ASSERT_STREQ(MkyObjectTypeNames[STRING_OBJ], MkyObjectTypeNames[evaluated->type]);
 
     mky_string_t *str = (mky_string_t *)evaluated;
     ASSERT_STREQ("Hello World!", CString(str->value));
@@ -434,7 +434,7 @@ UTEST(eval, builtinFunctions) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
 
         switch (test.expectedType) {
             case 0:
@@ -442,7 +442,7 @@ UTEST(eval, builtinFunctions) {
                 break;
 
             case 1: {
-                EXPECT_STREQ(obj_types[ERROR_OBJ], obj_types[evaluated->type]);
+                EXPECT_STREQ(MkyObjectTypeNames[ERROR_OBJ], MkyObjectTypeNames[evaluated->type]);
 
                 if (evaluated->type == ERROR_OBJ) {
                     mky_error_t *err = (mky_error_t *)evaluated;
@@ -457,9 +457,9 @@ UTEST(eval, builtinFunctions) {
 
 UTEST(eval, arrayLiteral) {
     const char *input = "[1, 2 * 2, 3 + 3]";
-    mky_object_t *evaluated = testEval(input);
+    MKYObject *evaluated = testEval(input);
 
-    ASSERT_STREQ(obj_types[ARRAY_OBJ], obj_types[evaluated->type]);
+    ASSERT_STREQ(MkyObjectTypeNames[ARRAY_OBJ], MkyObjectTypeNames[evaluated->type]);
 
     mky_array_t *array = (mky_array_t *)evaluated;
     ASSERT_EQ(3, arrlen(array->elements));
@@ -519,7 +519,7 @@ UTEST(eval, arrayIndexExpressions) {
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
 
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         if (test.expected > 0) {
             ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
 
@@ -544,14 +544,14 @@ UTEST(eval, hashLiterals) {
            }
            );
 
-    mky_object_t *evaluated = testEval(input);
+    MKYObject *evaluated = testEval(input);
     ASSERT_TRUE(evaluated);
 
-    ASSERT_STREQ(obj_types[HASH_OBJ], obj_types[evaluated->type]);
+    ASSERT_STREQ(MkyObjectTypeNames[HASH_OBJ], MkyObjectTypeNames[evaluated->type]);
     mky_hash_t *hash = (mky_hash_t *)evaluated;
 
     struct kv {
-        hashkey_t key;
+        MkyHashKey key;
         int64_t value;
     };
     struct kv *expected = NULL;
@@ -569,7 +569,7 @@ UTEST(eval, hashLiterals) {
         struct kv expvalue = expected[i];
 
         objmap_t *value = hmgetp_null(hash->pairs, expvalue.key);
-        ASSERT_TRUE(hashkeyEquals(hash->pairs[i].key, expvalue.key));
+        ASSERT_TRUE(HashkeyEquals(hash->pairs[i].key, expvalue.key));
         ASSERT_TRUE(value);
 
         ASSERT_TRUE(testIntegerObject(value->value.value, expvalue.value));
@@ -616,7 +616,7 @@ UTEST(eval, hashIndexedExpression) {
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
 
-        mky_object_t *evaluated = testEval(test.input);
+        MKYObject *evaluated = testEval(test.input);
         if (test.expected > 0) {
             ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
 

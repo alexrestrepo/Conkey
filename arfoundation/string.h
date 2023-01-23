@@ -15,6 +15,7 @@ typedef struct ARString *StringRef;
 void StringInitialize(void);
 
 StringRef StringCreateWithFormat(const char *fmt, ...) __printflike(1, 2);
+StringRef StringCreateWithChars(const char *chars);
 
 StringRef StringWithFormat(const char *fmt, ...) __printflike(1, 2);
 StringRef String(void);

@@ -13,8 +13,8 @@
 #include "builtins.h"
 
 
-static mky_object_t *evalProgram(astprogram_t *program, environment_t *env) {
-    mky_object_t *result = NULL;
+static MKYObject *evalProgram(astprogram_t *program, MKYEnvironment *env) {
+    MKYObject *result = NULL;
 
     for (int i = 0; i < arrlen(program->statements); i++) {
         result = mkyeval((astnode_t *)program->statements[i], env);
@@ -28,8 +28,8 @@ static mky_object_t *evalProgram(astprogram_t *program, environment_t *env) {
     return result;
 }
 
-static mky_object_t *evalBlockStatement(astblockstatement_t *block, environment_t *env) {
-    mky_object_t *result = NULL;
+static MKYObject *evalBlockStatement(astblockstatement_t *block, MKYEnvironment *env) {
+    MKYObject *result = NULL;
 
     for (int i = 0; i < arrlen(block->statements); i++) {
         result = mkyeval((astnode_t *)block->statements[i], env);
@@ -40,10 +40,10 @@ static mky_object_t *evalBlockStatement(astblockstatement_t *block, environment_
     return result;
 }
 
-static mky_object_t *evalBangOperatorExpression(mky_object_t *value) {
-    mky_object_t *TRUE_OBJ = (mky_object_t *)objBoolean(true);
-    mky_object_t *FALSE_OBJ = (mky_object_t *)objBoolean(false);
-    mky_object_t *NULL_OBJ = objNull();
+static MKYObject *evalBangOperatorExpression(MKYObject *value) {
+    MKYObject *TRUE_OBJ = (MKYObject *)objBoolean(true);
+    MKYObject *FALSE_OBJ = (MKYObject *)objBoolean(false);
+    MKYObject *NULL_OBJ = objNull();
 
 
     if (value == TRUE_OBJ) {
@@ -59,17 +59,17 @@ static mky_object_t *evalBangOperatorExpression(mky_object_t *value) {
     return FALSE_OBJ;
 }
 
-static mky_object_t *evalMinusPrefixOperatorExpression(mky_object_t *right) {
+static MKYObject *evalMinusPrefixOperatorExpression(MKYObject *right) {
     if (right->type != INTEGER_OBJ) {
-        return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: -%s",
-                                                              obj_types[right->type]));
+        return (MKYObject *)errorCreate(StringWithFormat("unknown operator: -%s",
+                                                              MkyObjectTypeNames[right->type]));
     }
 
     int64_t value = ((mky_integer_t *)right)->value;
-    return (mky_object_t *)objIntegerCreate(-value);
+    return (MKYObject *)objIntegerCreate(-value);
 }
 
-static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) {
+static MKYObject *evalPrefixExpression(token_type type, MKYObject *right) {
     switch (type) {
         case TOKEN_BANG:
             return evalBangOperatorExpression(right);
@@ -83,74 +83,74 @@ static mky_object_t *evalPrefixExpression(token_type type, mky_object_t *right) 
             break;
     }
 
-    return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s%s",
+    return (MKYObject *)errorCreate(StringWithFormat("unknown operator: %s%s",
                                                           token_str[type],
-                                                          obj_types[right->type]
+                                                          MkyObjectTypeNames[right->type]
                                                           ));
 }
 
-static mky_object_t *evalStringInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
+static MKYObject *evalStringInfixExpression(token_type type, MKYObject *left, MKYObject *right) {
     if (type != TOKEN_PLUS) {
-        return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
-                                                              obj_types[left->type],
+        return (MKYObject *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
+                                                              MkyObjectTypeNames[left->type],
                                                               token_str[type],
-                                                              obj_types[right->type]
+                                                              MkyObjectTypeNames[right->type]
                                                               ));
     }
 
     StringRef leftVal = ((mky_string_t *)left)->value;
     StringRef rightVal = ((mky_string_t *)right)->value;
-    return (mky_object_t *)objStringCreate(StringWithFormat("%s%s", CString(leftVal), CString(rightVal)));
+    return (MKYObject *)objStringCreate(StringWithFormat("%s%s", CString(leftVal), CString(rightVal)));
 }
 
-static mky_object_t *evalIntegerInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
+static MKYObject *evalIntegerInfixExpression(token_type type, MKYObject *left, MKYObject *right) {
     int64_t leftVal = ((mky_integer_t *)left)->value;
     int64_t rightVal = ((mky_integer_t *)right)->value;
 
     switch (type) {
         case TOKEN_PLUS:
-            return (mky_object_t *)objIntegerCreate(leftVal + rightVal);
+            return (MKYObject *)objIntegerCreate(leftVal + rightVal);
             break;
 
         case TOKEN_MINUS:
-            return (mky_object_t *)objIntegerCreate(leftVal - rightVal);
+            return (MKYObject *)objIntegerCreate(leftVal - rightVal);
             break;
 
         case TOKEN_ASTERISK:
-            return (mky_object_t *)objIntegerCreate(leftVal * rightVal);
+            return (MKYObject *)objIntegerCreate(leftVal * rightVal);
             break;
 
         case TOKEN_SLASH:
-            return (mky_object_t *)objIntegerCreate(leftVal / rightVal);
+            return (MKYObject *)objIntegerCreate(leftVal / rightVal);
             break;
 
         case TOKEN_LT:
-            return (mky_object_t *)objBoolean(leftVal < rightVal);
+            return (MKYObject *)objBoolean(leftVal < rightVal);
             break;
 
         case TOKEN_GT:
-            return (mky_object_t *)objBoolean(leftVal > rightVal);
+            return (MKYObject *)objBoolean(leftVal > rightVal);
             break;
 
         case TOKEN_EQ:
-            return (mky_object_t *)objBoolean(leftVal == rightVal);
+            return (MKYObject *)objBoolean(leftVal == rightVal);
             break;
 
         case TOKEN_NOT_EQ:
-            return (mky_object_t *)objBoolean(leftVal != rightVal);
+            return (MKYObject *)objBoolean(leftVal != rightVal);
             break;
 
         default:
             break;
     }
-    return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
-                                                     obj_types[left->type],
+    return (MKYObject *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
+                                                     MkyObjectTypeNames[left->type],
                                                      token_str[type],
-                                                     obj_types[right->type]
+                                                     MkyObjectTypeNames[right->type]
                                                      ));
 }
 
-static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mky_object_t *right) {
+static MKYObject *evalInfixExpression(token_type type, MKYObject *left, MKYObject *right) {
     if (left->type == INTEGER_OBJ && right->type == INTEGER_OBJ) {
         return evalIntegerInfixExpression(type, left, right);
     }
@@ -161,11 +161,11 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
 
     switch (type) {
         case TOKEN_EQ:
-            return (mky_object_t *)objBoolean(left == right);
+            return (MKYObject *)objBoolean(left == right);
             break;
 
         case TOKEN_NOT_EQ:
-            return (mky_object_t *)objBoolean(left != right);
+            return (MKYObject *)objBoolean(left != right);
             break;
 
         default:
@@ -173,21 +173,21 @@ static mky_object_t *evalInfixExpression(token_type type, mky_object_t *left, mk
     }
 
     if (left->type != right->type) {
-        return (mky_object_t *)errorCreate(StringWithFormat("type mismatch: %s %s %s",
-                                                              obj_types[left->type],
+        return (MKYObject *)errorCreate(StringWithFormat("type mismatch: %s %s %s",
+                                                              MkyObjectTypeNames[left->type],
                                                               token_str[type],
-                                                              obj_types[right->type]
+                                                              MkyObjectTypeNames[right->type]
                                                               ));
     }
 
-    return (mky_object_t *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
-                                                          obj_types[left->type],
+    return (MKYObject *)errorCreate(StringWithFormat("unknown operator: %s %s %s",
+                                                          MkyObjectTypeNames[left->type],
                                                           token_str[type],
-                                                          obj_types[right->type]
+                                                          MkyObjectTypeNames[right->type]
                                                           ));
 }
 
-static mky_object_t *evalArrayIndexExpression(mky_object_t *left, mky_object_t *index) {
+static MKYObject *evalArrayIndexExpression(MKYObject *left, MKYObject *index) {
     assert(left->type == ARRAY_OBJ);
     assert(index->type == INTEGER_OBJ);
 
@@ -202,13 +202,13 @@ static mky_object_t *evalArrayIndexExpression(mky_object_t *left, mky_object_t *
     return array->elements[idx];
 }
 
-static mky_object_t *evalHashIndexExpression(mky_object_t *left, mky_object_t *index) {
+static MKYObject *evalHashIndexExpression(MKYObject *left, MKYObject *index) {
     assert(left->type == HASH_OBJ);
     mky_hash_t *hash = (mky_hash_t *)left;
 
     if (!index->hashkey) {
-        return (mky_object_t *)errorCreate(StringWithFormat("unusable as hash key: %s",
-                                                              obj_types[index->type]));
+        return (MKYObject *)errorCreate(StringWithFormat("unusable as hash key: %s",
+                                                              MkyObjectTypeNames[index->type]));
     }
 
     objmap_t *data = hmgetp_null(hash->pairs, index->hashkey(index));
@@ -218,7 +218,7 @@ static mky_object_t *evalHashIndexExpression(mky_object_t *left, mky_object_t *i
     return data->value.value;
 }
 
-static mky_object_t *evalIndexExpression(mky_object_t *left, mky_object_t *index) {
+static MKYObject *evalIndexExpression(MKYObject *left, MKYObject *index) {
     if (left->type == ARRAY_OBJ && index->type == INTEGER_OBJ) {
         return evalArrayIndexExpression(left, index);
     }
@@ -227,41 +227,41 @@ static mky_object_t *evalIndexExpression(mky_object_t *left, mky_object_t *index
         return evalHashIndexExpression(left, index);
     }
 
-    return (mky_object_t *)errorCreate(StringWithFormat("index operator not supported: %s",
-                                                          obj_types[left->type]));
+    return (MKYObject *)errorCreate(StringWithFormat("index operator not supported: %s",
+                                                          MkyObjectTypeNames[left->type]));
 }
 
-static mky_object_t *evalHashLiteral(asthashliteral_t *node, environment_t *env) {
+static MKYObject *evalHashLiteral(asthashliteral_t *node, MKYEnvironment *env) {
     objmap_t *pairs = NULL;
     for (int i = 0; i < hmlen(node->pairs); i++) {
         pairs_t pair = node->pairs[i];
-        mky_object_t *key = mkyeval(AS_NODE(pair.key), env);
+        MKYObject *key = mkyeval(AS_NODE(pair.key), env);
         if (key->type == ERROR_OBJ) {
             return key;
         }
 
         if (!key->hashkey) {
-            return (mky_object_t *)errorCreate(StringWithFormat("unusable as hash key: %s",
-                                                                  obj_types[key->type]));
+            return (MKYObject *)errorCreate(StringWithFormat("unusable as hash key: %s",
+                                                                  MkyObjectTypeNames[key->type]));
         }
 
-        mky_object_t *value = mkyeval(AS_NODE(pair.value), env);
+        MKYObject *value = mkyeval(AS_NODE(pair.value), env);
         if (value->type == ERROR_OBJ) {
             return value;
         }
 
-        hashkey_t hashKey = key->hashkey(key);
+        MkyHashKey hashKey = key->hashkey(key);
         hashpair_t hashValue = HASHPAIR(RCRetain(key), RCRetain(value));
         hmput(pairs, hashKey, hashValue);
     }
     
-    return (mky_object_t *)objHashCreate(pairs);
+    return (MKYObject *)objHashCreate(pairs);
 }
 
-static bool isTruthy(mky_object_t *value) {
-    mky_object_t *TRUE_OBJ = (mky_object_t *)objBoolean(true);
-    mky_object_t *FALSE_OBJ = (mky_object_t *)objBoolean(false);
-    mky_object_t *NULL_OBJ = objNull();
+static bool isTruthy(MKYObject *value) {
+    MKYObject *TRUE_OBJ = (MKYObject *)objBoolean(true);
+    MKYObject *FALSE_OBJ = (MKYObject *)objBoolean(false);
+    MKYObject *NULL_OBJ = objNull();
 
 
     if (value == NULL_OBJ) {
@@ -277,8 +277,8 @@ static bool isTruthy(mky_object_t *value) {
     return true;
 }
 
-static mky_object_t *evalIfExpression(astifexpression_t *exp, environment_t *env) {
-    mky_object_t *condition = mkyeval(AS_NODE(exp->condition), env);
+static MKYObject *evalIfExpression(astifexpression_t *exp, MKYEnvironment *env) {
+    MKYObject *condition = mkyeval(AS_NODE(exp->condition), env);
     if (condition->type == ERROR_OBJ) {
         return condition;
     }
@@ -293,15 +293,15 @@ static mky_object_t *evalIfExpression(astifexpression_t *exp, environment_t *env
     return objNull();
 }
 
-static mky_object_t *unwrapReturnValue(mky_object_t *obj) {
+static MKYObject *unwrapReturnValue(MKYObject *obj) {
     if (obj && obj->type == RETURN_VALUE_OBJ) {
         return ((mky_returnvalue_t *)obj)->value;
     }
     return obj;
 }
 
-static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args) {
-    environment_t *env = enclosedEnvironmentCreate(fn->env);
+static MKYEnvironment *extendFunctionEnv(mky_function_t *fn, MKYObject **args) {
+    MKYEnvironment *env = enclosedEnvironmentCreate(fn->env);
     if (fn->parameters && args) {
         assert(arrlen(fn->parameters) == arrlen(args));
         for (int i = 0; i < arrlen(fn->parameters); i++) {
@@ -312,11 +312,11 @@ static environment_t *extendFunctionEnv(mky_function_t *fn, mky_object_t **args)
     return env;
 }
 
-static mky_object_t *applyFunction(mky_object_t *fn, mky_object_t **args) {
+static MKYObject *applyFunction(MKYObject *fn, MKYObject **args) {
     if (fn->type == FUNCTION_OBJ) {
         mky_function_t *function = (mky_function_t *)fn;
-        environment_t *extendedEnv = extendFunctionEnv(function, args);
-        mky_object_t *evaluated = mkyeval(AS_NODE(function->body), extendedEnv);
+        MKYEnvironment *extendedEnv = extendFunctionEnv(function, args);
+        MKYObject *evaluated = mkyeval(AS_NODE(function->body), extendedEnv);
         return unwrapReturnValue(evaluated);
 
     } else if (fn->type == BUILTIN_OBJ) {
@@ -324,14 +324,14 @@ static mky_object_t *applyFunction(mky_object_t *fn, mky_object_t **args) {
         return builtin->fn(args);
     }
 
-    return (mky_object_t *)errorCreate(StringWithFormat("not a function: %s", obj_types[fn->type]));
+    return (MKYObject *)errorCreate(StringWithFormat("not a function: %s", MkyObjectTypeNames[fn->type]));
 }
 
-static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env) {
-    mky_object_t **result = NULL;
+static MKYObject **evalExpressions(astexpression_t **exps, MKYEnvironment *env) {
+    MKYObject **result = NULL;
     if (exps) {
         for (int i = 0; i < arrlen(exps); i++) {
-            mky_object_t *evaluated = mkyeval(AS_NODE(exps[i]), env);
+            MKYObject *evaluated = mkyeval(AS_NODE(exps[i]), env);
             if (evaluated && evaluated->type == ERROR_OBJ) {
                 arrclear(result);
                 arrput(result, evaluated);
@@ -343,22 +343,22 @@ static mky_object_t **evalExpressions(astexpression_t **exps, environment_t *env
     return result;
 }
 
-static mky_object_t *evalIdentifier(astidentifier_t *ident, environment_t *env) {
+static MKYObject *evalIdentifier(astidentifier_t *ident, MKYEnvironment *env) {
     assert(AST_TYPE(ident) == AST_IDENTIFIER);
-    mky_object_t *obj = objectGetEnv(env, CString(ident->value));
+    MKYObject *obj = objectGetEnv(env, CString(ident->value));
     if (obj) {
         return obj;
     }
 
     mky_builtin_t *builtin = builtins(ident->value);
     if (builtin) {
-        return (mky_object_t *)builtin;
+        return (MKYObject *)builtin;
     }
 
-    return (mky_object_t *)errorCreate(StringWithFormat("identifier not found: %s", CString(ident->value)));
+    return (MKYObject *)errorCreate(StringWithFormat("identifier not found: %s", CString(ident->value)));
 }
 
-mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
+MKYObject *mkyeval(astnode_t *node, MKYEnvironment *env) {
     switch (node->type) {
         case AST_PROGRAM:
             return evalProgram((astprogram_t *)node, env);
@@ -366,7 +366,7 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
 // statements
         case AST_LET: {
             astletstatement_t *let = (astletstatement_t *)node;
-            mky_object_t *val = mkyeval(AS_NODE(let->value), env);
+            MKYObject *val = mkyeval(AS_NODE(let->value), env);
             if (val && val->type == ERROR_OBJ) {
                 return val;
             }
@@ -378,11 +378,11 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
 
         case AST_RETURN: {
             astexpression_t *rs = ((astreturnstatement_t *)node)->returnValue;
-            mky_object_t *val = mkyeval(AS_NODE(rs), env);
+            MKYObject *val = mkyeval(AS_NODE(rs), env);
             if (val->type == ERROR_OBJ) {
                 return val;
             }
-            return (mky_object_t *)returnValueCreate(val);
+            return (MKYObject *)returnValueCreate(val);
         }
             break;
 
@@ -401,12 +401,12 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             break;
 
         case AST_INTEGER:
-            return (mky_object_t *)objIntegerCreate(((astinteger_t *)node)->value);
+            return (MKYObject *)objIntegerCreate(((astinteger_t *)node)->value);
             break;
 
         case AST_PREFIXEXPR: {
             astprefixexpression_t *exp = (astprefixexpression_t *)node;
-            mky_object_t *right = mkyeval(AS_NODE(exp->right), env);
+            MKYObject *right = mkyeval(AS_NODE(exp->right), env);
             if (right->type == ERROR_OBJ) {
                 return right;
             }
@@ -415,11 +415,11 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             break;
 
         case AST_INFIXEXPR: {
-            mky_object_t *left = mkyeval(AS_NODE(((astinfixexpression_t *)node)->left), env);
+            MKYObject *left = mkyeval(AS_NODE(((astinfixexpression_t *)node)->left), env);
             if (left->type == ERROR_OBJ) {
                 return left;
             }
-            mky_object_t *right = mkyeval(AS_NODE(((astinfixexpression_t *)node)->right), env);
+            MKYObject *right = mkyeval(AS_NODE(((astinfixexpression_t *)node)->right), env);
             if (right->type == ERROR_OBJ) {
                 return right;
             }
@@ -428,7 +428,7 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
             break;
 
         case AST_BOOL:
-            return (mky_object_t *)objBoolean(((astboolean_t *)node)->value);
+            return (MKYObject *)objBoolean(((astboolean_t *)node)->value);
             break;
 
         case AST_IFEXPR:
@@ -437,17 +437,17 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
 
         case AST_FNLIT: {
             astfunctionliteral_t *fn = (astfunctionliteral_t *)node;
-            return (mky_object_t *)functionCrate(fn->parameters, fn->body, env);
+            return (MKYObject *)functionCrate(fn->parameters, fn->body, env);
         }
             break;
 
         case AST_CALL: {
             astcallexpression_t *call = (astcallexpression_t *)node;
-            mky_object_t *function = mkyeval(AS_NODE(call->function), env);
+            MKYObject *function = mkyeval(AS_NODE(call->function), env);
             if (function->type == ERROR_OBJ) {
                 return function;
             }
-            mky_object_t **args = evalExpressions(call->arguments, env);
+            MKYObject **args = evalExpressions(call->arguments, env);
             if (args && arrlen(args) == 1 && args[0]->type == ERROR_OBJ) {
                 return args[0];
             }
@@ -458,30 +458,30 @@ mky_object_t *mkyeval(astnode_t *node, environment_t *env) {
 
         case AST_STRING: {
             aststringliteral_t *str = (aststringliteral_t *)node;
-            return (mky_object_t *)objStringCreate(str->value);
+            return (MKYObject *)objStringCreate(str->value);
         }
             break;
 
         case AST_ARRAY: {
             astarrayliteral_t *array = (astarrayliteral_t *)node;
-            mky_object_t **elements = evalExpressions(array->elements, env);
+            MKYObject **elements = evalExpressions(array->elements, env);
             if (elements && arrlen(elements) == 1 && elements[0]->type == ERROR_OBJ) {
                 return elements[0];
             }
-            return (mky_object_t *)objArrayCreate(elements);
+            return (MKYObject *)objArrayCreate(elements);
         } break;
 
         case AST_INDEXEXP: {
             astindexexpression_t *exp = (astindexexpression_t *)node;
-            mky_object_t *left = mkyeval(AS_NODE(exp->left), env);
+            MKYObject *left = mkyeval(AS_NODE(exp->left), env);
             if (left->type == ERROR_OBJ) {
                 return left;
             }
-            mky_object_t *idx = mkyeval(AS_NODE(exp->index), env);
+            MKYObject *idx = mkyeval(AS_NODE(exp->index), env);
             if (idx->type == ERROR_OBJ) {
                 return idx;
             }
-            return (mky_object_t *)evalIndexExpression(left, idx);
+            return (MKYObject *)evalIndexExpression(left, idx);
 
         } break;
 

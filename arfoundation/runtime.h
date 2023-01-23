@@ -12,7 +12,7 @@
 
 #include "string.h"
 
-#define AR_RUNTIME_VERBOSE 0
+#define RC_RUNTIME_VERBOSE 0
 
 extern const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE;
 extern const uint64_t AR_RUNTIME_NOT_OBJECT;

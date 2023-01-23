@@ -16,31 +16,31 @@ typedef struct {
     mky_builtin_t *value;
 } builtins_storage;
 
-static mky_object_t *lenFn(mky_object_t **args) {
+static MKYObject *lenFn(MKYObject **args) {
     if (arrlen(args) != 1) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
     }
 
     if (args[0]->type == STRING_OBJ) {
         mky_string_t *str = (mky_string_t *)args[0];
-        return (mky_object_t *)objIntegerCreate(StringLength(str->value));
+        return (MKYObject *)objIntegerCreate(StringLength(str->value));
     }
 
     if (args[0]->type == ARRAY_OBJ) {
         mky_array_t *array = (mky_array_t *)args[0];
-        return (mky_object_t *)objIntegerCreate(arrlen(array->elements));
+        return (MKYObject *)objIntegerCreate(arrlen(array->elements));
     }
 
-    return (mky_object_t *)errorCreate(StringCreateWithFormat("argument to 'len' not supported, got %s", obj_types[args[0]->type]));
+    return (MKYObject *)errorCreate(StringCreateWithFormat("argument to 'len' not supported, got %s", MkyObjectTypeNames[args[0]->type]));
 }
 
-static mky_object_t *firstFn(mky_object_t **args) {
+static MKYObject *firstFn(MKYObject **args) {
     if (arrlen(args) != 1) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
     }
 
     if (args[0]->type != ARRAY_OBJ) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("argument to 'first' must be ARRAY, got %s", obj_types[args[0]->type]));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("argument to 'first' must be ARRAY, got %s", MkyObjectTypeNames[args[0]->type]));
     }
 
     mky_array_t *array = (mky_array_t *)args[0];
@@ -51,13 +51,13 @@ static mky_object_t *firstFn(mky_object_t **args) {
     return objNull();
 }
 
-static mky_object_t *lastFn(mky_object_t **args) {
+static MKYObject *lastFn(MKYObject **args) {
     if (arrlen(args) != 1) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
     }
 
     if (args[0]->type != ARRAY_OBJ) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", obj_types[args[0]->type]));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[args[0]->type]));
     }
 
     mky_array_t *array = (mky_array_t *)args[0];
@@ -68,56 +68,56 @@ static mky_object_t *lastFn(mky_object_t **args) {
     return objNull();
 }
 
-static mky_object_t *restFn(mky_object_t **args) {
+static MKYObject *restFn(MKYObject **args) {
     if (arrlen(args) != 1) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", arrlen(args)));
     }
 
     if (args[0]->type != ARRAY_OBJ) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", obj_types[args[0]->type]));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[args[0]->type]));
     }
 
     mky_array_t *array = (mky_array_t *)args[0];
     if (arrlen(array->elements) > 0) {
-        mky_object_t **elements = NULL;
+        MKYObject **elements = NULL;
         for (int i = 1; i < arrlen(array->elements); i++) {
             arrput(elements, array->elements[i]);
         }
-        return (mky_object_t *)objArrayCreate(elements);
+        return (MKYObject *)objArrayCreate(elements);
     }
 
     return objNull();
 }
 
-static mky_object_t *pushFn(mky_object_t **args) {
+static MKYObject *pushFn(MKYObject **args) {
     if (arrlen(args) != 2) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=2", arrlen(args)));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("wrong number of arguments. got=%ld, want=2", arrlen(args)));
     }
 
     if (args[0]->type != ARRAY_OBJ) {
-        return (mky_object_t *)errorCreate(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", obj_types[args[0]->type]));
+        return (MKYObject *)errorCreate(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[args[0]->type]));
     }
 
     mky_array_t *array = (mky_array_t *)args[0];
     if (arrlen(array->elements) > 0) {
-        mky_object_t **elements = NULL;
+        MKYObject **elements = NULL;
         for (int i = 0; i < arrlen(array->elements); i++) {
             arrput(elements, array->elements[i]);
         }
         arrput(elements, args[1]);
-        return (mky_object_t *)objArrayCreate(elements);
+        return (MKYObject *)objArrayCreate(elements);
     }
 
     return objNull();
 }
 
-static mky_object_t *putsFn(mky_object_t **args) {
+static MKYObject *putsFn(MKYObject **args) {
     if (!args) {
         return objNull();
     }
 
     for (int i = 0; i < arrlen(args); i++) {
-        mky_object_t *obj = args[i];
+        MKYObject *obj = args[i];
         StringRef inspect = obj->inspect(obj);
         printf("%s\n", CString(inspect));
     }

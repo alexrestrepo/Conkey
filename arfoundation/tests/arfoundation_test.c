@@ -12,7 +12,7 @@ UTEST(arfoundation, ARString) {
     StringRef desc = RuntimeDescription(string); // auto
     RCRetain(desc); // +1
     
-    fprintf(stderr, "'%s' -> [%s]\n", CString(string), CString(desc));
+//  fprintf(stderr, "'%s' -> [%s]\n", CString(string), CString(desc));
     
     ASSERT_EQ(1, RuntimeRefCount(string));
     ASSERT_EQ(2, RuntimeRefCount(desc));
@@ -70,8 +70,8 @@ UTEST(arfoundation, nonClassRefCount) {
     ASSERT_STREQ(refcounted, CString(someString));
     ASSERT_EQ(1, RuntimeRefCount(refcounted));
 
-    fprintf(stderr, "%s -> %s\n", refcounted, CString(RuntimeDescription(refcounted)));
-    fprintf(stderr, "%s\n", CString(RuntimeDescription(someString)));
+//  fprintf(stderr, "%s -> %s\n", refcounted, CString(RuntimeDescription(refcounted)));
+//  fprintf(stderr, "%s\n", CString(RuntimeDescription(someString)));
 
     RCAutorelease(refcounted);
     RCRelease(ap);
@@ -98,14 +98,85 @@ UTEST(arfoundation, autoreleasePool) {
     str = RuntimeMakeConstant(str);
     ASSERT_EQ(AR_RUNTIME_REFCOUNT_UNRELEASABLE, RuntimeRefCount(str));
     
-    fprintf(stderr, "str = [%s] %s\n", CString(RuntimeDescription(str)), CString(str));
-    fprintf(stderr, "ap = [%s]\n", CString(RuntimeDescription(ap)));
+//  fprintf(stderr, "str = [%s] %s\n", CString(RuntimeDescription(str)), CString(str));
+//  fprintf(stderr, "ap = [%s]\n", CString(RuntimeDescription(ap)));
     
     ap = RCRelease(ap);
     ASSERT_EQ(NULL, ap);
     
     str = RCRelease(str);
     ASSERT_TRUE(str);
+}
+
+UTEST(arfoundation, containers) {
+    AutoreleasePoolRef ap = AutoreleasePoolCreate();
+    
+    StringRef key = StringWithChars("hello");
+    ASSERT_EQ(1, RuntimeRefCount(key));
+    
+    StringRef value = StringWithChars("world");
+    ASSERT_EQ(1, RuntimeRefCount(value));
+    
+    ArrayRef array = ArrayCreate();
+    ArrayAppend(array, key);
+    ArrayAppend(array, value);
+    
+    ArrayAppend(array, StringWithChars("autoreleased"));
+    ArrayAppend(array, StringWithChars("autoreleased as well."));
+    
+    ASSERT_EQ(2, RuntimeRefCount(key));
+    ASSERT_EQ(2, RuntimeRefCount(value));
+    
+    ap = RCRelease(ap);
+    ASSERT_EQ(1, RuntimeRefCount(key));
+    ASSERT_EQ(1, RuntimeRefCount(value));
+    
+    RCRetain(key);
+    RCRetain(value);
+    
+    array = RCRelease(array);
+    ASSERT_EQ(NULL, array);
+    
+    DictionaryRef dict = DictionaryCreate();
+    DictionarySetObjectForKey(dict, key, value);
+    ASSERT_EQ(2, RuntimeRefCount(key));
+    ASSERT_EQ(2, RuntimeRefCount(value));
+    
+    ASSERT_EQ(DictionaryObjectForKey(dict, key), value);
+    
+    StringRef another = StringCreateWithFormat("oh hai");
+    DictionarySetObjectForKey(dict, key, another);
+    another = RCRelease(another);
+    
+    ASSERT_EQ(2, RuntimeRefCount(key));
+    ASSERT_EQ(1, RuntimeRefCount(value));
+    ASSERT_EQ(1, RuntimeRefCount(another));
+    
+    ASSERT_EQ(DictionaryObjectForKey(dict, key), another);
+    RCRetain(another);
+    
+    StringRef toreplace = StringCreateWithChars("doomed");
+    DictionarySetObjectForKey(dict, key, toreplace);
+    toreplace = RCRelease(toreplace);
+    ASSERT_EQ(1, RuntimeRefCount(toreplace));
+    ASSERT_EQ(DictionaryObjectForKey(dict, key), toreplace);
+    
+    ap = AutoreleasePoolCreate();
+    DictionarySetObjectForKey(dict, key, StringWithChars("autoreleased too"));
+    ASSERT_NE(DictionaryObjectForKey(dict, key), another);
+    ap = RCRelease(ap);
+    
+    dict = RCRelease(dict);
+    ASSERT_EQ(NULL, dict);
+    
+    key = RCRelease(key);
+    ASSERT_EQ(NULL, key);
+    
+    value = RCRelease(value);
+    ASSERT_EQ(NULL, value);
+    
+    another = RCRelease(another);
+    ASSERT_EQ(NULL, another);
 }
 
 UTEST_MAIN();

@@ -18,7 +18,7 @@ struct AutoreleasePool {
 };
 
 static RuntimeClassID ARAutoreleasePoolClassID = { 0 };
-static AutoreleasePoolRef *active_pools = NULL;
+static AutoreleasePoolRef *activePools = NULL;
 
 static uint64_t currentThreadID() {
     return pthread_mach_thread_np(pthread_self());
@@ -33,7 +33,7 @@ static RCTypeRef ARAutoreleasePoolConstructor(RCTypeRef obj) {
     // TODO: check if current thread has a pool stack, if not add 'obj' and set it 
 
     // add to stack
-    arrput(active_pools, pool);
+    arrput(activePools, pool);
     return pool;
 }
 
@@ -45,9 +45,9 @@ static void ARAutoreleasePoolDestructor(RCTypeRef obj) {
     AutoreleasePoolDrain(pool);
 
     // remove from stack
-    for (int i = 0; i < arrlen(active_pools); i++) {
-        if (active_pools[i] == pool) {
-            arrdel(active_pools, i);
+    for (int i = 0; i < arrlen(activePools); i++) {
+        if (activePools[i] == pool) {
+            arrdel(activePools, i);
             break;
         }
     }
@@ -73,6 +73,7 @@ AutoreleasePoolRef AutoreleasePoolCreate(void) {
 void AutoreleasePoolAddObject(AutoreleasePoolRef pool, RCTypeRef obj) {
     assert(pool);
     assert(obj);
+    assert(pool != obj);
 
     // check if poolid and threadid match
     
@@ -86,7 +87,7 @@ void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
         return;
     }
 
-#if AR_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE
     fprintf(stderr, "--- draining ---\n");
 #endif
 
@@ -94,7 +95,7 @@ void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
         RCRelease(pool->objects[(arrlen(pool->objects) - 1) - i]);
     }
 
-#if AR_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE
     fprintf(stderr, "----------------\n");
 #endif
     
@@ -102,8 +103,8 @@ void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
 }
 
 AutoreleasePoolRef CurrentAutoreleasePool(void) {
-    if (active_pools && arrlen(active_pools) > 0) {
-        return arrlast(active_pools);
+    if (activePools && arrlen(activePools) > 0) {
+        return arrlast(activePools);
     }
 
     return NULL;

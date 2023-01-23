@@ -170,7 +170,16 @@ void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef valu
 
     RCRetain(key);
     RCRetain(value);
-    hmput(dict->storage, key, value);
+
+    DictType *previous = hmgetp_null(dict->storage, key);
+    if (previous) {
+        RCRelease(previous->key);
+        RCRelease(previous->value);
+        previous->value = value;
+
+    } else {
+        hmput(dict->storage, key, value);
+    }
 }
 
 RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key) {

@@ -8,6 +8,7 @@
 #include "common.h"
 #include "string.h"
 #include "autoreleasepool.h"
+#include "containers.h"
 
 #ifndef STB_DS_IMPLEMENTATION
 #define STB_DS_IMPLEMENTATION
@@ -20,37 +21,39 @@ typedef enum {
     AR_RUNTIME_NOT_INITIALIZED,
     AR_RUNTIME_INITIALIZING,
     AR_RUNTIME_READY,
-} ar_runtime_status;
+} RuntimeStatus;
 
 const uint64_t AR_RUNTIME_NOT_OBJECT = 0;      // special/any
 const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE = -1;
-static _Atomic ar_runtime_status runtime_status;
-static _Atomic uint64_t ar_runtime_class_count;
-static RuntimeRegisteredClassInfo *ar_runtime_classes;      // TODO: not thread safe?
+static _Atomic RuntimeStatus runtimeStatus;
+static _Atomic uint64_t runtimeRegisteredClassCount;
+static RuntimeRegisteredClassInfo *runtimeClasses;      // TODO: make thread safe?
 
 #define ar_object_header(obj)  ((RuntimeObjectBase *) (obj) - 1)
 
 void RuntimeInitialize(void) {
-    if (runtime_status != AR_RUNTIME_NOT_INITIALIZED) {
+    if (runtimeStatus != AR_RUNTIME_NOT_INITIALIZED) {
         return;
     }
 
-    runtime_status = AR_RUNTIME_INITIALIZING;
+    runtimeStatus = AR_RUNTIME_INITIALIZING;
 
-    arrclear(ar_runtime_classes);
-    ar_runtime_class_count = arrlen(ar_runtime_classes);
-    RuntimeRegisteredClassInfo info = {0};
-    arrput(ar_runtime_classes, info);
+    arrclear(runtimeClasses);
+    runtimeRegisteredClassCount = arrlen(runtimeClasses);
+    RuntimeRegisteredClassInfo info = { 0 };
+    arrput(runtimeClasses, info);
 
-    runtime_status = AR_RUNTIME_READY;
+    runtimeStatus = AR_RUNTIME_READY;
 
     // register base classes
     AutoreleasePoolInitialize();
     StringInitialize();
+    ArrayInitialize();
+    DictionaryInitialize();
 }
 
 RuntimeClassID RuntimeRegisterClass(const RuntimeClassDescriptor *klass) {
-    if (runtime_status != AR_RUNTIME_READY) {
+    if (runtimeStatus != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
 
@@ -58,11 +61,11 @@ RuntimeClassID RuntimeRegisterClass(const RuntimeClassDescriptor *klass) {
         ar_fatal("Can't register NULL class info\n");
     }
 
-    ar_runtime_class_count = arrlen(ar_runtime_classes);
+    runtimeRegisteredClassCount = arrlen(runtimeClasses);
     RuntimeRegisteredClassInfo info = { klass };
-    arrput(ar_runtime_classes, info);
+    arrput(runtimeClasses, info);
 
-    return (RuntimeClassID){ ar_runtime_class_count };
+    return (RuntimeClassID){ runtimeRegisteredClassCount };
 }
 
 RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
@@ -70,7 +73,7 @@ RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
     // or flooh style typed arrays and return a {type} struct with the idx/offset?
 
     assert(size > 0);
-    assert(classid.classID <= arrlen(ar_runtime_classes));
+    assert(classid.classID <= arrlen(runtimeClasses));
 
     static _Atomic uint64_t allocid = 0;
 
@@ -84,7 +87,7 @@ RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
 
     RCTypeRef obj = (char *)object + sizeof(RuntimeObjectBase);
 
-#if AR_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE
     fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes [%llu]@%p\n", classid.classID, size, object->allocid, obj);
 #endif
 
@@ -92,7 +95,7 @@ RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
 }
 
 RCTypeRef RuntimeCreateInstance(RuntimeClassID classid) {
-    if (runtime_status != AR_RUNTIME_READY) {
+    if (runtimeStatus != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
 
@@ -124,7 +127,7 @@ const char *RuntimeClassName(RuntimeClassID classid) {
 }
 
 const RuntimeRegisteredClassInfo *RuntimeClassInfo(RuntimeClassID classid) {
-    if (runtime_status != AR_RUNTIME_READY) {
+    if (runtimeStatus != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
 
@@ -132,12 +135,12 @@ const RuntimeRegisteredClassInfo *RuntimeClassInfo(RuntimeClassID classid) {
         return NULL;
     }
 
-    const RuntimeRegisteredClassInfo *info = (const RuntimeRegisteredClassInfo *)&ar_runtime_classes[classid.classID];
+    const RuntimeRegisteredClassInfo *info = (const RuntimeRegisteredClassInfo *)&runtimeClasses[classid.classID];
     return info;
 }
 
 bool RuntimeIsRegisteredClass(RuntimeClassID classid) {
-    if (runtime_status != AR_RUNTIME_READY) {
+    if (runtimeStatus != AR_RUNTIME_READY) {
         ar_fatal("Runtime not initialized. Call ARRuntimeInitialize...\n");
     }
 
@@ -145,7 +148,7 @@ bool RuntimeIsRegisteredClass(RuntimeClassID classid) {
         return false;
     }
 
-    return classid.classID <= arrlen(ar_runtime_classes);
+    return classid.classID <= arrlen(runtimeClasses);
 }
 
 StringRef RuntimeDescription(RCTypeRef obj) {
@@ -225,10 +228,10 @@ RCTypeRef RCRelease(RCTypeRef obj) {
                 klass->descriptor->destructor(obj);
             }
 
-#if AR_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE
             fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) [%llu]@%p\n", klass->descriptor->classname, base->classid.classID, base->allocid, obj);
         } else {
-            fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> [%llu]@%p\n", base->size - sizeof(ar_object_base), base->allocid, obj);
+            fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> [%llu]@%p\n", base->size - sizeof(RuntimeObjectBase), base->allocid, obj);
 #endif
         }
 
