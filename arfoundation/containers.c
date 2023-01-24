@@ -10,6 +10,54 @@
 #include "string.h"
 #include "stb_ds_x.h"
 
+#pragma mark Pair
+
+struct ObjectPair {
+    RCTypeRef first;
+    RCTypeRef second;
+};
+
+static void PairDealloc(RCTypeRef obj) {
+    ObjectPairRef self = obj;
+    self->first = RCRelease(self->first);
+    self->second = RCRelease(self->second);
+}
+
+static StringRef PairDescription(RCTypeRef obj) {
+    ObjectPairRef self = obj;
+    return StringWithFormat("%s : %s",
+                            CString(RuntimeDescription(self->first)),
+                            CString(RuntimeDescription(self->second)));
+}
+
+static RuntimeClassID ARObjectPairClassID = { 0 };
+static RuntimeClassDescriptor ARObjectPairClass = {
+    "Pair",
+    sizeof(struct ObjectPair),
+    NULL, // const
+    PairDealloc, // dest
+    PairDescription  // desc
+};
+
+void ObjectPairInitialize(void) {
+    ARObjectPairClassID = RuntimeRegisterClass(&ARObjectPairClass);
+}
+
+ObjectPairRef objectPairWithObjects(RCTypeRef first, RCTypeRef second) {
+    ObjectPairRef pair = RuntimeCreateInstance(ARObjectPairClassID);
+    pair->first = RCRetain(first);
+    pair->second = RCRetain(second);
+    return RCAutorelease(pair);
+}
+
+RCTypeRef objectPairFirst(ObjectPairRef pair) {
+    return pair->first;
+}
+
+RCTypeRef objectPairSecond(ObjectPairRef pair) {
+    return pair->second;
+}
+
 #pragma mark - array
 
 struct ARArray {
@@ -105,11 +153,18 @@ size_t ArrayCount(ArrayRef array) {
     return 0;
 }
 
+RCTypeRef ArrayFirst(ArrayRef array) {
+    if (array && array->storage && arrlen(array->storage)) {
+        return array->storage[0];
+    }
+    return NULL;
+}
+
 #pragma mark - dictionary
 
 typedef struct {
     RuntimeHashValue key;
-    DictKeyValue value;
+    struct ObjectPair value;
 } DictType;
 
 struct ARDictionary {
@@ -123,8 +178,8 @@ static void ARDictDestructor(RCTypeRef dict) {
     
     for (size_t i = 0; i < hmlen(self->storage); i++) {
         DictType obj = self->storage[i];
-        RCRelease(obj.value.key);
-        RCRelease(obj.value.value);
+        RCRelease(obj.value.first);
+        RCRelease(obj.value.second);
     }
     
     hmfree(self->storage);
@@ -138,8 +193,8 @@ static StringRef ARDictDescription(RCTypeRef dict) {
     for (size_t i = 0; i < hmlen(self->storage); i++) {
         DictType obj = self->storage[i];
         StringAppendFormat(description, "\t%s : %s,\n",
-                           CString(RuntimeDescription(obj.value.key)),
-                           CString(RuntimeDescription(obj.value.value)));
+                           CString(RuntimeDescription(obj.value.first)),
+                           CString(RuntimeDescription(obj.value.second)));
     }
     StringAppendChars(description, "\n}\n");
     
@@ -182,12 +237,12 @@ void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef valu
     RuntimeHashValue hashKey = RuntimeHash(key);
     DictType *previous = hmgetp_null(dict->storage, hashKey);
     if (previous) {
-        RCRelease(previous->value.key);
-        RCRelease(previous->value.value);
-        previous->value = (DictKeyValue){key, value};
+        RCRelease(previous->value.first);
+        RCRelease(previous->value.second);
+        previous->value = (struct ObjectPair){key, value};
         
     } else {
-        DictKeyValue kv = {key, value};
+        struct ObjectPair kv = {key, value};
         hmput(dict->storage, hashKey, kv);
     }
 }
@@ -198,18 +253,22 @@ RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key) {
         RuntimeHashValue hashKey = RuntimeHash(key);
         DictType *value = hmgetp_null(dict->storage, hashKey);
         if (value) {
-            return value->value.value;
+            return value->value.second;
         }
     }
     return NULL;
 }
 
-DictKeyValue DictionaryKeyValueAtIndex(DictionaryRef dict,size_t index) {
+ObjectPairRef pairWithPairStruct(struct ObjectPair pair) {
+    return objectPairWithObjects(pair.first, pair.second);
+}
+
+ObjectPairRef DictionaryKeyValueAtIndex(DictionaryRef dict,size_t index) {
     assert(dict);
     if (index < hmlen(dict->storage)) {
-        return dict->storage[index].value;
+        return pairWithPairStruct(dict->storage[index].value);
     }
-    return (DictKeyValue){0};
+    return NULL;
 }
 
 size_t DictionaryCount(DictionaryRef dict) {

@@ -12,7 +12,9 @@
 
 #include "string.h"
 
-#define RC_RUNTIME_VERBOSE 0
+#define RC_RUNTIME_VERBOSE 1
+#define RC_PRINT_RETAIN_RELEASE 0 // needs above set to 1
+// TODO: zombies!
 
 extern const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE;
 extern const uint64_t AR_RUNTIME_NOT_OBJECT;
@@ -21,8 +23,10 @@ extern const size_t AR_RUNTIME_HASH_SEED;
 typedef struct {
     uint64_t classID;
 } RuntimeClassID;
+static const RuntimeClassID NO_CLASS_ID = { 0 };
 
 typedef struct {
+    // I can add a _isa_ here which points to RuntimeClassDescriptor? if none, add one?
     _Atomic int64_t     refcount;
     uint64_t            allocid;
     size_t              size; // allocation size (base + descriptor.size)
@@ -64,6 +68,7 @@ typedef struct {
 } RuntimeRegisteredClassInfo;
 
 void RuntimeInitialize(void) __attribute__((constructor));
+void RuntimeDealloc(void) __attribute__((destructor));
 
 RCTypeRef RCRetain(RCTypeRef obj);      // increments refcount
 RCTypeRef RCRelease(RCTypeRef obj);     // decrements refcount + release if 0
@@ -72,7 +77,7 @@ RCTypeRef RuntimeMakeConstant(RCTypeRef obj); // makes obj unreleasable.
 
 RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid); // {0} class id adds refcnt header to any alloc.
 AR_INLINE RCTypeRef RCAlloc(size_t size) {
-    return RuntimeRCAlloc(size, (RuntimeClassID){ AR_RUNTIME_NOT_OBJECT });
+    return RuntimeRCAlloc(size, NO_CLASS_ID);
 }
 
 RuntimeClassID RuntimeRegisterClass(const RuntimeClassDescriptor *klass);

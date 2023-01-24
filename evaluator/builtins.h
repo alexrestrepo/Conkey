@@ -11,6 +11,6 @@
 #include "../arfoundation/string.h"
 #include "../object/object.h"
 
-mky_builtin_t *builtins(StringRef name);
+MkyBuiltinRef builtinWithName(StringRef name);
 
 #endif /* builtins_h */

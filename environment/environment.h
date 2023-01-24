@@ -7,14 +7,15 @@
 #define environment_h
 
 #include "../token/token.h"
+#include "../arfoundation/string.h"
 
-typedef struct MKYEnvironment *MKYEnvironmentRef;
+typedef struct MkyEnvironment *MkyEnvironmentRef;
 
-MKYEnvironmentRef environmentCreate(void);
-MKYEnvironmentRef environmentCreateEnclosed(MKYEnvironmentRef outer);
+MkyEnvironmentRef environmentCreate(void);
+MkyEnvironmentRef environmentCreateEnclosedIn(MkyEnvironmentRef outer);
 
-typedef struct MKYObject MKYObject;
-MKYObject *environmentObjectForKey(MKYEnvironmentRef env, const char *key);
-MKYObject *environmentSetObjectForKey(MKYEnvironmentRef env, const char *key, MKYObject *value);
+typedef struct MkyObject MkyObject;
+MkyObject *environmentObjectForKey(MkyEnvironmentRef env, StringRef key);
+MkyObject *environmentSetObjectForKey(MkyEnvironmentRef env, StringRef key, MkyObject *value);
 
 #endif /* environment_h */

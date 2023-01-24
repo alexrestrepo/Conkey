@@ -63,22 +63,6 @@ StringRef StringCreateWithFormat(const char *fmt, ...) {
     return instance;
 }
 
-size_t StringLength(StringRef str) {
-    if (!str) {
-        return 0;
-    }
-    
-    return arrlen(str->cstr);
-}
-
-const char *CString(StringRef str) {
-    if (!str) {
-        return NULL;
-    }
-    
-    return (const char *)str->cstr;
-}
-
 StringRef StringWithFormat(const char *fmt, ...) {
     StringRef instance = NULL;
     
@@ -96,6 +80,8 @@ void StringAppendFormat(StringRef str, const char *fmt, ...) {
     va_start(args, fmt);
     sarrvprintf(str->cstr, fmt, args);
     va_end(args);
+
+    RuntimeInvalidateHash(str);
 }
 
 void StringAppendString(StringRef str, StringRef append) {
@@ -122,3 +108,20 @@ void StringAppendChars(StringRef str, const char *chars) {
 StringRef StringCreateWithChars(const char *chars) {
     return StringCreateWithFormat("%s", chars);
 }
+
+size_t StringLength(StringRef str) {
+    if (!str) {
+        return 0;
+    }
+
+    return arrlen(str->cstr);
+}
+
+const char *CString(StringRef str) {
+    if (!str) {
+        return NULL;
+    }
+
+    return (const char *)str->cstr;
+}
+

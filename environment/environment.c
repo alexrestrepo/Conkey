@@ -5,42 +5,53 @@
 
 #include "environment.h"
 
+#include <assert.h>
+
 #include "../arfoundation/arfoundation.h"
 #include "../object/object.h"
 
-typedef struct {
-    char *key;
-    MKYObject *value;
-} env_storage;
-
-struct MKYEnvironment {
-    env_storage *store;
-    MKYEnvironmentRef outer;
+struct MkyEnvironment {
+    DictionaryRef store;
+    MkyEnvironmentRef outer;
 };
 
-//void environmentRelease(MKYEnvironment **env) {
-//    if (env && *env) {
-//        shfree((*env)->store);
-//        free(*env);
-//        *env = NULL;
-//
-//        // release outer...
-//    }
-//}
+static RuntimeClassID MkyEnvironmentClassID = { 0 };
 
-MKYEnvironmentRef environmentCreate(void) {
-    MKYEnvironmentRef env = ar_calloc(1, sizeof(*env));
+static void environmentDestructor(RCTypeRef env) {
+    MkyEnvironmentRef self = env;
 
-    env->store = NULL;
-    sh_new_strdup(env->store); // or arena?
+    self->store = RCRelease(self->store);
+    self->outer = RCRelease(self->outer);
+}
 
+static RuntimeClassDescriptor MkyEnvironmentClass = {
+    "MkyEnvironment",
+    sizeof(struct MkyEnvironment),
+    NULL, // const
+    environmentDestructor,
+    NULL,
+    NULL
+};
+
+static void MkyEnvironmentInitialize(void) {
+    MkyEnvironmentClassID = RuntimeRegisterClass(&MkyEnvironmentClass);
+}
+
+MkyEnvironmentRef environmentCreate(void) {
+    if (MkyEnvironmentClassID.classID == 0) {
+        MkyEnvironmentInitialize();
+    }
+
+    MkyEnvironmentRef env = RuntimeCreateInstance(MkyEnvironmentClassID);
+
+    env->store = DictionaryCreate();
     env->outer = NULL;
 
     return env;
 }
 
-MKYObject *environmentObjectForKey(MKYEnvironmentRef env, const char *key) {
-    MKYObject *obj = shget(env->store, key);
+MkyObject *environmentObjectForKey(MkyEnvironmentRef env, StringRef key) {
+    MkyObject *obj = DictionaryObjectForKey(env->store, key);
 
     if (!obj && env->outer) {
         obj = environmentObjectForKey(env->outer, key);
@@ -49,22 +60,13 @@ MKYObject *environmentObjectForKey(MKYEnvironmentRef env, const char *key) {
     return obj;
 }
 
-MKYObject *environmentSetObjectForKey(MKYEnvironmentRef env, const char *key, MKYObject *value) {
-    RCRetain(value);
-
-    env_storage *old = shgetp_null(env->store, key);
-    if (old) {
-        RCRelease(old->value);
-        old->value = value;
-
-    } else {
-        shput(env->store, key, value);
-    }
+MkyObject *environmentSetObjectForKey(MkyEnvironmentRef env, StringRef key, MkyObject *value) {
+    DictionarySetObjectForKey(env->store, key, value);
     return value;
 }
 
-MKYEnvironmentRef environmentCreateEnclosed(MKYEnvironmentRef outer) {
-    MKYEnvironmentRef env = environmentCreate();
-    env->outer = outer;
+MkyEnvironmentRef environmentCreateEnclosedIn(MkyEnvironmentRef outer) {
+    MkyEnvironmentRef env = environmentCreate();
+    env->outer = RCRetain(outer);
     return env;
 }

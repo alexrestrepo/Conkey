@@ -87,7 +87,7 @@ void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
         return;
     }
     
-#if RC_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE && RC_PRINT_RETAIN_RELEASE
     fprintf(stderr, "--- draining ---\n");
 #endif
     
@@ -95,7 +95,7 @@ void AutoreleasePoolDrain(AutoreleasePoolRef pool) {
         RCRelease(pool->objects[(arrlen(pool->objects) - 1) - i]);
     }
     
-#if RC_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE && RC_PRINT_RETAIN_RELEASE
     fprintf(stderr, "----------------\n");
 #endif
     

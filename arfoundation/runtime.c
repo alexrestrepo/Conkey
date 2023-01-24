@@ -21,9 +21,10 @@ typedef enum {
     AR_RUNTIME_NOT_INITIALIZED,
     AR_RUNTIME_INITIALIZING,
     AR_RUNTIME_READY,
+    AR_RUNTIME_STOPPED
 } RuntimeStatus;
 
-static RuntimeHashValue NoHashValue = {{0},0};
+static const RuntimeHashValue NO_HASH_VALUE = {{0},0};
 
 const uint64_t AR_RUNTIME_NOT_OBJECT = 0; // special/any
 const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE = -1;
@@ -31,9 +32,20 @@ const size_t AR_RUNTIME_HASH_SEED = 0x5f3759df;  // quake's fast inv sqroot cons
 
 static _Atomic RuntimeStatus runtimeStatus;
 static _Atomic uint64_t runtimeRegisteredClassCount;
+static _Atomic uint64_t allocid = 0;
+static _Atomic uint64_t deallocid = 0;
 static RuntimeRegisteredClassInfo *runtimeClasses;      // TODO: make thread safe?
 
 #define ar_object_header(obj)  ((RuntimeObjectBase *) (obj) - 1)
+
+void RuntimeDealloc(void) {
+    runtimeStatus = AR_RUNTIME_STOPPED;
+
+    // TODO: other cleanup...?
+#if RC_RUNTIME_VERBOSE
+    fprintf(stderr, "\nAllocated %llu. Deallocated %llu. Leaked:%llu\n", (allocid - 1), deallocid, (allocid - 1) - deallocid);
+#endif
+}
 
 void RuntimeInitialize(void) {
     if (runtimeStatus != AR_RUNTIME_NOT_INITIALIZED) {
@@ -54,6 +66,7 @@ void RuntimeInitialize(void) {
     StringInitialize();
     ArrayInitialize();
     DictionaryInitialize();
+    ObjectPairInitialize();
 }
 
 RuntimeClassID RuntimeRegisterClass(const RuntimeClassDescriptor *klass) {
@@ -78,9 +91,7 @@ RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
     
     assert(size > 0);
     assert(classid.classID <= arrlen(runtimeClasses));
-    
-    static _Atomic uint64_t allocid = 0;
-    
+
     size_t allocSize = sizeof(RuntimeObjectBase) + size;
     RuntimeObjectBase *object = ar_calloc(1, allocSize);
     
@@ -91,7 +102,7 @@ RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
     
     RCTypeRef obj = (char *)object + sizeof(RuntimeObjectBase);
     
-#if RC_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE && RC_PRINT_RETAIN_RELEASE
     fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes [%llu]@%p\n", classid.classID, size, object->allocid, obj);
 #endif
     
@@ -195,7 +206,7 @@ void RuntimeInvalidateHash(RCTypeRef obj) {
 
 RuntimeHashValue RuntimeHash(RCTypeRef obj) {
     if (!obj) {
-        return NoHashValue;
+        return NO_HASH_VALUE;
     }
     
     RuntimeObjectBase *base = ar_object_header(obj);
@@ -264,14 +275,15 @@ RCTypeRef RCRelease(RCTypeRef obj) {
                 klass->descriptor->destructor(obj);
             }
             
-#if RC_RUNTIME_VERBOSE
+#if RC_RUNTIME_VERBOSE && RC_PRINT_RETAIN_RELEASE
             fprintf(stderr, "\033[31mDeallocating \033[0m%s(%llu) [%llu]@%p\n", klass->descriptor->classname, base->classid.classID, base->allocid, obj);
         } else {
             fprintf(stderr, "\033[31mDeallocating \033[0m<unknown:%zu bytes> [%llu]@%p\n", base->size - sizeof(RuntimeObjectBase), base->allocid, obj);
 #endif
         }
-        
+
         free(base);
+        deallocid++;
         return NULL;
     }
     

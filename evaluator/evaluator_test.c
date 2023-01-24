@@ -14,17 +14,17 @@
 #include "../arfoundation/vendor/utest.h"
 
 
-static MKYObject *testEval(const char *input) {
-    MKYObject *obj = objNull();
+static MkyObject *testEval(const char *input) {
+    MkyObject *obj = mkyNull();
 
     lexer_t *lexer = lexerCreate(input);
     parser_t *parser = parserCreate(lexer);
     astprogram_t *program = parserParseProgram(parser);
-    MKYEnvironmentRef env = environmentCreate();
+    MkyEnvironmentRef env = environmentCreate();
 
     obj = mkyeval(AS_NODE(program), env);
 
-    // environmentRelease(&env);
+    RCRelease(env);
     programRelease(&program);
     parserRelease(&parser);
     lexerRelease(&lexer);
@@ -32,13 +32,13 @@ static MKYObject *testEval(const char *input) {
     return obj;
 }
 
-static bool testIntegerObject(MKYObject *obj, int64_t expected) {
+static bool testIntegerObject(MkyObject *obj, int64_t expected) {
     if (!obj || obj->type != INTEGER_OBJ) {
         fprintf(stderr, "object is not integer. got=%s\n", obj ? MkyObjectTypeNames[obj->type] : "<nil>");
         return false;
     }
 
-    int64_t objVal = ((mky_integer_t *)obj)->value;
+    int64_t objVal = mkyIntegerValue(obj);
     if (objVal != expected) {
         fprintf(stderr, "object has wrong value. got=%lld want %lld", objVal, expected);
         return false;
@@ -47,13 +47,13 @@ static bool testIntegerObject(MKYObject *obj, int64_t expected) {
     return true;
 }
 
-static bool testbooleanObject(MKYObject *obj, bool expected) {
+static bool testbooleanObject(MkyObject *obj, bool expected) {
     if (!obj || obj->type != BOOLEAN_OBJ) {
         fprintf(stderr, "object is not boolean. got=%s\n", obj ? MkyObjectTypeNames[obj->type] : "<nil>");
         return false;
     }
 
-    bool objVal = ((mky_boolean_t *)obj)->value;
+    bool objVal = mkyBooleanValue(obj);
     if (objVal != expected) {
         fprintf(stderr, "object has wrong value. got=%s want %s", objVal ? "true" : "false", expected ? "true" : "false");
         return false;
@@ -62,8 +62,8 @@ static bool testbooleanObject(MKYObject *obj, bool expected) {
     return true;
 }
 
-static bool testNullObject(MKYObject *obj) {
-    if (obj && obj != objNull()) {
+static bool testNullObject(MkyObject *obj) {
+    if (obj && obj != mkyNull()) {
         fprintf(stderr, "object is not null. got=%s\n", obj ? MkyObjectTypeNames[obj->type] : "<nil>");
         return false;
     }
@@ -71,6 +71,7 @@ static bool testNullObject(MKYObject *obj) {
 }
 
 UTEST(eval, integerExpression) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         int64_t expected;
@@ -94,12 +95,14 @@ UTEST(eval, integerExpression) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, booleanExpression) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         bool expected;
@@ -127,12 +130,14 @@ UTEST(eval, booleanExpression) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testbooleanObject(evaluated, test.expected));
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, bangOperator) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         bool expected;
@@ -147,12 +152,14 @@ UTEST(eval, bangOperator) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testbooleanObject(evaluated, test.expected));
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, ifElseExpressions) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     typedef enum {
         NONE,
         INT,
@@ -186,7 +193,7 @@ UTEST(eval, ifElseExpressions) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         if (test.expected.type == INT) {
             ASSERT_TRUE(testIntegerObject(evaluated, test.expected.intVal));
 
@@ -194,9 +201,11 @@ UTEST(eval, ifElseExpressions) {
             ASSERT_TRUE(testNullObject(evaluated));
         }
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, returnStatements) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         int64_t expected;
@@ -237,9 +246,10 @@ UTEST(eval, returnStatements) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, errorHandling) {
@@ -308,10 +318,9 @@ UTEST(eval, errorHandling) {
     autoreleasepool(
      for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
          struct test test = tests[i];
-         MKYObject *evaluated = testEval(test.input);
+         MkyObject *evaluated = testEval(test.input);
          if (ERROR_OBJ == evaluated->type) {
-             mky_error_t *error = (mky_error_t *)evaluated;
-             EXPECT_STRNEQ(test.expected, CString(error->message), strlen(test.expected));
+             EXPECT_STRNEQ(test.expected, CString(mkyErrorMessage(evaluated)), strlen(test.expected));
 
          } else {
              EXPECT_STREQ(MkyObjectTypeNames[ERROR_OBJ], MkyObjectTypeNames[evaluated->type]);
@@ -321,6 +330,7 @@ UTEST(eval, errorHandling) {
 }
 
 UTEST(eval, letStatements) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         int64_t expected;
@@ -333,33 +343,35 @@ UTEST(eval, letStatements) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, functionObject) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
     StringRef input =  StringWithFormat("fn(x) { x + 2; };");
-    MKYObject *evaluated = testEval(CString(input));
+    MkyObject *evaluated = testEval(CString(input));
 
     ASSERT_TRUE(evaluated);
     ASSERT_STREQ(MkyObjectTypeNames[FUNCTION_OBJ], MkyObjectTypeNames[evaluated->type]);
 
-    mky_function_t *fn = (mky_function_t *)evaluated;
-    ASSERT_TRUE(fn->parameters);
-    ASSERT_EQ(1, arrlen(fn->parameters));
+    MkyFunctionRef fn = (MkyFunctionRef)evaluated;
+    ASSERT_TRUE(mkyFunctionParameters(fn));
+    ASSERT_EQ(1, arrlen(mkyFunctionParameters(fn)));
 
-    StringRef str = ASTN_STRING(fn->parameters[0]);
+    StringRef str = ASTN_STRING(mkyFunctionParameters(fn)[0]);
     ASSERT_STRNEQ("x", CString(str), 1);
 
     const char *expectedBody = "(x + 2)";
-    str = ASTN_STRING(fn->body);
+    str = ASTN_STRING(mkyFunctionBody(fn));
     ASSERT_STRNEQ(expectedBody, CString(str), strlen(expectedBody));
     RCRelease(pool);
 }
 
 UTEST(eval, functionApplication) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         int64_t expected;
@@ -374,12 +386,14 @@ UTEST(eval, functionApplication) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, testClosures) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input = MONKEY(
                                let newAdder = fn(x) {
                                    fn(y) { x + y };
@@ -387,29 +401,30 @@ UTEST(eval, testClosures) {
                                let addTwo = newAdder(2);
                                addTwo(2);
                                );
-    MKYObject *evaluated = testEval(input);
+    MkyObject *evaluated = testEval(input);
     ASSERT_TRUE(testIntegerObject(evaluated, 4));
+    RCRelease(pool);
 }
 
 UTEST(eval, stringLiteral) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input = "\"Hello World\"";
-    MKYObject *evaluated = testEval(input);
+    MkyObject *evaluated = testEval(input);
     
     ASSERT_STREQ(MkyObjectTypeNames[STRING_OBJ], MkyObjectTypeNames[evaluated->type]);
 
-    mky_string_t *str = (mky_string_t *)evaluated;
-    ASSERT_STREQ("Hello World", CString(str->value));
+    ASSERT_STREQ("Hello World", CString(mkyStringValue(evaluated)));
+    pool = RCRelease(pool);
 }
 
 UTEST(eval, stringConcatenation) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input = MONKEY("Hello" + " " + "World!");
-    MKYObject *evaluated = testEval(input);
+    MkyObject *evaluated = testEval(input);
 
     ASSERT_STREQ(MkyObjectTypeNames[STRING_OBJ], MkyObjectTypeNames[evaluated->type]);
 
-    mky_string_t *str = (mky_string_t *)evaluated;
-    ASSERT_STREQ("Hello World!", CString(str->value));
+    ASSERT_STREQ("Hello World!", CString(mkyStringValue(evaluated)));
     RCRelease(pool);
 }
 
@@ -434,7 +449,7 @@ UTEST(eval, builtinFunctions) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
 
         switch (test.expectedType) {
             case 0:
@@ -444,9 +459,8 @@ UTEST(eval, builtinFunctions) {
             case 1: {
                 EXPECT_STREQ(MkyObjectTypeNames[ERROR_OBJ], MkyObjectTypeNames[evaluated->type]);
 
-                if (evaluated->type == ERROR_OBJ) {
-                    mky_error_t *err = (mky_error_t *)evaluated;
-                    EXPECT_STREQ(test.string, CString(err->message));
+                if (evaluated->type == ERROR_OBJ) {                    
+                    EXPECT_STREQ(test.string, CString(mkyErrorMessage(evaluated)));
                 }
             }
                 break;
@@ -456,20 +470,24 @@ UTEST(eval, builtinFunctions) {
 }
 
 UTEST(eval, arrayLiteral) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     const char *input = "[1, 2 * 2, 3 + 3]";
-    MKYObject *evaluated = testEval(input);
+    MkyObject *evaluated = testEval(input);
 
     ASSERT_STREQ(MkyObjectTypeNames[ARRAY_OBJ], MkyObjectTypeNames[evaluated->type]);
 
-    mky_array_t *array = (mky_array_t *)evaluated;
-    ASSERT_EQ(3, arrlen(array->elements));
+    MkyArrayRef array = (MkyArrayRef)evaluated;
+    ASSERT_EQ(3, ArrayCount(mkyArrayElements(array)));
 
-    ASSERT_TRUE(testIntegerObject(array->elements[0], 1));
-    ASSERT_TRUE(testIntegerObject(array->elements[1], 4));
-    ASSERT_TRUE(testIntegerObject(array->elements[2], 6));
+    ArrayRef elements = mkyArrayElements(array);
+    ASSERT_TRUE(testIntegerObject(ArrayObjectAt(elements, 0), 1));
+    ASSERT_TRUE(testIntegerObject(ArrayObjectAt(elements, 1), 4));
+    ASSERT_TRUE(testIntegerObject(ArrayObjectAt(elements, 2), 6));
+    RCRelease(pool);
 }
 
 UTEST(eval, arrayIndexExpressions) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         int64_t expected; // using 0 as null
@@ -519,7 +537,7 @@ UTEST(eval, arrayIndexExpressions) {
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
 
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         if (test.expected > 0) {
             ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
 
@@ -527,6 +545,7 @@ UTEST(eval, arrayIndexExpressions) {
             ASSERT_TRUE(testNullObject(evaluated));
         }
     }
+    RCRelease(pool);
 }
 
 UTEST(eval, hashLiterals) {
@@ -544,41 +563,37 @@ UTEST(eval, hashLiterals) {
            }
            );
 
-    MKYObject *evaluated = testEval(input);
+    MkyObject *evaluated = testEval(input);
     ASSERT_TRUE(evaluated);
 
     ASSERT_STREQ(MkyObjectTypeNames[HASH_OBJ], MkyObjectTypeNames[evaluated->type]);
-    mky_hash_t *hash = (mky_hash_t *)evaluated;
+    MkyHashRef hash = (MkyHashRef)evaluated;
 
-    struct kv {
-        MkyHashKey key;
-        int64_t value;
-    };
-    struct kv *expected = NULL;
+    DictionaryRef expected = Dictionary();
+    DictionarySetObjectForKey(expected, mkyString(StringWithFormat("one")), mkyInteger(1));
+    DictionarySetObjectForKey(expected, mkyString(StringWithFormat("two")), mkyInteger(2));
+    DictionarySetObjectForKey(expected, mkyString(StringWithFormat("three")), mkyInteger(3));
+    DictionarySetObjectForKey(expected, mkyInteger(4), mkyInteger(4));
+    DictionarySetObjectForKey(expected, mkyBoolean(true), mkyInteger(5));
+    DictionarySetObjectForKey(expected, mkyBoolean(false), mkyInteger(6));
 
-    hmput(expected, OBJ_HASHKEY(objStringCreate(StringWithFormat("one"))), 1);
-    hmput(expected, OBJ_HASHKEY(objStringCreate(StringWithFormat("two"))), 2);
-    hmput(expected, OBJ_HASHKEY(objStringCreate(StringWithFormat("three"))), 3);
-    hmput(expected, OBJ_HASHKEY(objIntegerCreate(4)), 4);
-    hmput(expected, OBJ_HASHKEY(objBoolean(true)), 5);
-    hmput(expected, OBJ_HASHKEY(objBoolean(false)), 6);
+    DictionaryRef pairs = mkyHashPairs(hash);
+    ASSERT_EQ(DictionaryCount(pairs), DictionaryCount(expected));
 
-    ASSERT_EQ(hmlen(hash->pairs), hmlen(expected));
+    for (int i = 0; i < DictionaryCount(expected); i++) {
+        ObjectPairRef kv = DictionaryKeyValueAtIndex(expected, i);
 
-    for (int i = 0; i < hmlen(expected); i++) {
-        struct kv expvalue = expected[i];
-
-        objmap_t *value = hmgetp_null(hash->pairs, expvalue.key);
-        ASSERT_TRUE(HashkeyEquals(hash->pairs[i].key, expvalue.key));
+        MkyObject *value = DictionaryObjectForKey(pairs, objectPairFirst(kv));
         ASSERT_TRUE(value);
 
-        ASSERT_TRUE(testIntegerObject(value->value.value, expvalue.value));
+        ASSERT_TRUE(testIntegerObject(value, mkyIntegerValue(objectPairSecond(kv))));
     }
 
     RCRelease(pool);
 }
 
 UTEST(eval, hashIndexedExpression) {
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
     struct test {
         const char *input;
         int64_t expected; // using 0 as null
@@ -616,7 +631,7 @@ UTEST(eval, hashIndexedExpression) {
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
 
-        MKYObject *evaluated = testEval(test.input);
+        MkyObject *evaluated = testEval(test.input);
         if (test.expected > 0) {
             ASSERT_TRUE(testIntegerObject(evaluated, test.expected));
 
@@ -624,6 +639,7 @@ UTEST(eval, hashIndexedExpression) {
             ASSERT_TRUE(testNullObject(evaluated));
         }
     }
+    RCRelease(pool);
 }
 
 #ifndef AR_COMPOUND_TEST

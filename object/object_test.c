@@ -12,14 +12,14 @@
 UTEST(object, stringHashKeys) {
     AutoreleasePoolRef pool = AutoreleasePoolCreate();
 
-    mky_string_t *hello1 = objStringCreate(StringWithFormat("Hello World"));
-    mky_string_t *hello2 = objStringCreate(StringWithFormat("Hello World"));
-    mky_string_t *diff1 = objStringCreate(StringWithFormat("My name is johnny"));
-    mky_string_t *diff2 = objStringCreate(StringWithFormat("My name is johnny"));
+    MkyObject *hello1 = mkyString(StringWithFormat("Hello World"));
+    MkyObject *hello2 = mkyString(StringWithFormat("Hello World"));
+    MkyObject *diff1 = mkyString(StringWithFormat("My name is johnny"));
+    MkyObject *diff2 = mkyString(StringWithFormat("My name is johnny"));
 
-    ASSERT_TRUE(HashkeyEquals(OBJ_HASHKEY(hello1), OBJ_HASHKEY(hello2)));
-    ASSERT_TRUE(HashkeyEquals(OBJ_HASHKEY(diff1), OBJ_HASHKEY(diff2)));
-    ASSERT_FALSE(HashkeyEquals(OBJ_HASHKEY(hello1), OBJ_HASHKEY(diff1)));
+    ASSERT_TRUE(HashkeyEquals(mkyHashKey(hello1), mkyHashKey(hello2)));
+    ASSERT_TRUE(HashkeyEquals(mkyHashKey(diff1), mkyHashKey(diff2)));
+    ASSERT_FALSE(HashkeyEquals(mkyHashKey(hello1), mkyHashKey(diff1)));
 
     RCRelease(pool);
 }

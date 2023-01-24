@@ -40,95 +40,72 @@ static const char *MkyObjectTypeNames[] = {
 };
 #undef OBJ
 
+// these are pretty much unused...
 typedef struct {
     MkyObjectType type;
     uint64_t value;
 } __attribute__((packed)) MkyHashKey; // packed because it is used as a key and padding _can_ have random data
 
-#define OBJ_HASHKEY(obj) ((obj)->super.hashkey ? (obj)->super.hashkey(&(obj)->super) : (MkyHashKey){ 0, 0 })
 AR_INLINE bool HashkeyEquals(MkyHashKey a, MkyHashKey b) {
     return a.type == b.type && a.value == b.value;
 }
 
-typedef struct MKYObject MKYObject;
-typedef StringRef inspect_fn(MKYObject *obj);
-typedef MkyHashKey hashkey_fn(MKYObject *obj);
+typedef struct MkyObject MkyObject;
+typedef StringRef inspect_fn(MkyObject *obj);
+typedef MkyHashKey hashkey_fn(MkyObject *obj);
 
-struct MKYObject {
+struct MkyObject {
     MkyObjectType type;
     inspect_fn *inspect;
     hashkey_fn *hashkey;
 };
 
-typedef struct {
-    MKYObject super;
-    int64_t value;
-} mky_integer_t;
-mky_integer_t *objIntegerCreate(int64_t value);
+StringRef mkyInspect(MkyObject *obj);
+MkyHashKey mkyHashKey(MkyObject *obj);
+bool mkyIsHashable(MkyObject *obj);
+MkyObject *mkyNull(void);
 
-// union these instead?
+typedef struct MkyBoolean *MkyBooleanRef;
+MkyObject *mkyBoolean(bool value);
+bool mkyBooleanValue(MkyObject *self);
+void mkyBooleanSetValue(MkyObject *self, bool value);
 
-typedef struct {
-    MKYObject super;
-    bool value;
-} mky_boolean_t;
-mky_boolean_t *objBoolean(bool value);
-MKYObject *objNull(void);
+typedef struct MkyInteger *MkyIntegerRef;
+MkyObject *mkyInteger(int64_t value);
+int64_t mkyIntegerValue(MkyObject *self);
+void mkyIntegerSetValue(MkyObject *self, int64_t value);
 
-typedef struct {
-    MKYObject super;
-    MKYObject *value;
-} mky_returnvalue_t;
-mky_returnvalue_t *returnValueCreate(MKYObject *value);
+typedef struct MkyString *MkyStringRef;
+MkyObject *mkyString(StringRef value);
+StringRef mkyStringValue(MkyObject *self);
+void mkyStringSetValue(MkyObject *self, StringRef value);
 
-typedef struct {
-    MKYObject super;
-    StringRef message;
-} mky_error_t;
-mky_error_t *errorCreate(StringRef message);
+typedef struct MkyReturnValue *MkyReturnValueRef;
+MkyObject *mkyReturnValue(MkyObject *value);
+MkyObject *mkyReturnValueValue(MkyObject *self);
+void mkyReturnValueSetValue(MkyObject *self, MkyObject *value);
 
-typedef struct {
-    MKYObject super;
-    astidentifier_t **parameters;
-    astblockstatement_t *body;
-    MKYEnvironmentRef env;
-} mky_function_t;
-mky_function_t *functionCrate(astidentifier_t **parameters, astblockstatement_t *body, MKYEnvironmentRef env);
+typedef struct MkyError *MkyErrorRef;
+MkyObject *mkyError(StringRef message);
+StringRef mkyErrorMessage(MkyObject *self);
 
-typedef struct {
-    MKYObject super;
-    StringRef value;
-} mky_string_t;
-mky_string_t *objStringCreate(StringRef value);
+typedef struct MkyFunction *MkyFunctionRef;
+MkyObject *mkyFunction(astidentifier_t **parameters, astblockstatement_t *body, MkyEnvironmentRef env);
+astidentifier_t **mkyFunctionParameters(MkyFunctionRef self);
+astblockstatement_t *mkyFunctionBody(MkyFunctionRef self);
+MkyEnvironmentRef mkyFunctionEnv(MkyFunctionRef self);
 
-typedef MKYObject *builtin_fn(MKYObject **args);
-typedef struct {
-    MKYObject super;
-    builtin_fn *fn;
-} mky_builtin_t;
-mky_builtin_t *builtInCreate(builtin_fn *builtin);
+typedef struct MkyArray *MkyArrayRef;
+MkyObject *mkyArray(ArrayRef elements);
+ArrayRef mkyArrayElements(MkyArrayRef self);
 
-typedef struct {
-    MKYObject super;
-    MKYObject **elements;
-} mky_array_t;
-mky_array_t *objArrayCreate(MKYObject **elements);
+typedef MkyObject *builtin_fn(ArrayRef args);
+typedef struct MkyBuiltin *MkyBuiltinRef;
+MkyObject *mkyBuiltIn(builtin_fn *builtin);
+builtin_fn *mkyBuiltInFn(MkyObject *self);
 
-typedef struct {
-    MKYObject *key;
-    MKYObject *value;
-} hashpair_t;
-#define HASHPAIR(k,v) ((hashpair_t){(k),(v)})
-
-typedef struct {
-    MkyHashKey key;
-    hashpair_t value;
-} objmap_t;
-
-typedef struct {
-    MKYObject super;
-    objmap_t *pairs;
-} mky_hash_t;
-mky_hash_t *objHashCreate(objmap_t *pairs);
+typedef struct MkyHash *MkyHashRef;
+MkyObject *mkyHash(DictionaryRef pairs);
+DictionaryRef mkyHashPairs(MkyHashRef self);
 
 #endif /* _object_h_ */

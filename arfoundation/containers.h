@@ -10,6 +10,14 @@
 
 #include "runtime.h"
 
+#pragma mark - pair
+
+typedef struct ObjectPair *ObjectPairRef;
+void ObjectPairInitialize(void);
+ObjectPairRef objectPairWithObjects(RCTypeRef first, RCTypeRef second);
+RCTypeRef objectPairFirst(ObjectPairRef pair);
+RCTypeRef objectPairSecond(ObjectPairRef pair);
+
 #pragma mark - array
 typedef struct ARArray *ArrayRef;
 
@@ -22,12 +30,9 @@ size_t ArrayCount(ArrayRef array);
 void ArrayAppend(ArrayRef array, RCTypeRef obj);
 void ArrayRemoveAll(ArrayRef array);
 void ArrayRemoveAt(ArrayRef array, size_t index);
+RCTypeRef ArrayFirst(ArrayRef array);
 
 #pragma mark - dictionary
-typedef struct {
-    RCTypeRef *key;
-    RCTypeRef *value;
-} DictKeyValue;
 
 typedef struct ARDictionary *DictionaryRef;
 
@@ -38,6 +43,6 @@ DictionaryRef Dictionary(void);
 RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key);
 size_t DictionaryCount(DictionaryRef dict);
 void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef value);
-DictKeyValue DictionaryKeyValueAtIndex(DictionaryRef dict, size_t index);
+ObjectPairRef DictionaryKeyValueAtIndex(DictionaryRef dict, size_t index);
 
 #endif /* containers_h */

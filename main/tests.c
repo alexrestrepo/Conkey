@@ -25,10 +25,11 @@
 #include "../object/object_test.c"
 #include "../parser/parser_test.c"
 
+#if 0
 UTEST(perf, fibonacciRecursive) {
 	AutoreleasePoolRef ap = AutoreleasePoolCreate();
 	const char *input = MONKEY(
-		let rounds = 10;
+		let rounds = 15;
 		let fibonacci = fn(x) {
 			if (x < 2) {
 				return x;
@@ -51,5 +52,6 @@ UTEST(perf, fibonacciRecursive) {
 	}
 	RCRelease(ap);
 }
+#endif
 
 UTEST_MAIN();
