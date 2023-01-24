@@ -991,4 +991,6 @@ UTEST(parser, hashLiteralsWithExpressions) {
     RCRelease(autoreleasepool);
 }
 
+#ifndef AR_COMPOUND_TEST
 UTEST_MAIN();
+#endif

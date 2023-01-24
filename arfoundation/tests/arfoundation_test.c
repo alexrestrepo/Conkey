@@ -181,4 +181,6 @@ UTEST(arfoundation, containers) {
     ASSERT_EQ(NULL, another);
 }
 
+#ifndef AR_COMPOUND_TEST
 UTEST_MAIN();
+#endif

@@ -23,4 +23,6 @@ UTEST(ast, testString) {
     );
 }
 
+#ifndef AR_COMPOUND_TEST
 UTEST_MAIN();
+#endif

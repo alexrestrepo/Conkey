@@ -24,4 +24,6 @@ UTEST(object, stringHashKeys) {
     RCRelease(pool);
 }
 
+#ifndef AR_COMPOUND_TEST
 UTEST_MAIN();
+#endif

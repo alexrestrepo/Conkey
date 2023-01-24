@@ -36,20 +36,19 @@ void printParserErrors(StringRef *errors) {
 }
 
 void replStart() {
-	char line[1024];
+    char line[1024];
     MKYEnvironmentRef env = environmentCreate();
 
     AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
-    while (true) {
-
-		// printf("\033[32m>> \033[0m");
+    while (true) {        
+        // printf("\033[32m>> \033[0m");
         printf(">> ");
-		if (!fgets(line, sizeof(line), stdin)) {
-			printf("\n");
-			break;
-		}
-		
-		lexer_t *lexer = lexerCreate(line);
+        if (!fgets(line, sizeof(line), stdin)) {
+            printf("\n");
+            break;
+        }
+
+        lexer_t *lexer = lexerCreate(line);
         parser_t *parser = parserCreate(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
@@ -59,14 +58,14 @@ void replStart() {
         }
 
         MKYObject *evaluated = mkyeval(AS_NODE(program), env);
-        if (evaluated) {            
+        if (evaluated) {
             printf("%s\n", CString(evaluated->inspect(evaluated)));
         }
 
-//        parserRelease(&parser);
-//		  lexerRelease(&lexer);
+        //        parserRelease(&parser);
+        //		  lexerRelease(&lexer);
 
         AutoreleasePoolDrain(autoreleasepool);
-	}
+    }
     autoreleasepool = RCRelease(autoreleasepool);
 }
