@@ -43,7 +43,7 @@ static const char *MkyObjectTypeNames[] = {
 typedef struct {
     MkyObjectType type;
     uint64_t value;
-} __attribute__((packed))  MkyHashKey; // packed because it is used as a key and padding _can_ have random data
+} __attribute__((packed)) MkyHashKey; // packed because it is used as a key and padding _can_ have random data
 
 #define OBJ_HASHKEY(obj) ((obj)->super.hashkey ? (obj)->super.hashkey(&(obj)->super) : (MkyHashKey){ 0, 0 })
 AR_INLINE bool HashkeyEquals(MkyHashKey a, MkyHashKey b) {

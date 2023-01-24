@@ -37,7 +37,7 @@ void printParserErrors(StringRef *errors) {
 
 void replStart() {
 	char line[1024];
-    MKYEnvironment *env = environmentCreate();
+    MKYEnvironmentRef env = environmentCreate();
 
     AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     while (true) {

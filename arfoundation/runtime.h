@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
     RuntimeClassID id;
     uint64_t hash;
-} RuntimeHashValue;
+} __attribute__((packed)) RuntimeHashValue;
 
 // RC as in refcounted?
 typedef void *RCTypeRef;
@@ -49,12 +49,12 @@ typedef StringRef description_fn(RCTypeRef obj);
 typedef uint64_t hash_fn(RCTypeRef obj);
 
 typedef struct {
-    const char *classname;
-    size_t size; // descriptor only
-    constructor_fn *constructor;
-    destructor_fn *destructor;
-    description_fn *description;
-    hash_fn *hash;
+    const char      *classname;
+    size_t          size; // data/class size only
+    constructor_fn  *constructor;
+    destructor_fn   *destructor;
+    description_fn  *description;
+    hash_fn         *hash;
     // equals?
 } RuntimeClassDescriptor;
 

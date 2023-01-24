@@ -35,6 +35,7 @@ typedef enum {
 } astnode_type;
 
 // TODO: a tree structure dump?
+// NOTE: vtable maybe? https://nullprogram.com/blog/2014/10/21/
 
 typedef struct astnode astnode_t;
 typedef StringRef literal_fn(astnode_t *node);
