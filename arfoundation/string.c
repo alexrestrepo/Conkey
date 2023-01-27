@@ -27,7 +27,7 @@ static StringRef ARStringDescription(RCTypeRef str) {
 
 static uint64_t ARStringHash(RCTypeRef str) {
     StringRef self = str;
-    return stbds_hash_string((char *)CString(self), AR_RUNTIME_HASH_SEED);
+    return stbds_hash_string(self->cstr ? (char *)self->cstr : "", AR_RUNTIME_HASH_SEED);
 }
 
 static RuntimeClassDescriptor ARStringClass = {

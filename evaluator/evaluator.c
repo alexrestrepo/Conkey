@@ -360,7 +360,7 @@ static MkyObject *evalIdentifier(astidentifier_t *ident, MkyEnvironmentRef env) 
     return mkyError(StringWithFormat("identifier not found: %s", CString(ident->value)));
 }
 
-MkyObject *mkyEval(astnode_t *node, MkyEnvironmentRef env) {
+MkyObject *eval(astnode_t *node, MkyEnvironmentRef env) {
     switch (node->type) {
         case AST_PROGRAM:
             return evalProgram((astprogram_t *)node, env);
@@ -496,4 +496,26 @@ MkyObject *mkyEval(astnode_t *node, MkyEnvironmentRef env) {
 
     }
     return NULL;
+}
+
+MkyObject *mkyEval(astnode_t *node, MkyEnvironmentRef env) {
+#if 1
+    static uint64_t count = 0;
+
+    if (count++ % 16 == 0) {
+        MkyObject *obj = NULL;
+        AutoreleasePoolRef pool = AutoreleasePoolCreate();
+
+        obj = eval(node, env);
+        obj = RCRetain(obj);
+
+        RCRelease(pool);
+        return RCAutorelease(obj);
+    } else {
+        return eval(node, env);
+    }
+
+#else
+    return eval(node, env);
+#endif
 }
