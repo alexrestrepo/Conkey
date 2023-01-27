@@ -16,6 +16,13 @@
 #define RC_PRINT_RETAIN_RELEASE 0 // needs above set to 1
 // TODO: zombies!
 
+#define RC_RUNTIME_ATOMIC 1
+#if RC_RUNTIME_ATOMIC
+#define RCATOMIC _Atomic
+#else
+#define RCATOMIC volatile
+#endif
+
 extern const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE;
 extern const uint64_t AR_RUNTIME_NOT_OBJECT;
 extern const size_t AR_RUNTIME_HASH_SEED;
@@ -27,7 +34,7 @@ static const RuntimeClassID NO_CLASS_ID = { 0 };
 
 typedef struct {
     // I can add a _isa_ here which points to RuntimeClassDescriptor? if none, add one?
-    _Atomic int64_t     refcount;
+    RCATOMIC int64_t     refcount;
     uint64_t            allocid;
     size_t              size; // allocation size (base + descriptor.size)
     RuntimeClassID      classid;

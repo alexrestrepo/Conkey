@@ -70,3 +70,7 @@ MkyEnvironmentRef environmentCreateEnclosedIn(MkyEnvironmentRef outer) {
     env->outer = RCRetain(outer);
     return env;
 }
+
+void environmentClear(MkyEnvironmentRef env) {
+    DictionaryRemoveAll(env->store);
+}

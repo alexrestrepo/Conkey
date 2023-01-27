@@ -17,7 +17,7 @@ static MkyObject *evalProgram(astprogram_t *program, MkyEnvironmentRef env) {
     MkyObject *result = NULL;
 
     for (int i = 0; i < arrlen(program->statements); i++) {
-        result = mkyeval((astnode_t *)program->statements[i], env);
+        result = mkyEval((astnode_t *)program->statements[i], env);
         if (result && result->type == RETURN_VALUE_OBJ) {
             return mkyReturnValueValue(result);
 
@@ -32,7 +32,7 @@ static MkyObject *evalBlockStatement(astblockstatement_t *block, MkyEnvironmentR
     MkyObject *result = NULL;
 
     for (int i = 0; i < arrlen(block->statements); i++) {
-        result = mkyeval((astnode_t *)block->statements[i], env);
+        result = mkyEval((astnode_t *)block->statements[i], env);
         if (result && (result->type == RETURN_VALUE_OBJ || result->type == ERROR_OBJ) ) {
             return result;
         }
@@ -237,7 +237,7 @@ static MkyObject *evalHashLiteral(asthashliteral_t *node, MkyEnvironmentRef env)
     DictionaryRef pairs = Dictionary();
     for (int i = 0; i < hmlen(node->pairs); i++) {
         pairs_t pair = node->pairs[i];
-        MkyObject *key = mkyeval(AS_NODE(pair.key), env);
+        MkyObject *key = mkyEval(AS_NODE(pair.key), env);
         if (key->type == ERROR_OBJ) {
             return key;
         }
@@ -247,7 +247,7 @@ static MkyObject *evalHashLiteral(asthashliteral_t *node, MkyEnvironmentRef env)
                                              MkyObjectTypeNames[key->type]));
         }
 
-        MkyObject *value = mkyeval(AS_NODE(pair.value), env);
+        MkyObject *value = mkyEval(AS_NODE(pair.value), env);
         if (value->type == ERROR_OBJ) {
             return value;
         }
@@ -278,16 +278,16 @@ static bool isTruthy(MkyObject *value) {
 }
 
 static MkyObject *evalIfExpression(astifexpression_t *exp, MkyEnvironmentRef env) {
-    MkyObject *condition = mkyeval(AS_NODE(exp->condition), env);
+    MkyObject *condition = mkyEval(AS_NODE(exp->condition), env);
     if (condition->type == ERROR_OBJ) {
         return condition;
     }
 
     if (isTruthy(condition)) {
-        return mkyeval(AS_NODE(exp->consequence), env);
+        return mkyEval(AS_NODE(exp->consequence), env);
 
     } else if (exp->alternative) {
-        return mkyeval(AS_NODE(exp->alternative), env);
+        return mkyEval(AS_NODE(exp->alternative), env);
     }
 
     return mkyNull();
@@ -318,7 +318,7 @@ static MkyObject *applyFunction(MkyObject *fn, ArrayRef args) {
     if (fn->type == FUNCTION_OBJ) {
         MkyFunctionRef function = (MkyFunctionRef)fn;
         MkyEnvironmentRef extendedEnv = extendFunctionEnv(function, args);
-        MkyObject *evaluated = mkyeval(AS_NODE(mkyFunctionBody(function)), extendedEnv);
+        MkyObject *evaluated = mkyEval(AS_NODE(mkyFunctionBody(function)), extendedEnv);
         return unwrapReturnValue(evaluated);
 
     } else if (fn->type == BUILTIN_OBJ) {
@@ -333,7 +333,7 @@ static ArrayRef evalExpressions(astexpression_t **exps, MkyEnvironmentRef env) {
     if (exps) {
         result = Array();
         for (int i = 0; i < arrlen(exps); i++) {
-            MkyObject *evaluated = mkyeval(AS_NODE(exps[i]), env);
+            MkyObject *evaluated = mkyEval(AS_NODE(exps[i]), env);
             if (evaluated && evaluated->type == ERROR_OBJ) {
                 ArrayRemoveAll(result);
                 ArrayAppend(result, evaluated);
@@ -360,7 +360,7 @@ static MkyObject *evalIdentifier(astidentifier_t *ident, MkyEnvironmentRef env) 
     return mkyError(StringWithFormat("identifier not found: %s", CString(ident->value)));
 }
 
-MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
+MkyObject *mkyEval(astnode_t *node, MkyEnvironmentRef env) {
     switch (node->type) {
         case AST_PROGRAM:
             return evalProgram((astprogram_t *)node, env);
@@ -368,7 +368,7 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
 // statements
         case AST_LET: {
             astletstatement_t *let = (astletstatement_t *)node;
-            MkyObject *val = mkyeval(AS_NODE(let->value), env);
+            MkyObject *val = mkyEval(AS_NODE(let->value), env);
             if (val && val->type == ERROR_OBJ) {
                 return val;
             }
@@ -380,7 +380,7 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
 
         case AST_RETURN: {
             astexpression_t *rs = ((astreturnstatement_t *)node)->returnValue;
-            MkyObject *val = mkyeval(AS_NODE(rs), env);
+            MkyObject *val = mkyEval(AS_NODE(rs), env);
             if (val->type == ERROR_OBJ) {
                 return val;
             }
@@ -389,7 +389,7 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
             break;
 
         case AST_EXPRESSIONSTMT:
-            return mkyeval(AS_NODE(((astexpressionstatement_t *)node)->expression), env);
+            return mkyEval(AS_NODE(((astexpressionstatement_t *)node)->expression), env);
             break;
 
         case AST_BLOCKSTMT:
@@ -408,7 +408,7 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
 
         case AST_PREFIXEXPR: {
             astprefixexpression_t *exp = (astprefixexpression_t *)node;
-            MkyObject *right = mkyeval(AS_NODE(exp->right), env);
+            MkyObject *right = mkyEval(AS_NODE(exp->right), env);
             if (right->type == ERROR_OBJ) {
                 return right;
             }
@@ -417,11 +417,11 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
             break;
 
         case AST_INFIXEXPR: {
-            MkyObject *left = mkyeval(AS_NODE(((astinfixexpression_t *)node)->left), env);
+            MkyObject *left = mkyEval(AS_NODE(((astinfixexpression_t *)node)->left), env);
             if (left->type == ERROR_OBJ) {
                 return left;
             }
-            MkyObject *right = mkyeval(AS_NODE(((astinfixexpression_t *)node)->right), env);
+            MkyObject *right = mkyEval(AS_NODE(((astinfixexpression_t *)node)->right), env);
             if (right->type == ERROR_OBJ) {
                 return right;
             }
@@ -445,7 +445,7 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
 
         case AST_CALL: {
             astcallexpression_t *call = (astcallexpression_t *)node;
-            MkyObject *function = mkyeval(AS_NODE(call->function), env);
+            MkyObject *function = mkyEval(AS_NODE(call->function), env);
             if (function->type == ERROR_OBJ) {
                 return function;
             }
@@ -478,11 +478,11 @@ MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env) {
 
         case AST_INDEXEXP: {
             astindexexpression_t *exp = (astindexexpression_t *)node;
-            MkyObject *left = mkyeval(AS_NODE(exp->left), env);
+            MkyObject *left = mkyEval(AS_NODE(exp->left), env);
             if (left->type == ERROR_OBJ) {
                 return left;
             }
-            MkyObject *idx = mkyeval(AS_NODE(exp->index), env);
+            MkyObject *idx = mkyEval(AS_NODE(exp->index), env);
             if (idx->type == ERROR_OBJ) {
                 return idx;
             }

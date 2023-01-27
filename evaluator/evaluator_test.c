@@ -5,6 +5,8 @@
 
 #include "evaluator.h"
 
+#include <assert.h>
+
 #include "../macros.h"
 #include "../ast/ast.h"
 #include "../arfoundation/arfoundation.h"
@@ -17,17 +19,17 @@
 static MkyObject *testEval(const char *input) {
     MkyObject *obj = mkyNull();
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
     MkyEnvironmentRef env = environmentCreate();
 
-    obj = mkyeval(AS_NODE(program), env);
+    obj = mkyEval(AS_NODE(program), env);
 
-    RCRelease(env);
+    environmentClear(env);
+    env = RCRelease(env);
+//    assert(env == NULL);
     programRelease(&program);
-    parserRelease(&parser);
-    lexerRelease(&lexer);
 
     return obj;
 }

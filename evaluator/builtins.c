@@ -1,7 +1,5 @@
 //
 //  builtins.c
-//  conkey
-//
 //  Created by Alex Restrepo on 1/18/23.
 //
 
@@ -18,7 +16,7 @@ typedef struct {
 
 static MkyObject *lenFn(ArrayRef args) {
     if (ArrayCount(args) != 1) {
-        return mkyError(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
+        return mkyError(StringWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
     }
 
     MkyObject *container = ArrayFirst(args);
@@ -31,17 +29,17 @@ static MkyObject *lenFn(ArrayRef args) {
         return mkyInteger(ArrayCount(mkyArrayElements(array)));
     }
 
-    return mkyError(StringCreateWithFormat("argument to 'len' not supported, got %s", MkyObjectTypeNames[container->type]));
+    return mkyError(StringWithFormat("argument to 'len' not supported, got %s", MkyObjectTypeNames[container->type]));
 }
 
 static MkyObject *firstFn(ArrayRef args) {
     if (ArrayCount(args) != 1) {
-        return mkyError(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
+        return mkyError(StringWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
     }
 
     MkyObject *container = ArrayFirst(args);
     if (container->type != ARRAY_OBJ) {
-        return mkyError(StringCreateWithFormat("argument to 'first' must be ARRAY, got %s", MkyObjectTypeNames[container->type]));
+        return mkyError(StringWithFormat("argument to 'first' must be ARRAY, got %s", MkyObjectTypeNames[container->type]));
     }
 
     MkyArrayRef array = (MkyArrayRef)container;
@@ -55,12 +53,12 @@ static MkyObject *firstFn(ArrayRef args) {
 
 static MkyObject *lastFn(ArrayRef args) {
     if (ArrayCount(args) != 1) {
-        return mkyError(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
+        return mkyError(StringWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
     }
 
     MkyObject *container = ArrayFirst(args);
     if (container->type != ARRAY_OBJ) {
-        return mkyError(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[container->type]));
+        return mkyError(StringWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[container->type]));
     }
 
     MkyArrayRef array = (MkyArrayRef)container;
@@ -74,12 +72,12 @@ static MkyObject *lastFn(ArrayRef args) {
 
 static MkyObject *restFn(ArrayRef args) {
     if (ArrayCount(args) != 1) {
-        return mkyError(StringCreateWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
+        return mkyError(StringWithFormat("wrong number of arguments. got=%ld, want=1", ArrayCount(args)));
     }
 
     MkyObject *container = ArrayFirst(args);
     if (container->type != ARRAY_OBJ) {
-        return mkyError(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[container->type]));
+        return mkyError(StringWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[container->type]));
     }
 
     MkyArrayRef array = (MkyArrayRef)container;
@@ -97,12 +95,12 @@ static MkyObject *restFn(ArrayRef args) {
 
 static MkyObject *pushFn(ArrayRef args) {
     if (ArrayCount(args) != 2) {
-        return mkyError(StringCreateWithFormat("wrong number of arguments. got=%ld, want=2", ArrayCount(args)));
+        return mkyError(StringWithFormat("wrong number of arguments. got=%ld, want=2", ArrayCount(args)));
     }
 
     MkyObject *first = ArrayFirst(args);
     if (first->type != ARRAY_OBJ) {
-        return mkyError(StringCreateWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[first->type]));
+        return mkyError(StringWithFormat("argument to 'last' must be ARRAY, got %s", MkyObjectTypeNames[first->type]));
     }
 
     MkyArrayRef array = (MkyArrayRef)first;

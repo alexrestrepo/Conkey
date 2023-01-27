@@ -43,6 +43,7 @@ DictionaryRef Dictionary(void);
 RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key);
 size_t DictionaryCount(DictionaryRef dict);
 void DictionarySetObjectForKey(DictionaryRef dict, RCTypeRef key, RCTypeRef value);
+void DictionaryRemoveObjectForKey(DictionaryRef dict, RCTypeRef key);
 ObjectPairRef DictionaryKeyValueAtIndex(DictionaryRef dict, size_t index);
-
+void DictionaryRemoveAll(DictionaryRef dict);
 #endif /* containers_h */

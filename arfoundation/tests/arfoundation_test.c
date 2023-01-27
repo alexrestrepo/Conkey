@@ -95,7 +95,7 @@ UTEST(arfoundation, autoreleasePool) {
     StringRef str = StringWithFormat("hello there");
     ASSERT_EQ(1, RuntimeRefCount(str));
     
-    str = RuntimeMakeConstant(str);
+    str = RuntimeMakeConstant(str); // this will "leak"
     ASSERT_EQ(AR_RUNTIME_REFCOUNT_UNRELEASABLE, RuntimeRefCount(str));
     
     //  fprintf(stderr, "str = [%s] %s\n", CString(RuntimeDescription(str)), CString(str));

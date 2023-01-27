@@ -12,6 +12,6 @@
 #include "../environment/environment.h"
 #include "../object/object.h"
 
-MkyObject *mkyeval(astnode_t *node, MkyEnvironmentRef env);
+MkyObject *mkyEval(astnode_t *node, MkyEnvironmentRef env);
 
 #endif /* evaluator_h */

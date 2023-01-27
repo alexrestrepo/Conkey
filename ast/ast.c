@@ -76,7 +76,7 @@ astidentifier_t *identifierCreate(token_t token, charslice_t value) {
     astidentifier_t *identifier = calloc(1, sizeof(*identifier));
     identifier->super.node = astnodeMake(AST_IDENTIFIER, identifierTokenLiteral, identifierString);
     identifier->token = token;
-    identifier->value = ARStringCreateWithSlice(value);
+    identifier->value = ARStringWithSlice(value);
     return identifier;
 }
 
@@ -407,7 +407,7 @@ aststringliteral_t *stringLiteralCreate(token_t token, charslice_t value) {
     aststringliteral_t *string = calloc(1, sizeof(*string));
     string->super.node = astnodeMake(AST_STRING, stringLiteralTokenLiteral, stringLiteralTokenLiteral);
     string->token = token;
-    string->value = ARStringCreateWithSlice(value);
+    string->value = ARStringWithSlice(value);
     return string;
 }
 

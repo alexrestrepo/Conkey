@@ -164,7 +164,7 @@ RCTypeRef ArrayFirst(ArrayRef array) {
 
 typedef struct {
     RuntimeHashValue key;
-    struct ObjectPair value;
+    struct ObjectPair value; // used as a struct, not an obj
 } DictType;
 
 struct ARDictionary {
@@ -175,14 +175,7 @@ static RuntimeClassID ARDictClassID = { 0 };
 
 static void ARDictDestructor(RCTypeRef dict) {
     DictionaryRef self = dict;
-    
-    for (size_t i = 0; i < hmlen(self->storage); i++) {
-        DictType obj = self->storage[i];
-        RCRelease(obj.value.first);
-        RCRelease(obj.value.second);
-    }
-    
-    hmfree(self->storage);
+    DictionaryRemoveAll(self);
 }
 
 static StringRef ARDictDescription(RCTypeRef dict) {
@@ -259,6 +252,19 @@ RCTypeRef DictionaryObjectForKey(DictionaryRef dict, RCTypeRef key) {
     return NULL;
 }
 
+void DictionaryRemoveObjectForKey(DictionaryRef dict, RCTypeRef key) {
+    assert(dict);
+    if (key) {
+        RuntimeHashValue hashKey = RuntimeHash(key);
+        DictType *value = hmgetp_null(dict->storage, hashKey);
+        if (value) {
+            RCRelease(value->value.first);
+            RCRelease(value->value.second);
+            hmdel(dict->storage, hashKey);
+        }
+    }
+}
+
 ObjectPairRef pairWithPairStruct(struct ObjectPair pair) {
     return objectPairWithObjects(pair.first, pair.second);
 }
@@ -276,4 +282,14 @@ size_t DictionaryCount(DictionaryRef dict) {
         return hmlen(dict->storage);
     }
     return 0;
+}
+
+void DictionaryRemoveAll(DictionaryRef self) {
+    for (size_t i = 0; i < hmlen(self->storage); i++) {
+        DictType obj = self->storage[i];
+        RCRelease(obj.value.first);
+        RCRelease(obj.value.second);
+    }
+    hmfree(self->storage);
+    self->storage = NULL;
 }

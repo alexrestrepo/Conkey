@@ -16,8 +16,6 @@ typedef struct {
 	char input[];
 } lexer_t;
 
-lexer_t *lexerCreate(const char *input);
-void lexerRelease(lexer_t **lexer);
-
+lexer_t *lexerWithInput(const char *input); // autoreleased, retain if needed.
 token_t lexerNextToken(lexer_t *lexer);
 #endif

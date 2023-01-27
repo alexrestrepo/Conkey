@@ -34,16 +34,10 @@ static op_precedence precedences[TOKEN_TYPE_COUNT] = {
     [TOKEN_LBRACKET] = PREC_INDEX,
 };
 
-void parserRelease(parser_t **parser) {
-    if (parser && *parser) {
-        if ((*parser)->errors) {
-            for (int i = 0; i < arrlen((*parser)->errors); i++) {
-                RCRelease((*parser)->errors[i]);
-            }
-        }
-        free(*parser);
-        *parser = NULL;
-    }
+static void parserDealloc(RCTypeRef obj) {
+    parser_t *self = obj;
+    self->lexer = RCRelease(self->lexer);
+    self->errors = RCRelease(self->errors);
 }
 
 void parserNextToken(parser_t *parser) {
@@ -54,7 +48,7 @@ void parserNextToken(parser_t *parser) {
 static void parserPeekError(parser_t *parser, token_type type) {
     StringRef error = StringCreateWithFormat("expected next token to be %s, got '%s' instead",
                                                  token_str[type], token_str[parser->peekToken.type]);
-    arrput(parser->errors, error);
+    ArrayAppend(parser->errors, error);
 }
 
 static op_precedence parserPeekPrecedence(parser_t *parser) {
@@ -75,7 +69,7 @@ static op_precedence parserCurrentPrecedence(parser_t *parser) {
 
 static void parserNoPrefixParseFnError(parser_t *parser, token_type token) {
     StringRef error = StringCreateWithFormat("no prefix parse function for '%s' found", token_str[token]);
-    arrput(parser->errors, error);
+    ArrayAppend(parser->errors, error);
 }
 
 static bool parserCurTokenIs(parser_t *parser, token_type type) {
@@ -401,9 +395,24 @@ void parserRegisterInfix(parser_t *parser, token_type type, infixParseFn *infixP
     parser->infixParseFns[type] = infixParseFn;
 }
 
-parser_t *parserCreate(lexer_t *lexer) {
-    parser_t *parser = ar_calloc(1, sizeof(*parser));
-    parser->lexer = lexer;
+static RuntimeClassID MkyParserClassID = { 0 };
+static RuntimeClassDescriptor MkyParserClass = {
+    "MkyParser",
+    sizeof(struct parser_t),
+    NULL, // const
+    parserDealloc,
+    NULL,
+    NULL
+};
+
+parser_t *parserWithLexer(lexer_t *lexer) {
+    if (MkyParserClassID.classID == 0) {
+        MkyParserClassID = RuntimeRegisterClass(&MkyParserClass);
+    }
+
+    parser_t *parser = RuntimeCreateInstance(MkyParserClassID);
+    parser->lexer = RCRetain(lexer);
+    parser->errors = ArrayCreate();
     
     // read 2 tokens so current and peek are set
     parserNextToken(parser);
@@ -432,5 +441,6 @@ parser_t *parserCreate(lexer_t *lexer) {
     parserRegisterInfix(parser, TOKEN_GT, parserParseInfixExpression);
     parserRegisterInfix(parser, TOKEN_LPAREN, parserParseCallExpression);
     parserRegisterInfix(parser, TOKEN_LBRACKET, parserParseIndexExpression);
-    return parser;
+
+    return RCAutorelease(parser);
 }

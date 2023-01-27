@@ -26,12 +26,12 @@ static const char *monkey_face =
 "         '._ '-=-' _.'\n"
 "            '-----'\n";
 
-void printParserErrors(StringRef *errors) {
+void printParserErrors(ArrayRef errors) {
     printf("%s", monkey_face);
     printf("Woops! We ran into some monkey business here!\n");
     printf(" Parser errors:\n");
-    for (int i = 0; i < arrlen(errors); i++) {
-        printf("\t%s\n", CString(errors[i]));
+    for (int i = 0; i < ArrayCount(errors); i++) {
+        printf("\t%s\n", CString(ArrayObjectAt(errors, i)));
     }
 }
 
@@ -48,24 +48,24 @@ void replStart() {
             break;
         }
 
-        lexer_t *lexer = lexerCreate(line);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(line);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
-        if (parser->errors && arrlen(parser->errors)) {
+        if (parser->errors && ArrayCount(parser->errors)) {
             printParserErrors(parser->errors);
             continue;
         }
 
-        MkyObject *evaluated = mkyeval(AS_NODE(program), env);
+        MkyObject *evaluated = mkyEval(AS_NODE(program), env);
         if (evaluated) {
             printf("%s\n", CString(evaluated->inspect(evaluated)));
         }
-
-        //        parserRelease(&parser);
-        //		  lexerRelease(&lexer);
-
+       
         AutoreleasePoolDrain(autoreleasepool);
     }
+
+    environmentClear(env);
+    RCRelease(env);
     autoreleasepool = RCRelease(autoreleasepool);
 }

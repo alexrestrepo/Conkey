@@ -16,7 +16,7 @@ typedef astexpression_t *infixParseFn(parser_t *parser, astexpression_t *left);
 
 struct parser_t {
     lexer_t *lexer;
-    StringRef *errors;
+    ArrayRef errors;
     
     token_t currentToken;
     token_t peekToken;
@@ -26,8 +26,7 @@ struct parser_t {
     infixParseFn *infixParseFns[TOKEN_TYPE_COUNT];
 };
 
-parser_t *parserCreate(lexer_t *lexer);
-void parserRelease(parser_t **parser);
+parser_t *parserWithLexer(lexer_t *lexer);
 
 void parserNextToken(parser_t *parser);
 astprogram_t *parserParseProgram(parser_t *parser);

@@ -7,12 +7,18 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <assert.h>
+
+#include "../arfoundation/arfoundation.h"
 
 static void lexerReadChar(lexer_t *lexer);
 
-lexer_t *lexerCreate(const char *input) {
+lexer_t *lexerWithInput(const char *input) {
+    assert(input);
+
 	size_t inputLength = strlen(input);
-	lexer_t *lexer = calloc(1, sizeof(*lexer) + sizeof(char[inputLength + 1]));
+
+	lexer_t *lexer = RCAlloc(sizeof(*lexer) + sizeof(char[inputLength + 1]));
 	if (lexer) {
 		memcpy(lexer->input, input, inputLength);
 		lexer->input[inputLength] = '\0';
@@ -20,14 +26,7 @@ lexer_t *lexerCreate(const char *input) {
 		
 		lexerReadChar(lexer);
 	}
-	return lexer;
-}
-
-void lexerRelease(lexer_t **lexer) {
-	if (lexer && *lexer) {
-		free(*lexer);
-		*lexer = NULL;
-	}
+	return RCAutorelease(lexer);
 }
 
 static bool isLetter(char ch) {

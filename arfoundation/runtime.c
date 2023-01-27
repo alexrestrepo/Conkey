@@ -30,20 +30,39 @@ const uint64_t AR_RUNTIME_NOT_OBJECT = 0; // special/any
 const int64_t AR_RUNTIME_REFCOUNT_UNRELEASABLE = -1;
 const size_t AR_RUNTIME_HASH_SEED = 0x5f3759df;  // quake's fast inv sqroot constant :shrug:
 
-static _Atomic RuntimeStatus runtimeStatus;
-static _Atomic uint64_t runtimeRegisteredClassCount;
-static _Atomic uint64_t allocid = 0;
-static _Atomic uint64_t deallocid = 0;
+static RCATOMIC RuntimeStatus runtimeStatus;
+static RCATOMIC uint64_t runtimeRegisteredClassCount;
+static RCATOMIC uint64_t allocid = 0;
+static RCATOMIC uint64_t deallocid = 0;
+static RCATOMIC uint64_t constants = 0;
 static RuntimeRegisteredClassInfo *runtimeClasses;      // TODO: make thread safe?
+
+#define RC_RUNTIME_ALLOC_TRACK 0
+#if RC_RUNTIME_ALLOC_TRACK
+struct alloc_track { uint64_t key; uint64_t value; };
+static struct alloc_track *allocationTracking = NULL;
+#endif
 
 #define ar_object_header(obj)  ((RuntimeObjectBase *) (obj) - 1)
 
 void RuntimeDealloc(void) {
+
+#if RC_RUNTIME_ALLOC_TRACK
+    fprintf(stderr, "Leaks: %ld {\n", hmlen(allocationTracking));
+    for (int i = 0; i < hmlen(allocationTracking); i++) {
+        struct alloc_track entry = allocationTracking[i];
+        fprintf(stderr, "\talloc:%llu, id:%llu type:%s \n", entry.key, entry.value, RuntimeClassName((RuntimeClassID){entry.value}));
+    }
+    fprintf(stderr, "}\n");
+    hmfree(allocationTracking);
+#endif
+
     runtimeStatus = AR_RUNTIME_STOPPED;
+    arrfree(runtimeClasses);
 
     // TODO: other cleanup...?
 #if RC_RUNTIME_VERBOSE
-    fprintf(stderr, "\nAllocated %llu. Deallocated %llu. Leaked:%llu\n", (allocid - 1), deallocid, (allocid - 1) - deallocid);
+    fprintf(stderr, "\nAllocated: %llu. Deallocated: %llu. Constants: %llu. Leaked:%llu\n", allocid, deallocid, constants, allocid - deallocid - constants);
 #endif
 }
 
@@ -104,6 +123,10 @@ RCTypeRef RuntimeRCAlloc(size_t size, RuntimeClassID classid) {
     
 #if RC_RUNTIME_VERBOSE && RC_PRINT_RETAIN_RELEASE
     fprintf(stderr, "\033[33mAllocated \033[0mid:%llu s:%zu bytes [%llu]@%p\n", classid.classID, size, object->allocid, obj);
+#endif
+
+#if RC_RUNTIME_ALLOC_TRACK
+    hmput(allocationTracking, object->allocid, classid.classID);
 #endif
     
     return obj;
@@ -282,6 +305,10 @@ RCTypeRef RCRelease(RCTypeRef obj) {
 #endif
         }
 
+#if RC_RUNTIME_ALLOC_TRACK
+        hmdel(allocationTracking, base->allocid);
+#endif
+
         free(base);
         deallocid++;
         return NULL;
@@ -319,6 +346,7 @@ RCTypeRef RuntimeMakeConstant(RCTypeRef obj) {
         assert(base);
         
         base->refcount = AR_RUNTIME_REFCOUNT_UNRELEASABLE;
+        constants++;
     }
     return obj;
 }

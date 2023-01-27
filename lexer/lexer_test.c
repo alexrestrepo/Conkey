@@ -136,8 +136,9 @@ UTEST(lexer, nextToken) {
 
 		{TOKEN_EOF, ""},
 	};
-	
-	lexer_t *lexer = lexerCreate(input);
+
+    AutoreleasePoolRef pool = AutoreleasePoolCreate();
+	lexer_t *lexer = lexerWithInput(input);
 	
 	size_t testCount = sizeof(tests) / sizeof(test_t);
 	for (int i = 0; i < testCount; i++) {
@@ -147,8 +148,7 @@ UTEST(lexer, nextToken) {
 		ASSERT_STREQ(token_types[test.expectedType], token_types[token.type]);
 		ASSERT_STRNEQ(test.expectedLiteral, token.literal.src, strlen(test.expectedLiteral));
 	}
-	
-	lexerRelease(&lexer);
+    RCRelease(pool);
 }
 
 #ifndef AR_COMPOUND_TEST

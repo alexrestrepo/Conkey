@@ -61,13 +61,13 @@ static bool testLetStatement(aststatement_t *statement, const char *name) {
 }
 
 static bool checkParserErrors(parser_t *parser) {
-    if (!parser->errors || arrlen(parser->errors) == 0) {
+    if (ArrayCount(parser->errors) == 0) {
         return false;
     }
 
-    fprintf(stderr, "\nparser has %ld errors\n", arrlen(parser->errors));
-    for (size_t i = 0; i < arrlen(parser->errors); i++) {
-        fprintf(stderr, "parser error: %s\n", CString(parser->errors[i]));
+    fprintf(stderr, "\nparser has %ld errors\n", ArrayCount(parser->errors));
+    for (size_t i = 0; i < ArrayCount(parser->errors); i++) {
+        fprintf(stderr, "parser error: %s\n", CString(ArrayObjectAt(parser->errors, i)));
     }
     return true;
 }
@@ -207,8 +207,8 @@ UTEST(parser, letStatements) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
@@ -244,8 +244,8 @@ UTEST(parser, returnStatements) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
@@ -275,8 +275,8 @@ UTEST(parser, identifierExpression) {
 
     const char *input = "foobar;";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
 
     astprogram_t *program = parserParseProgram(parser);
     bool errors = checkParserErrors(parser);
@@ -304,8 +304,8 @@ UTEST(parser, integerLiteralExpression) {
 
     const char *input = "5;";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
 
     astprogram_t *program = parserParseProgram(parser);
     bool errors = checkParserErrors(parser);
@@ -343,8 +343,8 @@ UTEST(parser, parsingPrefixExpressions) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
         bool errors = checkParserErrors(parser);
         if (errors) {
@@ -402,8 +402,8 @@ UTEST(parser, parsingInfixExpressions) {
     
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
@@ -543,8 +543,8 @@ UTEST(parser, operatorPrecedenceParsing) {
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
 
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
@@ -576,8 +576,8 @@ UTEST(parser, booleanExpressions) {
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
 
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
@@ -607,8 +607,8 @@ UTEST(parser, ifExpressions) {
 
     const char *input = "if (x < y) { x }";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -643,8 +643,8 @@ UTEST(parser, ifElseExpressions) {
 
     const char *input = "if (x < y) { x } else { y }";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -685,8 +685,8 @@ UTEST(parser, functionLiteralParsing) {
 
     const char *input = "fn(x, y) { x + y; }";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -736,8 +736,8 @@ UTEST(parser, functionParameterParsing) {
 
     for (int i = 0; i < sizeof(tests) / sizeof(struct test); i++) {
         struct test test = tests[i];
-        lexer_t *lexer = lexerCreate(test.input);
-        parser_t *parser = parserCreate(lexer);
+        lexer_t *lexer = lexerWithInput(test.input);
+        parser_t *parser = parserWithLexer(lexer);
         astprogram_t *program = parserParseProgram(parser);
 
         bool errors = checkParserErrors(parser);
@@ -767,8 +767,8 @@ UTEST(parser, callExpressionParsing) {
 
     const char *input = "add(1, 2 * 3, 4 + 5);";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -796,10 +796,11 @@ UTEST(parser, callExpressionParsing) {
 }
 
 UTEST(parser, stringLiteralExpressions) {
+    AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "\"Hello World\"";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -815,14 +816,15 @@ UTEST(parser, stringLiteralExpressions) {
     aststringliteral_t *str = (aststringliteral_t *)stmt->expression;
 
     ASSERT_STREQ("Hello World", CString(str->value));
+    RCRelease(autoreleasepool);
 }
 
 UTEST(parser, arrayLiterals) {
     AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "[1, 2 * 2, 3+3]";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -848,8 +850,8 @@ UTEST(parser, parseIndexExpressions) {
     AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "myArray[1+1]";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -874,8 +876,8 @@ UTEST(parser, hashLiteralStringKeys) {
 
     const char *input = MONKEY({"one":1, "two":2, "three":3});
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -918,8 +920,8 @@ UTEST(parser, emptyHashLiteral) {
     AutoreleasePoolRef autoreleasepool = AutoreleasePoolCreate();
     const char *input = "{}";
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
@@ -943,8 +945,8 @@ UTEST(parser, hashLiteralsWithExpressions) {
 
     const char *input = MONKEY({"one" : 0 + 1, "two" : 10 - 8, "three":15 / 5});
 
-    lexer_t *lexer = lexerCreate(input);
-    parser_t *parser = parserCreate(lexer);
+    lexer_t *lexer = lexerWithInput(input);
+    parser_t *parser = parserWithLexer(lexer);
     astprogram_t *program = parserParseProgram(parser);
 
     bool errors = checkParserErrors(parser);
