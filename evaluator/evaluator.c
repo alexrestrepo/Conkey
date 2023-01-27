@@ -511,6 +511,7 @@ MkyObject *mkyEval(astnode_t *node, MkyEnvironmentRef env) {
 
         RCRelease(pool);
         return RCAutorelease(obj);
+        
     } else {
         return eval(node, env);
     }

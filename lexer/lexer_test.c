@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "../macros.h"
 #include "../arfoundation/vendor/utest.h"
+#include "../arfoundation/arfoundation.h"
 #include "../token/token.h"
 
 typedef struct {
