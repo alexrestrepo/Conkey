@@ -26,9 +26,8 @@ static MkyObject *testEval(const char *input) {
 
     obj = mkyEval(AS_NODE(program), env);
 
-    environmentClear(env);
     env = RCRelease(env);
-//    assert(env == NULL);
+    assert(env == NULL);
     programRelease(&program);
 
     return obj;

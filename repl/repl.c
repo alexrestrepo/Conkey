@@ -65,7 +65,6 @@ void replStart() {
         AutoreleasePoolDrain(autoreleasepool);
     }
 
-    environmentClear(env);
     RCRelease(env);
     autoreleasepool = RCRelease(autoreleasepool);
 }

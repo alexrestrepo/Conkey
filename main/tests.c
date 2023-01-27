@@ -63,7 +63,6 @@ UTEST(perf, fibonacciRecursive) {
 		printf("%s\n", CString(obj->inspect(obj)));
 	}
 
-    environmentClear(env);
     RCRelease(env);
 	RCRelease(ap);
 }

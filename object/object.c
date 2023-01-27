@@ -365,7 +365,7 @@ struct MkyFunction {
 
 static void mkyFunctionDealloc(RCTypeRef obj) {
     MkyFunctionRef self = obj;
-    self->env = RCRelease(self->env);
+//    self->env = RCRelease(self->env);
 
     arrfree(self->parameters);
 //    self->body = RCRelease(self->body);
@@ -409,8 +409,7 @@ static RuntimeClassDescriptor MkyFunctionClass = {
     NULL
 };
 
-MkyObject *mkyFunction(astidentifier_t **parameters, astblockstatement_t
-                       *body, MkyEnvironmentRef env) {
+MkyObject *mkyFunction(astidentifier_t **parameters, astblockstatement_t *body, MkyEnvironmentRef env) {
 
     if (MkyFunctionClassID.classID == 0) {
         MkyFunctionClassID = RuntimeRegisterClass(&MkyFunctionClass);
@@ -423,7 +422,7 @@ MkyObject *mkyFunction(astidentifier_t **parameters, astblockstatement_t
     fn->parameters = parameters;
     fn->body = body;
 
-    fn->env = RCRetain(env);
+    fn->env = env; // do not retain environment as it will contain this fn.
     return RCAutorelease(fn);
 }
 

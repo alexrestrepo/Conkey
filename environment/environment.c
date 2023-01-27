@@ -21,7 +21,6 @@ static void environmentDestructor(RCTypeRef env) {
     MkyEnvironmentRef self = env;
 
     self->store = RCRelease(self->store);
-    self->outer = RCRelease(self->outer);
 }
 
 static RuntimeClassDescriptor MkyEnvironmentClass = {
@@ -67,10 +66,6 @@ MkyObject *environmentSetObjectForKey(MkyEnvironmentRef env, StringRef key, MkyO
 
 MkyEnvironmentRef environmentCreateEnclosedIn(MkyEnvironmentRef outer) {
     MkyEnvironmentRef env = environmentCreate();
-    env->outer = RCRetain(outer);
+    env->outer = outer; // outer is the enclosing one that will have a reftree to this
     return env;
-}
-
-void environmentClear(MkyEnvironmentRef env) {
-    DictionaryRemoveAll(env->store);
 }

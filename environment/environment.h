@@ -18,6 +18,4 @@ typedef struct MkyObject MkyObject;
 MkyObject *environmentObjectForKey(MkyEnvironmentRef env, StringRef key);
 MkyObject *environmentSetObjectForKey(MkyEnvironmentRef env, StringRef key, MkyObject *value);
 
-void environmentClear(MkyEnvironmentRef env);
-
 #endif /* environment_h */
